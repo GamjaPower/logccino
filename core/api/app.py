@@ -29,7 +29,14 @@ app.include_router(admin.router, prefix="/api/v1")
 # Remote MCP over SSE 라우트 마운트 (Claude Desktop 원격 연동용)
 if mcp_app:
     try:
-        sse_starlette_app = mcp_app.sse_app()
+        try:
+            from mcp.server.transport_security import TransportSecuritySettings
+            # 사내 IP(192.168.x.x) 및 k8s/AWS 도메인 접속 허용을 위해 DNS rebinding 보호 해제
+            sec_settings = TransportSecuritySettings(enable_dns_rebinding_protection=False)
+            sse_starlette_app = mcp_app.sse_app(transport_security=sec_settings)
+        except Exception:
+            sse_starlette_app = mcp_app.sse_app()
+
         for route in sse_starlette_app.routes:
             app.routes.append(route)
     except Exception as e:
