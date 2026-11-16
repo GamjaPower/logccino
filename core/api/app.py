@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.client.opensearch_client import opensearch_service
-from core.api.routes import ingest, search, analysis, admin
+from core.api.routes import ingest, search, analysis, admin, install
 from core.mcp.server import mcp_app
 
 app = FastAPI(
@@ -20,6 +20,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
+app.include_router(install.router) # /install, /install.sh, /install.py, /install.ps1
 app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
