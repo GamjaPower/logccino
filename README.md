@@ -52,12 +52,23 @@ aws cloudformation create-stack \
   --parameters ParameterKey=KeyName,ParameterValue=my-key
 ```
 
-### 3. 로컬 개발 환경 실행
-```bash
-# 1. 인프라 실행
-docker compose up -d
+### 3. 로컬 및 Docker 실행
 
-# 2. 의존성 설치 및 백엔드 실행
+#### 옵션 A. Docker Compose로 원클릭 전체 실행 (권장)
+OpenSearch와 Logccino 백엔드 서비스를 모두 컨테이너로 즉시 실행합니다:
+```bash
+docker compose up -d --build
+```
+- Core API & Swagger: `http://localhost:8000/docs`
+- Claude Remote MCP 엔드포인트: `http://localhost:8000/sse`
+
+#### 옵션 B. 로컬 Python 직접 개발 환경 실행
+OpenSearch 인프라만 컨테이너로 띄우고 호스트 환경에서 백엔드를 직접 개발/디버깅합니다:
+```bash
+# 1. OpenSearch 인프라 실행
+docker compose up -d opensearch-node
+
+# 2. 로컬 가상환경 및 백엔드 실행
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m core.main

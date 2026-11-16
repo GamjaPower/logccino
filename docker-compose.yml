@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   opensearch-node:
     image: opensearchproject/opensearch:2.18.0
@@ -23,8 +21,51 @@ services:
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     ports:
-      - 9200:9200
-      - 9600:9600
+      - "9200:9200"
+      - "9600:9600"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - logccino-net
+
+  logccino:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: logccino-api
+    restart: unless-stopped
+    depends_on:
+      opensearch-node:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - OPENSEARCH_HOST=http://opensearch-node:9200
+      - OPENSEARCH_USE_SSL=${OPENSEARCH_USE_SSL:-false}
+      - OPENSEARCH_VERIFY_CERTS=${OPENSEARCH_VERIFY_CERTS:-false}
+      - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME:-}
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD:-}
+      - OPENSEARCH_INDEX_PREFIX=${OPENSEARCH_INDEX_PREFIX:-logccino-logs}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=${DEBUG:-false}
+      - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-gemini-2.5-flash}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - logccino-net
 
