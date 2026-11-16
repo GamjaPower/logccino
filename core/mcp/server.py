@@ -1,7 +1,8 @@
 """
 Logccino Model Context Protocol (MCP) Server
-Claude, Antigravity, Cursor 등 AI 에이전트가 Logccino의 로그 검색 및 분석 기능을
+Claude, Antigravity, Cursor 등 AI 에이전트가 Logccino의 대규모/실시간 데이터 인텔리전스 기능을
 표준 MCP 도구(Tools), 리소스(Resources), 프롬프트(Prompts)로 호출할 수 있도록 제공하는 서버입니다.
+Stdio(로컬) 및 SSE(원격 Kubernetes / AWS Marketplace 배포) 전송 방식을 모두 지원합니다.
 """
 
 import sys
@@ -11,26 +12,47 @@ from typing import Optional, Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
+# FastMCP / MCPServer (mcp 1.x & 2.x 호환)
+HAS_MCP = False
+mcp_app = None
+
 try:
-    from mcp.server.fastmcp import FastMCP
-    HAS_FASTMCP = True
-except ImportError:
-    HAS_FASTMCP = False
-    logger.warning("mcp package is not installed. Run: pip install 'mcp>=1.2.0'")
+    try:
+        # mcp 2.x
+        from mcp.server.mcpserver import MCPServer
+        mcp_app = MCPServer(
+            name="Logccino Big Data & Real-Time Intelligence",
+            instructions="Logccino MCP Server enables Claude to query massive distributed OpenSearch logs, diagnose errors, summarize real-time stream bursts, and aggregate big data metrics."
+        )
+        HAS_MCP = True
+    except (ImportError, ModuleNotFoundError):
+        # mcp 1.x
+        from mcp.server.fastmcp import FastMCP
+        mcp_app = FastMCP(
+            name="Logccino Big Data & Real-Time Intelligence",
+            instructions="Logccino MCP Server enables Claude to query massive distributed OpenSearch logs, diagnose errors, summarize real-time stream bursts, and aggregate big data metrics."
+        )
+        HAS_MCP = True
+except Exception as e:
+    logger.warning(f"MCP server module could not be initialized: {e}. Run: pip install 'mcp>=1.2.0'")
 
 from core.mcp.tools import mcp_tools
 from core.config import settings
 
-# FastMCP 인스턴스 초기화
-if HAS_FASTMCP:
-    mcp_app = FastMCP(
-        name="Logccino Log Intelligence",
-        instructions="Logccino MCP Server enables AI agents to query OpenSearch logs, diagnose errors, inspect microservice health metrics, and trace distributed transactions."
-    )
-
+if HAS_MCP and mcp_app:
     # -------------------------------------------------------------
     # 1. MCP Tools 등록
     # -------------------------------------------------------------
+    @mcp_app.tool()
+    def search_natural(prompt: str, size: int = 30) -> str:
+        """
+        Search massive distributed logs using natural language (Korean or English).
+        Directly queries OpenSearch using PPL when available, and automatically falls back to native Query DSL.
+        Example: "Find connection timeout errors in payment service from yesterday"
+        """
+        res = mcp_tools.search_natural(natural_query=prompt, size=size)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     @mcp_app.tool()
     def search_logs(
         query: Optional[str] = None,
@@ -51,6 +73,32 @@ if HAS_FASTMCP:
             start_time=start_time,
             end_time=end_time,
             size=size
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def get_realtime_stream_summary(minutes: int = 15, service: Optional[str] = None) -> str:
+        """
+        Summarize high-velocity real-time log streams over the last N minutes.
+        Computes throughput, error spikes, and time-series trends in the cluster before Claude context limits are reached.
+        """
+        res = mcp_tools.get_realtime_stream_summary(minutes=minutes, service=service)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def aggregate_bigdata_metrics(
+        time_window: str = "24h",
+        group_by: str = "service",
+        filter_query: Optional[str] = None
+    ) -> str:
+        """
+        Aggregate millions of big data log records into concise summary tables grouped by field (e.g. service, host, level).
+        Protects Claude context window while giving full statistical visibility over massive datasets.
+        """
+        res = mcp_tools.aggregate_bigdata_metrics(
+            time_window=time_window,
+            group_by=group_by,
+            filter_query=filter_query
         )
         return json.dumps(res, ensure_ascii=False, indent=2)
 
@@ -98,9 +146,9 @@ if HAS_FASTMCP:
         return json.dumps(res, ensure_ascii=False, indent=2)
 
     @mcp_app.tool()
-    def get_cluster_status() -> str:
+    def get_cluster_health() -> str:
         """
-        Check OpenSearch cluster connection status, active health (green/yellow/red), and total number of indexed logs.
+        Get OpenSearch cluster connection status, health color (green/yellow/red), node count, and total indexed logs count.
         """
         res = mcp_tools.get_cluster_status()
         return json.dumps(res, ensure_ascii=False, indent=2)
@@ -108,50 +156,51 @@ if HAS_FASTMCP:
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------
-    @mcp_app.resource("logccino://schema")
-    def get_log_schema() -> str:
-        """Logccino log document schema definition and field descriptions."""
-        schema = {
-            "index_pattern": f"{settings.opensearch_index_prefix}-*",
-            "fields": {
-                "@timestamp": {"type": "date", "description": "Log timestamp (ISO8601)"},
-                "service": {"type": "keyword", "description": "Microservice name (e.g. auth-service, payment-gateway)"},
-                "host": {"type": "keyword", "description": "Server hostname or container ID"},
-                "level": {"type": "keyword", "description": "Log level: DEBUG, INFO, WARN, ERROR, FATAL"},
-                "message": {"type": "text", "description": "Raw log message or formatted text"},
-                "trace_id": {"type": "keyword", "description": "Distributed tracing ID"},
-                "span_id": {"type": "keyword", "description": "Tracing span ID"},
-                "attributes": {"type": "object", "description": "Key-value context attributes (status_code, user_id, latency_ms)"}
-            }
-        }
-        return json.dumps(schema, ensure_ascii=False, indent=2)
+    @mcp_app.resource("logccino://cluster/status")
+    def cluster_status_resource() -> str:
+        """OpenSearch Cluster Status & Health Information"""
+        return json.dumps(mcp_tools.get_cluster_status(), ensure_ascii=False, indent=2)
+
+    @mcp_app.resource("logccino://services/metrics")
+    def services_metrics_resource() -> str:
+        """Aggregated 24h Microservices Metrics"""
+        return json.dumps(mcp_tools.get_service_metrics("24h"), ensure_ascii=False, indent=2)
 
     # -------------------------------------------------------------
     # 3. MCP Prompts 등록
     # -------------------------------------------------------------
-    @mcp_app.prompt()
-    def analyze_incident(service: str, time_window: str = "24h") -> str:
-        """Prompt template to instruct AI agents on how to investigate service incidents using Logccino."""
-        return f"""You are investigating an incident in service '{service}' over the past {time_window}.
-Please use the 'diagnose_service_errors' tool to inspect the latest error logs, and 'get_service_metrics' to assess the failure rate.
-Structure your diagnosis into:
-1. Incident Summary
-2. Root Cause Analysis
-3. Affected Services and Impact
-4. Recommended Remediation Steps (Immediate Mitigation & Long-term Fix)
-"""
+    @mcp_app.prompt("diagnose-incident")
+    def diagnose_incident_prompt(service_name: str) -> str:
+        """Claude용 장애 진단 가이드 프롬프트"""
+        return f"""You are investigating an incident on microservice '{service_name}'.
+1. Call `diagnose_service_errors` with service='{service_name}' to retrieve top error patterns and recent exceptions.
+2. If distributed trace IDs appear, call `trace_transaction` to inspect cross-service impact.
+3. Call `get_realtime_stream_summary` to see if error spikes are currently ongoing.
+4. Formulate the root cause and provide actionable mitigation steps."""
 
-else:
-    mcp_app = None
+    @mcp_app.prompt("bigdata-overview")
+    def bigdata_overview_prompt(time_window: str = "24h") -> str:
+        """Claude용 대용량 로그 데이터 거시적 분석 프롬프트"""
+        return f"""Analyze the massive cluster-wide logs for the last '{time_window}':
+1. Call `aggregate_bigdata_metrics` grouped by service to identify high-volume anomaly services.
+2. Call `get_service_metrics` to inspect error rates across all tiers.
+3. Provide a structured system health summary and recommend which services need immediate inspection."""
 
-def main():
-    """STDIO 모드로 MCP 서버 구동 (Claude Desktop, Antigravity CLI 등에서 호출 시 진입점)"""
-    if not HAS_FASTMCP or mcp_app is None:
-        print("Error: MCP package is not installed. Please run: pip install 'mcp>=1.2.0'", file=sys.stderr)
+def run_mcp_server(transport: str = "stdio"):
+    """MCP 서버 실행 (stdio 또는 sse)"""
+    if not HAS_MCP or not mcp_app:
+        print("Error: MCP package is not properly configured.", file=sys.stderr)
         sys.exit(1)
 
-    # FastMCP 기본 실행 (stdio transport)
-    mcp_app.run(transport="stdio")
+    if transport == "sse":
+        print(f"Starting Logccino MCP Server over SSE on port {settings.logccino_port}...")
+        mcp_app.run(transport="sse")
+    else:
+        # Default: stdio
+        mcp_app.run(transport="stdio")
 
 if __name__ == "__main__":
-    main()
+    mode = "stdio"
+    if len(sys.argv) > 1 and sys.argv[1] == "sse":
+        mode = "sse"
+    run_mcp_server(mode)

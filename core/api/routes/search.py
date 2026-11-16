@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from core.api.models.query import SearchRequest, NaturalQueryRequest
 from core.query.builder import QueryBuilder
-from core.query.spl_parser import SplunkToPPLTranslator
 from core.query.executor import QueryExecutor
 from core.ai.assistant import ai_assistant
 
@@ -10,26 +9,21 @@ executor = QueryExecutor()
 
 @router.post("")
 async def search_logs(req: SearchRequest):
+    """
+    로그 검색 엔드포인트
+    1. natural_query 입력 시: 자연어 의도 분석 후 PPL(가능시) 또는 OpenSearch 기본 DSL로 자동 실행
+    2. 일반 필터 입력 시: OpenSearch 표준 Query DSL로 실행
+    """
     try:
-        # 1. SPL / PPL 파이프라인 형태의 쿼리가 제공된 경우
-        if req.spl:
-            translated_ppl = SplunkToPPLTranslator.translate(req.spl)
-            try:
-                ppl_result = executor.execute_ppl(translated_ppl)
-                return {
-                    "mode": "ppl",
-                    "query": translated_ppl,
-                    "result": ppl_result
-                }
-            except Exception as ppl_err:
-                # OpenSearch PPL 플러그인이 없거나 실패할 경우 DSL fallback 안내
-                return {
-                    "mode": "ppl_fallback",
-                    "error": str(ppl_err),
-                    "query": translated_ppl
-                }
+        # 1. 자연어 질의가 직접 포함된 경우
+        if req.natural_query and req.natural_query.strip():
+            result = await ai_assistant.execute_natural_query(
+                user_query=req.natural_query,
+                size=req.size
+            )
+            return result
 
-        # 2. 일반 Query DSL 방식
+        # 2. 일반 Query DSL 방식 (키워드/필터)
         dsl = QueryBuilder.build_search_query(
             query_string=req.query,
             level=req.level,
@@ -50,22 +44,25 @@ async def search_logs(req: SearchRequest):
 
 @router.post("/natural")
 async def natural_language_search(req: NaturalQueryRequest):
-    """자연어를 OpenSearch PPL로 변환하고 필요시 즉시 실행"""
+    """
+    자연어에서 바로 OpenSearch를 호출하는 엔드포인트
+    - PPL이 사용 가능한 구조이면 PPL 쿼리로 실행
+    - PPL이 미지원되거나 실패할 경우 OpenSearch 원래 기능(Query DSL)으로 자동 Fallback 실행
+    """
     try:
-        generated_ppl = await ai_assistant.translate_natural_language_to_ppl(req.prompt)
-        
-        response_data = {
-            "prompt": req.prompt,
-            "ppl_query": generated_ppl
-        }
-
         if req.execute:
-            try:
-                result = executor.execute_ppl(generated_ppl)
-                response_data["execution_result"] = result
-            except Exception as exec_err:
-                response_data["execution_error"] = str(exec_err)
-
-        return response_data
+            exec_result = await ai_assistant.execute_natural_query(
+                user_query=req.prompt,
+                size=req.size
+            )
+            return exec_result
+        else:
+            plan = await ai_assistant.plan_query_from_natural_language(req.prompt)
+            return {
+                "prompt": req.prompt,
+                "query_plan": plan,
+                "ppl_query": plan.get("ppl_query"),
+                "dsl_query": plan.get("dsl_query")
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

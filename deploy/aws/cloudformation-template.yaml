@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Logccino: Agent-Native Big Data & Real-Time Intelligence Backend for Claude on AWS'
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: 'm6i.xlarge'
+    Description: 'EC2 instance type for Logccino and OpenSearch single-node cluster'
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: 'EC2 KeyPair for SSH access'
+
+Resources:
+  LogccinoSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow HTTP/SSE and OpenSearch traffic'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  LogccinoInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref LogccinoSecurityGroup
+      ImageId: ami-0c55b159cbfafe1f0 # Ubuntu 24.04 LTS (Amazon region dependent)
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install -y docker.io docker-compose git
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ubuntu
+
+          # Clone and Start Logccino
+          cd /home/ubuntu
+          git clone https://github.com/sst96/logccino.git
+          cd logccino
+          docker compose up -d
+
+Outputs:
+  LogccinoEndpoint:
+    Description: 'Logccino Core API and Remote MCP Endpoint for Claude'
+    Value: !Sub 'http://${LogccinoInstance.PublicDnsName}:8000'
+  ClaudeMCPConfigSnippet:
+    Description: 'Snippet to copy into claude_desktop_config.json'
+    Value: !Sub '{"mcpServers": {"logccino": {"url": "http://${LogccinoInstance.PublicDnsName}:8000/sse"}}}'

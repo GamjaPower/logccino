@@ -69,6 +69,36 @@ class LogccinoMCPTools:
         except Exception as e:
             return {"error": f"Failed to search logs: {str(e)}"}
 
+    def search_natural(self, natural_query: str, size: int = 30) -> Dict[str, Any]:
+        """
+        자연어 질문(예: '어제 결제 모듈에서 발생한 타임아웃 에러')으로 OpenSearch를 바로 검색합니다.
+        PPL 지원 환경이면 PPL을 사용하고, 미지원 또는 실패 시 OpenSearch 기본 Query DSL로 자동 검색합니다.
+        """
+        import asyncio
+        from core.ai.assistant import ai_assistant
+        try:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as pool:
+                        return pool.submit(asyncio.run, ai_assistant.execute_natural_query(natural_query, size=size)).result()
+                else:
+                    return loop.run_until_complete(ai_assistant.execute_natural_query(natural_query, size=size))
+            except RuntimeError:
+                return asyncio.run(ai_assistant.execute_natural_query(natural_query, size=size))
+        except Exception as e:
+            logger.warning(f"search_natural failed ({e}), falling back to direct Query DSL")
+            dsl = QueryBuilder.build_search_query(query_string=natural_query, size=size)
+            dsl_res = self.executor.execute_dsl(dsl)
+            return {
+                "prompt": natural_query,
+                "mode": "dsl_fallback",
+                "hits": dsl_res.get("hits", []),
+                "total": dsl_res.get("total", 0),
+                "executed_query": dsl
+            }
+
     def search_ppl(self, ppl_query: str) -> Dict[str, Any]:
         """
         OpenSearch PPL (Piped Processing Language) 쿼리를 직접 실행합니다.
@@ -121,6 +151,131 @@ class LogccinoMCPTools:
             }
         except Exception as e:
             return {"error": f"Error diagnosis fetch failed: {str(e)}"}
+
+    def get_realtime_stream_summary(self, minutes: int = 15, service: Optional[str] = None) -> Dict[str, Any]:
+        """
+        초당 대규모로 쏟아지는 실시간 로그 스트림에서 최근 N분 동안의 서비스별 상태, 급증 에러 패턴 및 이상치를 요약합니다.
+        로컬 PC의 단일 Claude로는 감당할 수 없는 실시간 스트리밍 데이터를 백엔드에서 집계하여 전달합니다.
+        """
+        now = datetime.now(timezone.utc)
+        start_iso = (now - timedelta(minutes=minutes)).isoformat()
+        
+        filter_clauses = [{"range": {"@timestamp": {"gte": start_iso}}}]
+        if service:
+            filter_clauses.append({"term": {"service": service}})
+
+        body = {
+            "size": 0,
+            "query": {"bool": {"filter": filter_clauses}},
+            "aggs": {
+                "services": {
+                    "terms": {"field": "service", "size": 20},
+                    "aggs": {
+                        "levels": {"terms": {"field": "level", "size": 10}}
+                    }
+                },
+                "timeline": {
+                    "date_histogram": {
+                        "field": "@timestamp",
+                        "fixed_interval": f"{max(1, minutes // 10)}m"
+                    }
+                }
+            }
+        }
+        try:
+            client = opensearch_service.get_client()
+            index = f"{settings.opensearch_index_prefix}-*"
+            res = client.search(index=index, body=body)
+            total_recent_logs = res.get("hits", {}).get("total", {}).get("value", 0)
+
+            # 서비스별 통계
+            service_stats = []
+            for b in res.get("aggregations", {}).get("services", {}).get("buckets", []):
+                svc = b.get("key")
+                total = b.get("doc_count", 0)
+                levels = {lb["key"]: lb["doc_count"] for lb in b.get("levels", {}).get("buckets", [])}
+                err_cnt = levels.get("ERROR", 0) + levels.get("FATAL", 0)
+                service_stats.append({
+                    "service": svc,
+                    "recent_logs": total,
+                    "errors": err_cnt,
+                    "error_rate_pct": round((err_cnt / total * 100), 2) if total > 0 else 0
+                })
+
+            # 시계열 트렌드
+            timeline = [
+                {"timestamp": tb.get("key_as_string"), "count": tb.get("doc_count", 0)}
+                for tb in res.get("aggregations", {}).get("timeline", {}).get("buckets", [])
+            ]
+
+            return {
+                "window_minutes": minutes,
+                "total_stream_logs": total_recent_logs,
+                "throughput_per_sec": round(total_recent_logs / (minutes * 60), 2),
+                "service_breakdown": service_stats,
+                "realtime_timeline": timeline
+            }
+        except Exception as e:
+            return {"error": f"Failed to get realtime stream summary: {str(e)}"}
+
+    def aggregate_bigdata_metrics(
+        self,
+        time_window: str = "24h",
+        group_by: str = "service",
+        filter_query: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        수백만~수억 건의 빅데이터 로그를 분산 클러스터에서 사전 집계(Aggregation)하여
+        Claude의 컨텍스트 윈도우 한계를 초과하지 않는 압축된 통계 요약 테이블을 반환합니다.
+        """
+        start_iso = self._resolve_relative_time(time_window)
+        filter_clauses = []
+        if start_iso:
+            filter_clauses.append({"range": {"@timestamp": {"gte": start_iso}}})
+        if filter_query:
+            filter_clauses.append({"query_string": {"query": filter_query, "default_field": "message"}})
+
+        body = {
+            "size": 0,
+            "query": {"bool": {"filter": filter_clauses}} if filter_clauses else {"match_all": {}},
+            "aggs": {
+                "groups": {
+                    "terms": {"field": group_by, "size": 30},
+                    "aggs": {
+                        "error_count": {
+                            "filter": {"terms": {"level": ["ERROR", "FATAL"]}}
+                        }
+                    }
+                }
+            }
+        }
+        try:
+            client = opensearch_service.get_client()
+            index = f"{settings.opensearch_index_prefix}-*"
+            res = client.search(index=index, body=body)
+            total_matched = res.get("hits", {}).get("total", {}).get("value", 0)
+
+            buckets = res.get("aggregations", {}).get("groups", {}).get("buckets", [])
+            summary_table = []
+            for b in buckets:
+                key = b.get("key")
+                total = b.get("doc_count", 0)
+                err = b.get("error_count", {}).get("doc_count", 0)
+                summary_table.append({
+                    group_by: key,
+                    "total_volume": total,
+                    "error_volume": err,
+                    "error_percentage": round((err / total * 100), 2) if total > 0 else 0
+                })
+
+            return {
+                "time_window": time_window,
+                "total_bigdata_records_analyzed": total_matched,
+                "grouped_by": group_by,
+                "summary": summary_table
+            }
+        except Exception as e:
+            return {"error": f"Failed to aggregate bigdata metrics: {str(e)}"}
 
     def get_service_metrics(self, time_window: str = "24h") -> Dict[str, Any]:
         """

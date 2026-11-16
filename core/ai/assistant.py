@@ -3,7 +3,10 @@ import re
 import json
 import logging
 from typing import Optional, Dict, Any, List
+from datetime import datetime, timedelta, timezone
 from core.config import settings
+from core.query.builder import QueryBuilder
+from core.query.executor import QueryExecutor
 from core.ai.prompts.nl_to_query import (
     NL_QUERY_PLANNER_SYSTEM_PROMPT,
     build_nl_query_planner_prompt
@@ -28,11 +31,31 @@ from core.ai.prompts.log_summarize import (
 logger = logging.getLogger(__name__)
 
 class AIAssistant:
-    """Logccino 자연어 로그 분석 AI 엔진"""
+    """Logccino 자연어 로그 분석 및 직결 AI 엔진"""
 
     def __init__(self):
         self.provider = settings.llm_provider
         self.model = settings.llm_model
+        self.executor = QueryExecutor()
+
+    def _resolve_relative_time(self, window_str: Optional[str]) -> Optional[str]:
+        if not window_str:
+            return None
+        now = datetime.now(timezone.utc)
+        unit = window_str[-1].lower()
+        try:
+            val = int(window_str[:-1])
+            if unit == 'm':
+                delta = timedelta(minutes=val)
+            elif unit == 'h':
+                delta = timedelta(hours=val)
+            elif unit == 'd':
+                delta = timedelta(days=val)
+            else:
+                return None
+            return (now - delta).isoformat()
+        except Exception:
+            return None
 
     async def _call_llm(self, system_prompt: str, user_prompt: str, temperature: float = 0.2) -> str:
         """LLM 호출 공통 유틸리티 (Gemini & OpenAI 지원)"""
@@ -77,8 +100,9 @@ class AIAssistant:
         return ""
 
     async def plan_query_from_natural_language(self, user_query: str) -> Dict[str, Any]:
-        """자연어 질의로부터 검색 전략 및 PPL/DSL 쿼리 플랜 생성"""
+        """자연어 질의로부터 검색 전략 및 PPL / OpenSearch 기본 Query DSL 플랜 생성"""
         prompt = build_nl_query_planner_prompt(user_query)
+        plan: Optional[Dict[str, Any]] = None
 
         try:
             raw_response = await self._call_llm(
@@ -88,30 +112,81 @@ class AIAssistant:
             )
 
             if raw_response:
-                # json 블록 추출
                 match = re.search(r"```(?:json)?\s*(.*?)\s*```", raw_response, re.DOTALL)
                 json_str = match.group(1).strip() if match else raw_response.strip()
-                return json.loads(json_str)
+                plan = json.loads(json_str)
         except Exception as e:
             logger.warning(f"Failed to generate query plan via LLM: {e}, falling back to rule-based")
 
-        # 규칙 기반 Fallback 생성
-        level_hint = "ERROR" if any(w in user_query.lower() for w in ["에러", "error", "fail", "실패", "오류", "exception"]) else None
+        if not plan:
+            # 규칙 기반 Fallback 생성
+            level_hint = "ERROR" if any(w in user_query.lower() for w in ["에러", "error", "fail", "실패", "오류", "exception"]) else None
+            # 간단한 서비스명 추론
+            service_hint = None
+            for common_svc in ["payment", "auth", "order", "gateway", "user", "notification"]:
+                if common_svc in user_query.lower():
+                    service_hint = common_svc
+                    break
+
+            plan = {
+                "intent": "ERROR_DIAGNOSIS" if level_hint else "EVENT_LOOKUP",
+                "summary_of_intent": f"자연어 키워드 검색: {user_query}",
+                "filters": {
+                    "service": service_hint,
+                    "level": level_hint,
+                    "keywords": [user_query],
+                    "time_relative": "24h"
+                },
+                "ppl_query": f"source = {settings.opensearch_index_prefix}-* | where match(message, '{user_query}') | head 50",
+                "suggested_size": 50
+            }
+
+        # OpenSearch 원래 기능인 Query DSL 빌드 및 플랜에 첨부
+        filters = plan.get("filters", {})
+        keywords = filters.get("keywords") or []
+        query_str = " ".join(keywords) if keywords else None
+        time_rel = filters.get("time_relative")
+        start_time = self._resolve_relative_time(time_rel)
+
+        dsl_query = QueryBuilder.build_search_query(
+            query_string=query_str,
+            level=filters.get("level"),
+            service=filters.get("service"),
+            start_time=start_time,
+            size=plan.get("suggested_size", 50)
+        )
+        plan["dsl_query"] = dsl_query
+
+        return plan
+
+    async def execute_natural_query(self, user_query: str, size: int = 50) -> Dict[str, Any]:
+        """
+        자연어 질의로부터 OpenSearch를 바로 호출:
+        PPL이 사용 가능한 구조이면 PPL로 실행하고, 불가하거나 실패 시 OpenSearch 원래 기능(Query DSL)으로 자동 실행
+        """
+        plan = await self.plan_query_from_natural_language(user_query)
+        ppl_query = plan.get("ppl_query")
+        dsl_query = plan.get("dsl_query") or QueryBuilder.build_search_query(query_string=user_query, size=size)
+
+        exec_res = self.executor.execute_with_fallback(
+            ppl_query=ppl_query,
+            dsl_query=dsl_query
+        )
+
         return {
-            "intent": "ERROR_DIAGNOSIS" if level_hint else "EVENT_LOOKUP",
-            "summary_of_intent": f"자연어 키워드 검색: {user_query}",
-            "filters": {
-                "service": None,
-                "level": level_hint,
-                "keywords": [user_query],
-                "time_relative": "24h"
-            },
-            "ppl_query": f"source = {settings.opensearch_index_prefix}-* | where match(message, '{user_query}') | head 50",
-            "suggested_size": 50
+            "prompt": user_query,
+            "query_plan": plan,
+            "mode": exec_res.get("mode"),
+            "executed_query": exec_res.get("executed_query"),
+            "total": exec_res.get("total", 0),
+            "count": exec_res.get("count", 0),
+            "hits": exec_res.get("hits", []),
+            "took_ms": exec_res.get("took_ms", 0),
+            "fallback_reason": exec_res.get("fallback_reason")
         }
 
     async def translate_natural_language_to_ppl(self, user_query: str) -> str:
-        """하위 호환성을 위한 단일 PPL 쿼리 추출"""
+        """단일 PPL 쿼리 문자열 추출"""
         plan = await self.plan_query_from_natural_language(user_query)
         return plan.get("ppl_query", f"source = {settings.opensearch_index_prefix}-* | head 50")
 
@@ -160,43 +235,57 @@ class AIAssistant:
     async def chat_about_logs(
         self,
         conversation_history: List[Dict[str, str]],
-        new_question: str,
-        new_logs_context: str = ""
+        user_question: str,
+        logs_context: str = ""
     ) -> str:
-        """로그 분석 대화형 후속 질의 처리"""
+        """이전 대화 이력과 로그 컨텍스트를 고려한 멀티턴 대화형 답변 생성"""
         prompt = build_chat_analysis_prompt(
             conversation_history=conversation_history,
-            new_question=new_question,
-            new_logs_context=new_logs_context
+            user_question=user_question,
+            logs_context=logs_context
         )
 
         try:
-            answer = await self._call_llm(
+            reply = await self._call_llm(
                 system_prompt=CHAT_LOG_ANALYST_SYSTEM_PROMPT,
                 user_prompt=prompt,
-                temperature=0.2
+                temperature=0.3
             )
-            if answer:
-                return answer
+            if reply:
+                return reply
         except Exception as e:
-            logger.error(f"Error in chat analysis: {e}")
+            logger.error(f"Error in chat_about_logs: {e}")
 
-        return "AI 응답을 생성하지 못했습니다. LLM API Key 및 설정을 확인해주세요."
+        return f"현재 LLM 서비스에 연결할 수 없어 질문('{user_question}')에 답변을 생성하지 못했습니다."
 
-    async def analyze_root_cause(self, logs_text: str, user_question: str = "") -> str:
-        """기존 RCA 호환 메서드"""
-        prompt = build_rca_prompt(logs_text, user_question)
+    async def analyze_root_cause(self, error_logs: str, context: Optional[str] = None) -> str:
+        """단일 에러에 대한 빠른 원인 및 해결책 제시"""
+        prompt = build_rca_prompt(error_logs, context)
         try:
-            res = await self._call_llm(
+            report = await self._call_llm(
                 system_prompt=ROOT_CAUSE_ANALYSIS_SYSTEM_PROMPT,
+                user_prompt=prompt,
+                temperature=0.1
+            )
+            if report:
+                return report
+        except Exception as e:
+            logger.error(f"Error in analyze_root_cause: {e}")
+        return "에러 분석을 수행할 수 없습니다. LLM 설정을 확인해주세요."
+
+    async def summarize_logs(self, logs_sample: str) -> str:
+        """수집된 로그 요약 브리핑 생성"""
+        prompt = build_log_summarize_prompt(logs_sample)
+        try:
+            summary = await self._call_llm(
+                system_prompt=LOG_SUMMARIZE_SYSTEM_PROMPT,
                 user_prompt=prompt,
                 temperature=0.2
             )
-            if res:
-                return res
+            if summary:
+                return summary
         except Exception as e:
-            logger.error(f"Gemini RCA error: {e}")
-            raise e
-        return "LLM API Key가 설정되지 않았습니다. .env 파일에 GEMINI_API_KEY를 등록해주세요."
+            logger.error(f"Error in summarize_logs: {e}")
+        return "로그 요약을 생성할 수 없습니다."
 
 ai_assistant = AIAssistant()

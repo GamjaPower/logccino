@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 
 class SearchRequest(BaseModel):
     query: Optional[str] = Field(default=None, description="Lucene 검색어 또는 키워드")
-    spl: Optional[str] = Field(default=None, description="Splunk SPL 또는 PPL 스타일 쿼리")
+    natural_query: Optional[str] = Field(default=None, description="자연어 질의 (입력 시 PPL 또는 OpenSearch 기본 DSL로 자동 변환 및 실행)")
     level: Optional[str] = Field(default=None, description="로그 레벨 (INFO, ERROR 등)")
     service: Optional[str] = Field(default=None, description="서비스 필터")
     start_time: Optional[str] = Field(default=None, description="시작 시각 (ISO8601)")
@@ -12,8 +12,9 @@ class SearchRequest(BaseModel):
     from_: int = Field(default=0, ge=0)
 
 class NaturalQueryRequest(BaseModel):
-    prompt: str = Field(..., description="자연어 질의 (예: '어제 auth-service 에러 보여줘')")
-    execute: bool = Field(default=True, description="변환 즉시 OpenSearch 실행 여부")
+    prompt: str = Field(..., description="자연어 질의 (예: '어제 auth-service 에러 보여줘', '결제 타임아웃 로그')")
+    size: int = Field(default=50, ge=1, le=200, description="최대 조회 로그 수")
+    execute: bool = Field(default=True, description="OpenSearch 즉시 실행 여부 (PPL 지원 시 PPL, 미지원/실패 시 OpenSearch 기본 DSL로 자동 실행)")
 
 class NaturalAnalysisRequest(BaseModel):
     prompt: str = Field(..., description="자연어 분석 요청 (예: '결제 서비스에서 500 에러 발생 원인과 해결책 분석해줘')")
@@ -25,7 +26,8 @@ class NaturalAnalysisResponse(BaseModel):
     status: str = "success"
     prompt: str
     query_plan: Dict[str, Any]
-    executed_query: str
+    executed_query: Any
+    mode: str = "dsl"
     total_matched: int
     analysis_report: str
     evidence_logs: List[Dict[str, Any]] = []

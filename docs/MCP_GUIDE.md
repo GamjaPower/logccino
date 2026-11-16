@@ -9,36 +9,34 @@ Claude Code / Desktop, Google Antigravity, Cursor IDE 등의 AI 에이전트 설
 
 | Tool 이름 | 설명 | 주요 매개변수 |
 | :--- | :--- | :--- |
-| `search_logs` | 필터 기반 로그 검색 | `query`, `service`, `level`, `start_time`, `end_time`, `size` |
+| `search_natural` | 자연어 질문으로 OpenSearch 대규모 분산 로그 직접 검색 (PPL 우선, DSL 자동 폴백) | `prompt`, `size` |
+| `get_realtime_stream_summary` | 초당 대규모로 유입되는 실시간 로그 스트림의 최근 N분간 에러율 및 시계열 트렌드 요약 | `minutes`, `service` |
+| `aggregate_bigdata_metrics` | 수백만~수억 건의 빅데이터 로그를 분산 사전 집계하여 Claude 컨텍스트 친화적 통계 요약 반환 | `time_window`, `group_by`, `filter_query` |
+| `search_logs` | 필터 및 키워드 기반 로그 검색 | `query`, `service`, `level`, `start_time`, `end_time`, `size` |
 | `search_ppl` | OpenSearch PPL 파이프라인 쿼리 실행 | `ppl_query` |
 | `diagnose_service_errors` | 최근 에러 로그 및 스택트레이스 수집 (RCA용) | `service`, `time_window` (예: '1h', '24h'), `limit` |
 | `get_service_metrics` | 서비스별 로그 볼륨 및 에러율(%) 통계 | `time_window` |
 | `trace_transaction` | 특정 `trace_id`의 마이크로서비스 전 구간 타임라인 추적 | `trace_id` |
-| `get_cluster_status` | OpenSearch 클러스터 및 Logccino 인덱스 상태 점검 | 없음 |
+| `get_cluster_health` | OpenSearch 클러스터 및 Logccino 인덱스 상태 점검 | 없음 |
 
 ---
 
 ## 🔌 AI 에이전트별 연동 설정
 
-### 1. Google Antigravity / Gemini CLI 연동
-Antigravity 설정 파일(또는 MCP 서버 설정)에 다음 블록을 추가합니다:
+### 1. Claude Desktop 원격 연동 (AWS Marketplace / 사내 k8s 배포 환경) 🌟 [권장]
+사내 Kubernetes 또는 AWS에 Logccino가 배포된 경우, 로컬 Claude Desktop 설정 파일(`~/.config/Claude/claude_desktop_config.json`)에 원격 SSE URL만 지정하면 됩니다:
 
 ```json
 {
   "mcpServers": {
     "logccino": {
-      "command": "python",
-      "args": ["-m", "core.mcp.server"],
-      "cwd": "/path/to/logccino",
-      "env": {
-        "PYTHONPATH": "/path/to/logccino"
-      }
+      "url": "http://<YOUR_LOGCCINO_HOST>:8000/sse"
     }
   }
 }
 ```
 
-### 2. Claude Desktop 연동
+### 2. Claude Desktop 로컬 Stdio 연동 (로컬 단일 PC 개발 환경)
 `~/.config/Claude/claude_desktop_config.json` (Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`) 파일에 다음을 추가합니다:
 
 ```json

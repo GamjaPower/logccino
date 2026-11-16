@@ -15,7 +15,7 @@ def get_project_root() -> str:
     return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 def generate_claude_desktop_config() -> Dict[str, Any]:
-    """Claude Desktop config (~/.config/Claude/claude_desktop_config.json) 형식"""
+    """Claude Desktop config (~/.config/Claude/claude_desktop_config.json) 형식 (로컬 Stdio 방식)"""
     root = get_project_root()
     return {
         "mcpServers": {
@@ -26,6 +26,16 @@ def generate_claude_desktop_config() -> Dict[str, Any]:
                 "env": {
                     "PYTHONPATH": root
                 }
+            }
+        }
+    }
+
+def generate_remote_claude_config(endpoint_url: str = "http://localhost:8000/sse") -> Dict[str, Any]:
+    """AWS Marketplace 또는 사내 K8s 클러스터 배포 시 Claude Desktop 원격 연동 형식 (SSE 방식)"""
+    return {
+        "mcpServers": {
+            "logccino": {
+                "url": endpoint_url
             }
         }
     }
@@ -59,9 +69,10 @@ def generate_cursor_config() -> Dict[str, Any]:
         }
     }
 
-def get_all_mcp_configs() -> Dict[str, Any]:
+def get_all_mcp_configs(remote_url: str = "http://localhost:8000/sse") -> Dict[str, Any]:
     return {
-        "claude_desktop": generate_claude_desktop_config(),
+        "claude_desktop_local": generate_claude_desktop_config(),
+        "claude_desktop_remote_k8s_aws": generate_remote_claude_config(remote_url),
         "antigravity": generate_antigravity_config(),
         "cursor": generate_cursor_config()
     }
