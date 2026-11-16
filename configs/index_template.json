@@ -1,0 +1,52 @@
+{
+  "index_patterns": ["logccino-logs-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.mapping.total_fields.limit": 2000
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "host": {
+          "type": "keyword"
+        },
+        "service": {
+          "type": "keyword"
+        },
+        "source": {
+          "type": "keyword"
+        },
+        "sourcetype": {
+          "type": "keyword"
+        },
+        "level": {
+          "type": "keyword"
+        },
+        "trace_id": {
+          "type": "keyword"
+        },
+        "span_id": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "attributes": {
+          "type": "object",
+          "dynamic": true
+        }
+      }
+    }
+  }
+}
