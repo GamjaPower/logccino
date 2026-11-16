@@ -131,5 +131,9 @@ logccino/
 
 ---
 
-## 📜 라이선스
-Apache License 2.0
+## 📜 라이선스 (License)
+
+본 프로젝트는 **"Meal & Drinks License (밥과 술 라이선스)"**를 따릅니다:
+
+> 🍚🍺 **원저작자에게 맛있는 밥 한 끼와 기분 좋은 술 한 잔을 정성껏 사야만 본 소프트웨어의 수정 및 배포 권한이 정식으로 부여됩니다.**  
+> 상세한 조항은 [LICENSE](file:///home/sst96/Workspace/logccino/LICENSE) 파일을 참고하세요.
