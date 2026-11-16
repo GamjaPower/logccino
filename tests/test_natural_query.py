@@ -86,7 +86,10 @@ def test_mcp_config_helper():
     from core.mcp.config_helper import get_all_mcp_configs
     configs = get_all_mcp_configs("http://logccino.company.internal/sse")
     assert "claude_desktop_remote_k8s_aws" in configs
-    assert configs["claude_desktop_remote_k8s_aws"]["mcpServers"]["logccino"]["url"] == "http://logccino.company.internal/sse"
+    mcp_cfg = configs["claude_desktop_remote_k8s_aws"]["mcpServers"]["logccino"]
+    assert "command" in mcp_cfg
+    assert "args" in mcp_cfg
+    assert "http://logccino.company.internal/sse" in mcp_cfg["args"]
     print("MCP config helper test passed!")
 
 if __name__ == "__main__":

@@ -31,11 +31,14 @@ def generate_claude_desktop_config() -> Dict[str, Any]:
     }
 
 def generate_remote_claude_config(endpoint_url: str = "http://localhost:8000/sse") -> Dict[str, Any]:
-    """AWS Marketplace 또는 사내 K8s 클러스터 배포 시 Claude Desktop 원격 연동 형식 (SSE 방식)"""
+    """AWS Marketplace 또는 사내 K8s 클러스터 배포 시 Claude Desktop 원격 연동 형식 (표준 bridge command 방식)"""
+    root = get_project_root()
+    bridge_path = os.path.join(root, "core", "mcp", "bridge.py")
     return {
         "mcpServers": {
             "logccino": {
-                "url": endpoint_url
+                "command": get_python_executable(),
+                "args": [bridge_path, endpoint_url]
             }
         }
     }
