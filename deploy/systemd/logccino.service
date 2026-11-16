@@ -1,17 +1,14 @@
 [Unit]
 Description=Logccino Agent-Native Big Data & Real-Time Intelligence Backend
-After=network.target docker.service
-Wants=network.target
+After=network.target
 
 [Service]
 Type=simple
-User=sst96
-Group=sst96
-WorkingDirectory=/home/sst96/Workspace/logccino
-Environment="PATH=/home/sst96/Workspace/logccino/.venv/bin:/usr/local/bin:/usr/bin:/bin"
-Environment="PYTHONPATH=/home/sst96/Workspace/logccino"
-EnvironmentFile=-/home/sst96/Workspace/logccino/.env
-ExecStart=/home/sst96/Workspace/logccino/.venv/bin/python -m core.main
+WorkingDirectory=%h/Workspace/logccino
+Environment="PATH=%h/Workspace/logccino/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=%h/Workspace/logccino"
+EnvironmentFile=-%h/Workspace/logccino/.env
+ExecStart=%h/Workspace/logccino/.venv/bin/python -m core.main
 Restart=always
 RestartSec=5
 KillMode=process
@@ -22,4 +19,4 @@ StandardError=journal
 SyslogIdentifier=logccino
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
