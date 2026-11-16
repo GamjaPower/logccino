@@ -7,75 +7,93 @@ Claude Desktop (Stdio) <-> Logccino Remote Server (SSE /messages)
 
 import sys
 import json
+import time
 import urllib.request
 import urllib.error
 import threading
 from urllib.parse import urljoin
 
 def run_bridge(sse_url: str):
-    # 1. SSE 핸드셰이크 및 세션 엔드포인트 획득
+    # 1. SSE 핸드셰이크 및 세션 엔드포인트 획득 (재시도 지원)
     req = urllib.request.Request(sse_url, headers={"Accept": "text/event-stream"})
-    try:
-        response = urllib.request.urlopen(req, timeout=10)
-    except Exception as e:
-        sys.stderr.write(f"Logccino SSE connection error: {e}\n")
-        sys.exit(1)
+    response = None
+    
+    # 최대 5회 연결 재시도
+    for attempt in range(1, 6):
+        try:
+            # SSE 스트림은 장시간 유지되어야 하므로 timeout=None
+            response = urllib.request.urlopen(req, timeout=None)
+            break
+        except Exception as e:
+            sys.stderr.write(f"Logccino SSE connection attempt {attempt}/5 failed: {e}\n")
+            if attempt == 5:
+                sys.stderr.write("Failed to connect to Logccino server. Please check network and server IP.\n")
+                sys.exit(1)
+            time.sleep(1)
 
     post_endpoint = None
+    running = True
 
     def read_sse_stream():
-        nonlocal post_endpoint
-        buffer = ""
+        nonlocal post_endpoint, running
         event_type = "message"
-        while True:
-            line = response.readline()
-            if not line:
-                break
-            line_str = line.decode("utf-8")
-            if line_str.startswith("event:"):
-                event_type = line_str[6:].strip()
-            elif line_str.startswith("data:"):
-                data_str = line_str[5:].strip()
-                if event_type == "endpoint":
-                    post_endpoint = urljoin(sse_url, data_str)
-                elif event_type == "message":
-                    sys.stdout.write(data_str + "\n")
-                    sys.stdout.flush()
-            elif line_str.strip() == "":
-                event_type = "message"
+        try:
+            while running:
+                line = response.readline()
+                if not line:
+                    break
+                line_str = line.decode("utf-8")
+                if line_str.startswith("event:"):
+                    event_type = line_str[6:].strip()
+                elif line_str.startswith("data:"):
+                    data_str = line_str[5:].strip()
+                    if event_type == "endpoint":
+                        post_endpoint = urljoin(sse_url, data_str)
+                    elif event_type == "message":
+                        sys.stdout.write(data_str + "\n")
+                        sys.stdout.flush()
+                elif line_str.strip() == "":
+                    event_type = "message"
+        except Exception as e:
+            if running:
+                sys.stderr.write(f"SSE stream read error: {e}\n")
 
     sse_thread = threading.Thread(target=read_sse_stream, daemon=True)
     sse_thread.start()
 
-    # endpoint 수신 대기
-    for _ in range(50):
+    # endpoint 수신 대기 (최대 10초)
+    for _ in range(100):
         if post_endpoint:
             break
         threading.Event().wait(0.1)
 
     if not post_endpoint:
         sys.stderr.write("Failed to receive endpoint event from SSE server\n")
+        running = False
         sys.exit(1)
 
     # 2. stdin(Claude Desktop)으로부터 JSON-RPC 읽어서 POST 엔드포인트로 전달
-    while True:
-        line = sys.stdin.readline()
-        if not line:
-            break
-        line_clean = line.strip()
-        if not line_clean:
-            continue
-        try:
-            req_data = line_clean.encode("utf-8")
-            post_req = urllib.request.Request(
-                post_endpoint,
-                data=req_data,
-                headers={"Content-Type": "application/json"}
-            )
-            with urllib.request.urlopen(post_req, timeout=30) as p_res:
-                _ = p_res.read()
-        except Exception as err:
-            sys.stderr.write(f"POST error: {err}\n")
+    try:
+        while True:
+            line = sys.stdin.readline()
+            if not line:
+                break
+            line_clean = line.strip()
+            if not line_clean:
+                continue
+            try:
+                req_data = line_clean.encode("utf-8")
+                post_req = urllib.request.Request(
+                    post_endpoint,
+                    data=req_data,
+                    headers={"Content-Type": "application/json"}
+                )
+                with urllib.request.urlopen(post_req, timeout=60) as p_res:
+                    _ = p_res.read()
+            except Exception as err:
+                sys.stderr.write(f"POST error: {err}\n")
+    finally:
+        running = False
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
