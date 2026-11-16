@@ -35,6 +35,21 @@ async def get_mcp_status_and_configs() -> Dict[str, Any]:
     """MCP 서버 상태, 등록된 도구(Tools) 메타데이터, 에이전트별 설정 JSON"""
     tools_metadata = [
         {
+            "name": "search_natural",
+            "description": "자연어 질의로 OpenSearch 대규모 분산 로그 직접 검색 (PPL 우선, DSL 자동 폴백)",
+            "parameters": ["prompt", "size"]
+        },
+        {
+            "name": "get_realtime_stream_summary",
+            "description": "초당 대규모 실시간 스트림에서 최근 N분간 에러율 및 시계열 트렌드 요약",
+            "parameters": ["minutes", "service"]
+        },
+        {
+            "name": "aggregate_bigdata_metrics",
+            "description": "수백만~수억 건의 빅데이터 로그를 분산 사전 집계하여 통계 요약표 반환",
+            "parameters": ["time_window", "group_by", "filter_query"]
+        },
+        {
             "name": "search_logs",
             "description": "OpenSearch 로그 검색 (키워드, 서비스, 레벨, 시간 필터)",
             "parameters": ["query", "service", "level", "start_time", "end_time", "size"]
@@ -60,7 +75,7 @@ async def get_mcp_status_and_configs() -> Dict[str, Any]:
             "parameters": ["trace_id"]
         },
         {
-            "name": "get_cluster_status",
+            "name": "get_cluster_health",
             "description": "OpenSearch 클러스터 및 Logccino 인덱스 상태 점검",
             "parameters": []
         }
@@ -70,12 +85,17 @@ async def get_mcp_status_and_configs() -> Dict[str, Any]:
 
     return {
         "status": "active",
-        "server_name": "Logccino Log Intelligence MCP",
+        "server_name": "Logccino Big Data & Real-Time Intelligence MCP",
         "transport": ["stdio", "sse"],
         "tools_count": len(tools_metadata),
         "tools": tools_metadata,
         "agent_configs": configs
     }
+
+@router.get("/mcp/config")
+async def get_mcp_config_only() -> Dict[str, Any]:
+    """Claude Desktop 및 AI 에이전트 연동용 설정 JSON만 반환"""
+    return get_all_mcp_configs()
 
 @router.get("/logs/preview")
 async def get_logs_preview(size: int = 30) -> Dict[str, Any]:
