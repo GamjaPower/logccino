@@ -4,6 +4,7 @@ services:
   opensearch-node:
     image: opensearchproject/opensearch:2.18.0
     container_name: logccino-opensearch
+    restart: unless-stopped
     environment:
       - cluster.name=logccino-cluster
       - node.name=logccino-node1
