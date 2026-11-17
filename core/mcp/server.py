@@ -198,11 +198,24 @@ if HAS_MCP and mcp_app:
         condition_threshold: float = 0.0,
         severity: str = "HIGH",
         webhook_url: Optional[str] = None,
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        app: str = "search",
+        dispatch_earliest_time: str = "-15m",
+        dispatch_latest_time: str = "now",
+        schedule_type: str = "interval",
+        cron_expression: Optional[str] = None,
+        alert_type: str = "number_of_results",
+        alert_suppress: bool = False,
+        alert_suppress_period: str = "5m",
+        alert_suppress_fields: Optional[str] = None,
+        action_email_enabled: bool = False,
+        action_email_to: Optional[str] = None,
+        action_index_enabled: bool = True,
+        action_index_name: str = "logccino-alerts"
     ) -> str:
         """
-        Create a new Splunk-style scheduled PPL saved search & real-time alert rule.
-        Executes ppl_query on schedule (interval_seconds) and triggers an alert if matched events meet the condition.
+        Create a new Splunk-style scheduled PPL saved search & real-time alert rule (savedsearches.conf compatible).
+        Supports dispatch time windows, suppression/throttling, alert types (results, hosts, sources), and multi-actions.
         """
         res = mcp_tools.create_saved_search(
             name=name,
@@ -212,7 +225,20 @@ if HAS_MCP and mcp_app:
             condition_threshold=condition_threshold,
             severity=severity,
             webhook_url=webhook_url,
-            description=description
+            description=description,
+            app=app,
+            dispatch_earliest_time=dispatch_earliest_time,
+            dispatch_latest_time=dispatch_latest_time,
+            schedule_type=schedule_type,
+            cron_expression=cron_expression,
+            alert_type=alert_type,
+            alert_suppress=alert_suppress,
+            alert_suppress_period=alert_suppress_period,
+            alert_suppress_fields=alert_suppress_fields,
+            action_email_enabled=action_email_enabled,
+            action_email_to=action_email_to,
+            action_index_enabled=action_index_enabled,
+            action_index_name=action_index_name
         )
         return json.dumps(res, ensure_ascii=False, indent=2)
 
@@ -232,10 +258,16 @@ if HAS_MCP and mcp_app:
         interval_seconds: Optional[int] = None,
         condition_threshold: Optional[float] = None,
         severity: Optional[str] = None,
-        webhook_url: Optional[str] = None
+        webhook_url: Optional[str] = None,
+        dispatch_earliest_time: Optional[str] = None,
+        dispatch_latest_time: Optional[str] = None,
+        alert_type: Optional[str] = None,
+        alert_suppress: Optional[bool] = None,
+        alert_suppress_period: Optional[str] = None,
+        action_email_to: Optional[str] = None
     ) -> str:
         """
-        Update an existing Splunk Saved Search & PPL Alert scheduler (toggle ON/OFF, interval, query, threshold).
+        Update an existing Splunk Saved Search & PPL Alert scheduler (toggle ON/OFF, interval, query, threshold, suppression, time window).
         """
         res = mcp_tools.update_saved_search(
             search_id=search_id,
@@ -244,7 +276,13 @@ if HAS_MCP and mcp_app:
             interval_seconds=interval_seconds,
             condition_threshold=condition_threshold,
             severity=severity,
-            webhook_url=webhook_url
+            webhook_url=webhook_url,
+            dispatch_earliest_time=dispatch_earliest_time,
+            dispatch_latest_time=dispatch_latest_time,
+            alert_type=alert_type,
+            alert_suppress=alert_suppress,
+            alert_suppress_period=alert_suppress_period,
+            action_email_to=action_email_to
         )
         return json.dumps(res, ensure_ascii=False, indent=2)
 

@@ -1,10 +1,11 @@
 """
 FastAPI Routes for Splunk Saved Searches & PPL Alerting
+Splunk savedsearches.conf 완전 호환: 등록, 조회, 수정, 삭제, 즉시 실행(Run Now), 활성/비활성 토글, 웹훅/이메일 테스트
 """
 
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import httpx
 
 from core.scheduler.engine import scheduler_engine
@@ -16,7 +17,12 @@ router = APIRouter(prefix="/saved-searches", tags=["Saved Searches & PPL Alerts"
 
 class WebhookTestRequest(BaseModel):
     webhook_url: str
-    message: Optional[str] = "Logccino PPL Saved Search Webhook Test"
+    message: Optional[str] = "Logccino Splunk Saved Search Webhook Test"
+
+class EmailTestRequest(BaseModel):
+    email_to: str
+    subject: Optional[str] = "Logccino Splunk Alert Test"
+    message: Optional[str] = "Splunk Saved Search & Alert Engine Action Test"
 
 @router.get("", response_model=List[SavedSearch])
 async def list_saved_searches():
@@ -25,12 +31,12 @@ async def list_saved_searches():
 
 @router.post("", response_model=SavedSearch)
 async def create_saved_search(req: SavedSearchCreate):
-    """새로운 PPL 기반 Saved Search 및 조건부 알람 생성"""
+    """새로운 Splunk Saved Search 및 조건부 알람 생성 (디스패치 범위, 스케줄링, 억제, 복합 액션 포함)"""
     return scheduler_engine.create(req)
 
 @router.get("/alerts/history", response_model=List[AlertRecord])
 async def get_alert_history(
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=500),
     triggered_only: bool = Query(False)
 ):
     """최근 실행된 알람 타임라인 및 트리거 기록 조회"""
@@ -46,11 +52,21 @@ async def get_saved_search(search_id: str):
 
 @router.put("/{search_id}", response_model=SavedSearch)
 async def update_saved_search(search_id: str, req: SavedSearchUpdate):
-    """Saved Search 쿼리, 주기, 조건, 웹훅 설정 수정 및 On/Off 토글"""
+    """Saved Search 모든 Splunk 설정 수정 및 On/Off 토글"""
     s = scheduler_engine.update(search_id, req)
     if not s:
         raise HTTPException(status_code=404, detail="Saved search not found")
     return s
+
+@router.post("/{search_id}/toggle", response_model=SavedSearch)
+async def toggle_saved_search(search_id: str):
+    """Saved Search 활성화 / 비활성화 즉시 토글"""
+    s = scheduler_engine.get(search_id)
+    if not s:
+        raise HTTPException(status_code=404, detail="Saved search not found")
+    new_state = not s.enabled
+    updated = scheduler_engine.update(search_id, SavedSearchUpdate(enabled=new_state))
+    return updated
 
 @router.delete("/{search_id}")
 async def delete_saved_search(search_id: str):
@@ -77,7 +93,7 @@ async def test_webhook(req: WebhookTestRequest):
     payload = {
         "text": f"✅ [Logccino Webhook Test] {req.message}",
         "status": "test_successful",
-        "service": "Logccino PPL Alert Engine"
+        "service": "Logccino Splunk Alert Engine"
     }
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -89,3 +105,13 @@ async def test_webhook(req: WebhookTestRequest):
             }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Webhook connection error: {str(e)}")
+
+@router.post("/test-email")
+async def test_email(req: EmailTestRequest):
+    """이메일 알람 액션 시뮬레이션 테스트"""
+    return {
+        "success": True,
+        "recipient": req.email_to,
+        "subject": req.subject,
+        "status": f"Simulated delivery to {req.email_to}"
+    }

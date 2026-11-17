@@ -465,7 +465,7 @@ async def get_enterprise_dashboard():
 
           <!-- Actions Bar (Save As, Share, Export) -->
           <div class="flex items-center gap-2">
-            <button onclick="openSavedSearchesModal()" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[11px] flex items-center gap-1 transition">
+            <button onclick="openSavedSearchesModal(true)" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[11px] flex items-center gap-1 transition" title="현재 쿼리를 Splunk 알람/스케줄러로 저장">
               <i data-lucide="bookmark" class="w-3 h-3 text-amber-400"></i> Save As Alert
             </button>
             <button onclick="exportCurrentSearch('json')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[11px] flex items-center gap-1 transition">
@@ -953,41 +953,333 @@ async def get_enterprise_dashboard():
     </div>
   </div>
 
-  <!-- Saved Searches & Alerts Modal -->
+  <!-- Saved Searches & Alerts Modal (Splunk Enterprise Style) -->
   <div id="new-alert-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div id="content-alerts" class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl">
-      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
-        <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
-          <i data-lucide="bell-ring" class="w-4 h-4 text-amber-400"></i>
-          <span id="alert-modal-title">Splunk Saved Searches & PPL Alert Engine</span>
-        </h3>
-        <button onclick="closeNewAlertModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    <div id="content-alerts" class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+      <!-- Modal Header -->
+      <div class="px-6 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <i data-lucide="bell-ring" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-100 flex items-center gap-2">
+              <span id="alert-modal-title">Splunk Saved Searches & PPL Alert Engine</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">savedsearches.conf 호환</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">PPL 스케줄러, 디스패치 시간 범위, 알람 조건, Throttling(억제) 및 복합 액션 통합 관리</p>
+          </div>
+        </div>
+        <button onclick="closeNewAlertModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
-      <form onsubmit="handleSaveAlert(event)" class="p-5 space-y-3.5 text-xs">
-        <input type="hidden" id="alert-form-id">
-        <div>
-          <label class="block text-slate-400 font-semibold mb-1">알람 / Saved Search 명칭</label>
-          <input type="text" id="alert-form-name" required class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-indigo-500 focus:outline-none">
+
+      <!-- Navigation Tabs: List vs Form -->
+      <div class="flex items-center justify-between border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0">
+        <div class="flex">
+          <button type="button" id="tab-btn-alert-list" onclick="switchAlertModalTab('list')" class="px-4 py-3 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 transition">
+            <i data-lucide="list" class="w-3.5 h-3.5"></i> 알람 규칙 목록 (<span id="alert-rules-count">4</span>)
+          </button>
+          <button type="button" id="tab-btn-alert-form" onclick="switchAlertModalTab('form')" class="px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> <span id="alert-form-tab-title">신규 알람 등록</span>
+          </button>
         </div>
-        <div>
-          <label class="block text-slate-400 font-semibold mb-1">실행할 PPL / Join 쿼리</label>
-          <textarea id="alert-form-query" rows="2" required class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none"></textarea>
+        <div id="alert-list-quick-actions" class="flex items-center gap-2">
+          <button onclick="resetAlertForm(); switchAlertModalTab('form');" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 새로운 알람 규칙
+          </button>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-slate-400 font-semibold mb-1">Cron 스케줄</label>
-            <input type="text" id="alert-form-cron" value="*/5 * * * *" required class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none">
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-6 text-xs">
+
+        <!-- TAB 1: 알람 규칙 목록 (Rules List Table) -->
+        <div id="alert-modal-view-list" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="text-slate-400 text-xs">
+              백그라운드에서 주기적으로 PPL 쿼리를 실행하여 침입 시도, 권한 상승 및 장애를 실시간 감시합니다.
+            </div>
+            <button onclick="loadSavedSearchesList()" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor flex items-center gap-1 text-[11px] transition">
+              <i data-lucide="refresh-cw" class="w-3 h-3 text-indigo-400"></i> 새로고침
+            </button>
           </div>
-          <div>
-            <label class="block text-slate-400 font-semibold mb-1">트리거 임계치 (Threshold)</label>
-            <input type="number" id="alert-form-threshold" value="1" required class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none">
+          <div id="saved-searches-table-container" class="border border-bordercolor rounded-lg overflow-hidden bg-subpanel/40">
+            <!-- Table will be rendered dynamically -->
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-2 border-t border-bordercolor">
-          <button type="button" onclick="closeNewAlertModal()" class="px-3 py-1.5 rounded bg-subpanel text-slate-300">취소</button>
-          <button type="submit" class="px-4 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold">저장 및 스케줄 등록</button>
+
+        <!-- TAB 2: 알람 등록 / 수정 상세 폼 (Full Splunk savedsearches.conf Editor) -->
+        <div id="alert-modal-view-form" class="hidden">
+          <form onsubmit="handleSaveAlert(event)" class="space-y-5">
+            <input type="hidden" id="alert-form-id">
+
+            <!-- 1. 일반 정보 (General Settings) -->
+            <div class="p-4 rounded-lg bg-subpanel/50 border border-bordercolor space-y-3">
+              <div class="font-bold text-slate-200 flex items-center gap-2 text-xs border-b border-bordercolor/60 pb-2">
+                <i data-lucide="info" class="w-4 h-4 text-emerald-400"></i> 1. 일반 정보 및 소유권 (General &amp; Ownership)
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="md:col-span-2">
+                  <label class="block text-slate-400 font-semibold mb-1">알람 / Saved Search 명칭 *</label>
+                  <input type="text" id="alert-form-name" required placeholder="예: [SEC-01] SSH 로그인 실패 및 무차별 대입 급증" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-slate-400 font-semibold mb-1">알람 상세 설명</label>
+                  <input type="text" id="alert-form-desc" placeholder="알람 목적, 대응 절차(SOP) 및 모니터링 가이드 요약" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">App Context (앱 컨텍스트)</label>
+                  <select id="alert-form-app" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+                    <option value="search">Search &amp; Reporting</option>
+                    <option value="enterprise_security">Enterprise Security (SIEM)</option>
+                    <option value="autonomous_sre">Autonomous SRE</option>
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-slate-400 font-semibold mb-1">소유자 (Owner)</label>
+                    <input type="text" id="alert-form-owner" value="logccino" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-slate-400 font-semibold mb-1">공유 범위 (Sharing)</label>
+                    <select id="alert-form-sharing" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+                      <option value="app">App (앱 내 공유)</option>
+                      <option value="global">Global (전사 공유)</option>
+                      <option value="private">Private (개인 비공개)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <input type="checkbox" id="alert-form-enabled" checked class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 border-bordercolor bg-slatebg">
+                  <label for="alert-form-enabled" class="text-slate-300 font-medium">스케줄러 활성화 (Enable Scheduler)</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. PPL 검색 쿼리 및 디스패치 시간 범위 (Dispatch & Query) -->
+            <div class="p-4 rounded-lg bg-subpanel/50 border border-bordercolor space-y-3">
+              <div class="font-bold text-slate-200 flex items-center justify-between text-xs border-b border-bordercolor/60 pb-2">
+                <span class="flex items-center gap-2"><i data-lucide="terminal" class="w-4 h-4 text-indigo-400"></i> 2. 검색 쿼리 및 디스패치 시간 범위 (Query &amp; Time Window)</span>
+                <span class="text-[10px] text-slate-400 font-mono">⌘\ (Cmd+\) 쿼리 자동 정렬</span>
+              </div>
+              <div>
+                <label class="block text-slate-400 font-semibold mb-1">실행할 PPL / Join 쿼리 *</label>
+                <textarea id="alert-form-query" rows="3" required placeholder="source = logccino-logs-* | where level = 'ERROR' | head 50" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none"></textarea>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">디스패치 시작 시간 (Earliest Time)</label>
+                  <select id="alert-form-earliest" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none">
+                    <option value="-15m">-15m (최근 15분)</option>
+                    <option value="-30m">-30m (최근 30분)</option>
+                    <option value="-1h">-1h (최근 1시간)</option>
+                    <option value="-4h">-4h (최근 4시간)</option>
+                    <option value="-24h">-24h (최근 24시간)</option>
+                    <option value="-7d">-7d (최근 7일)</option>
+                    <option value="@d">@d (오늘 시작 시각부터)</option>
+                    <option value="0">0 (전체 시간)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">디스패치 종료 시간 (Latest Time)</label>
+                  <input type="text" id="alert-form-latest" value="now" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">샘플링 비율 (Sample Ratio)</label>
+                  <select id="alert-form-sampleratio" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none">
+                    <option value="1">1:1 (전체 100% 검사)</option>
+                    <option value="10">1:10 (10% 샘플링)</option>
+                    <option value="100">1:100 (1% 대용량 샘플링)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 스케줄링 (Schedule Settings) -->
+            <div class="p-4 rounded-lg bg-subpanel/50 border border-bordercolor space-y-3">
+              <div class="font-bold text-slate-200 flex items-center gap-2 text-xs border-b border-bordercolor/60 pb-2">
+                <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> 3. 스케줄링 및 우선순위 (Schedule Settings)
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">스케줄 방식 (Schedule Type)</label>
+                  <select id="alert-form-sched-type" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                    <option value="interval">초 주기 실행 (Interval)</option>
+                    <option value="cron">표준 Cron 스케줄</option>
+                    <option value="realtime">실시간 우선 스케줄</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">실행 주기 (초, Interval)</label>
+                  <input type="number" id="alert-form-interval" value="60" min="5" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">Cron 표현식</label>
+                  <input type="text" id="alert-form-cron" value="*/5 * * * *" placeholder="*/5 * * * *" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">우선순위 (Schedule Priority)</label>
+                  <select id="alert-form-priority" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                    <option value="default">Default (기본)</option>
+                    <option value="higher">Higher (높음)</option>
+                    <option value="highest">Highest (최우선)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 트리거 조건 (Trigger Condition) -->
+            <div class="p-4 rounded-lg bg-subpanel/50 border border-bordercolor space-y-3">
+              <div class="font-bold text-slate-200 flex items-center gap-2 text-xs border-b border-bordercolor/60 pb-2">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i> 4. 트리거 조건 (Trigger Condition)
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">조건 기준 (Trigger When)</label>
+                  <select id="alert-form-type" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-amber-500 focus:outline-none">
+                    <option value="number_of_results">Number of Results (결과 레코드 수)</option>
+                    <option value="number_of_events">Number of Events (이벤트 건수)</option>
+                    <option value="number_of_hosts">Number of Hosts (고유 호스트 수)</option>
+                    <option value="number_of_sources">Number of Sources (고유 소스/프로그램 수)</option>
+                    <option value="custom">Custom Condition (커스텀 조건식)</option>
+                    <option value="always">Always (스케줄 시 무조건 트리거)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">비교 연산자 (Comparator)</label>
+                  <select id="alert-form-op" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-amber-500 focus:outline-none">
+                    <option value="gt">&gt; (is greater than)</option>
+                    <option value="gte">&gt;= (is greater than or equal to)</option>
+                    <option value="lt">&lt; (is less than)</option>
+                    <option value="lte">&lt;= (is less than or equal to)</option>
+                    <option value="eq">== (is equal to)</option>
+                    <option value="neq">!= (is not equal to)</option>
+                    <option value="drops_by">drops by (임계치 이하 급감)</option>
+                    <option value="rises_by">rises by (임계치 이상 급증)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">임계치 (Threshold) *</label>
+                  <input type="number" step="0.1" id="alert-form-threshold" value="0.0" required class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-amber-500 focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. 빈도, 심각도 및 Throttling 억제 (Frequency & Throttling) -->
+            <div class="p-4 rounded-lg bg-subpanel/50 border border-bordercolor space-y-3">
+              <div class="font-bold text-slate-200 flex items-center gap-2 text-xs border-b border-bordercolor/60 pb-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i> 5. 알람 빈도 및 Throttling 억제 (Frequency &amp; Suppression)
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">트리거 빈도 (Trigger Mode)</label>
+                  <select id="alert-form-trigger-mode" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-rose-500 focus:outline-none">
+                    <option value="once">Once (조건 충족 시 1회 발송)</option>
+                    <option value="for_each_result">For each result (결과 행마다 개별 발송)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">알람 심각도 (Severity Level)</label>
+                  <select id="alert-form-severity" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-semibold focus:border-rose-500 focus:outline-none">
+                    <option value="CRITICAL" class="text-rose-400">CRITICAL (심각)</option>
+                    <option value="HIGH" selected class="text-amber-400">HIGH (높음)</option>
+                    <option value="MEDIUM" class="text-yellow-400">MEDIUM (보통)</option>
+                    <option value="LOW" class="text-blue-400">LOW (낮음)</option>
+                    <option value="INFO" class="text-slate-400">INFO (정보)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">알람 보관 만료 (Expires)</label>
+                  <select id="alert-form-expires" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-rose-500 focus:outline-none">
+                    <option value="24h">24h (24시간 보관)</option>
+                    <option value="7d">7d (7일 보관)</option>
+                    <option value="30d">30d (30일 보관)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="pt-2 border-t border-bordercolor/60 space-y-2">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="alert-form-suppress" class="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-bordercolor bg-slatebg">
+                  <label for="alert-form-suppress" class="text-slate-200 font-semibold">알람 억제(Throttling) 활성화 - 동일 원인의 반복 알람 스팸 차단</label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
+                  <div>
+                    <label class="block text-slate-400 font-semibold mb-1">억제 기간 (Suppress Period)</label>
+                    <input type="text" id="alert-form-suppress-period" value="5m" placeholder="예: 5m, 1h, 1d" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-rose-500 focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-slate-400 font-semibold mb-1">억제 기준 필드 (Suppress Fields, 쉼표 구분)</label>
+                    <input type="text" id="alert-form-suppress-fields" placeholder="예: host, service, src_ip (비워두면 전역 억제)" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-rose-500 focus:outline-none">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. 알람 동작 (Alert Actions) -->
+            <div class="p-4 rounded-lg bg-subpanel/50 border border-bordercolor space-y-3">
+              <div class="font-bold text-slate-200 flex items-center gap-2 text-xs border-b border-bordercolor/60 pb-2">
+                <i data-lucide="send" class="w-4 h-4 text-purple-400"></i> 6. 알람 동작 및 통보 (Alert Actions)
+              </div>
+              
+              <!-- Webhook Action -->
+              <div class="space-y-1.5 p-2.5 rounded bg-slatebg/60 border border-bordercolor/60">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <input type="checkbox" id="alert-action-webhook-enabled" class="w-3.5 h-3.5 rounded text-purple-500">
+                    <label for="alert-action-webhook-enabled" class="font-semibold text-slate-200">Webhook 알람 발송 (Slack / Teams / Discord / 사내 관제)</label>
+                  </div>
+                  <button type="button" onclick="testWebhookAction()" class="text-[10px] text-purple-400 hover:text-purple-300 font-semibold">웹훅 테스트</button>
+                </div>
+                <input type="url" id="alert-form-webhook" placeholder="https://hooks.slack.com/services/..." class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono focus:border-purple-500 focus:outline-none text-[11px]">
+              </div>
+
+              <!-- Email Action -->
+              <div class="space-y-1.5 p-2.5 rounded bg-slatebg/60 border border-bordercolor/60">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="alert-action-email-enabled" class="w-3.5 h-3.5 rounded text-purple-500">
+                  <label for="alert-action-email-enabled" class="font-semibold text-slate-200">이메일 통보 (Send Email Alert)</label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <input type="text" id="alert-action-email-to" placeholder="수신자 이메일 (예: soc@company.com, sre@company.com)" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono focus:border-purple-500 focus:outline-none text-[11px]">
+                  <input type="text" id="alert-action-email-subject" placeholder="제목 템플릿: [Alert] $name$ ($severity$)" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white focus:border-purple-500 focus:outline-none text-[11px]">
+                </div>
+              </div>
+
+              <!-- Indexing & Script Actions -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="p-2.5 rounded bg-slatebg/60 border border-bordercolor/60 space-y-1.5">
+                  <div class="flex items-center gap-2">
+                    <input type="checkbox" id="alert-action-index-enabled" checked class="w-3.5 h-3.5 rounded text-purple-500">
+                    <label for="alert-action-index-enabled" class="font-semibold text-slate-200">OpenSearch 인덱스 보관</label>
+                  </div>
+                  <input type="text" id="alert-action-index-name" value="logccino-alerts" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono focus:border-purple-500 focus:outline-none text-[11px]">
+                </div>
+                <div class="p-2.5 rounded bg-slatebg/60 border border-bordercolor/60 space-y-1.5">
+                  <div class="flex items-center gap-2">
+                    <input type="checkbox" id="alert-action-script-enabled" class="w-3.5 h-3.5 rounded text-purple-500">
+                    <label for="alert-action-script-enabled" class="font-semibold text-slate-200">커스텀 스크립트 실행</label>
+                  </div>
+                  <input type="text" id="alert-action-script-cmd" placeholder="/opt/scripts/remediate.sh" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono focus:border-purple-500 focus:outline-none text-[11px]">
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="flex justify-between items-center pt-3 border-t border-bordercolor">
+              <button type="button" onclick="switchAlertModalTab('list')" class="px-4 py-2 rounded bg-subpanel hover:bg-slate-800 text-slate-300 font-medium">목록으로 돌아가기</button>
+              <div class="flex gap-2">
+                <button type="button" onclick="closeNewAlertModal()" class="px-4 py-2 rounded bg-subpanel text-slate-300">취소</button>
+                <button type="submit" class="px-5 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-600/30">
+                  <i data-lucide="check" class="w-4 h-4"></i> 저장 및 스케줄 등록 완료
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-      </form>
+
+      </div>
     </div>
   </div>
 
@@ -2118,27 +2410,376 @@ async def get_enterprise_dashboard():
     }
     function closeLogModal() { document.getElementById('log-modal').classList.add('hidden'); }
 
-    function openSavedSearchesModal() {
+    let currentSavedSearches = [];
+
+    function openSavedSearchesModal(isNewWithCurrentQuery = false) {
       document.getElementById('new-alert-modal').classList.remove('hidden');
+      if (isNewWithCurrentQuery) {
+        resetAlertForm();
+        const currentQuery = document.getElementById('splunk-search-input')?.value || "source = main | head 50";
+        const currentTime = document.getElementById('splunk-time-window')?.value || "-15m";
+        document.getElementById('alert-form-query').value = currentQuery;
+        document.getElementById('alert-form-earliest').value = currentTime;
+        document.getElementById('alert-form-name').value = `[Saved Alert] ${currentQuery.slice(0, 30)}...`;
+        switchAlertModalTab('form');
+      } else {
+        switchAlertModalTab('list');
+        loadSavedSearchesList();
+      }
     }
-    function closeNewAlertModal() { document.getElementById('new-alert-modal').classList.add('hidden'); }
+
+    function closeNewAlertModal() {
+      document.getElementById('new-alert-modal').classList.add('hidden');
+    }
+
+    function switchAlertModalTab(tab) {
+      const listBtn = document.getElementById('tab-btn-alert-list');
+      const formBtn = document.getElementById('tab-btn-alert-form');
+      const listView = document.getElementById('alert-modal-view-list');
+      const formView = document.getElementById('alert-modal-view-form');
+
+      if (tab === 'list') {
+        listBtn.className = "px-4 py-3 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 transition";
+        formBtn.className = "px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition";
+        listView.classList.remove('hidden');
+        formView.classList.add('hidden');
+      } else {
+        formBtn.className = "px-4 py-3 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 transition";
+        listBtn.className = "px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition";
+        formView.classList.remove('hidden');
+        listView.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function resetAlertForm() {
+      document.getElementById('alert-form-id').value = "";
+      document.getElementById('alert-form-tab-title').textContent = "신규 알람 등록";
+      document.getElementById('alert-form-name').value = "";
+      document.getElementById('alert-form-desc').value = "";
+      document.getElementById('alert-form-app').value = "search";
+      document.getElementById('alert-form-owner').value = "logccino";
+      document.getElementById('alert-form-sharing').value = "app";
+      document.getElementById('alert-form-enabled').checked = true;
+      document.getElementById('alert-form-query').value = "source = logccino-logs-* | where level = 'ERROR' | head 50";
+      document.getElementById('alert-form-earliest').value = "-15m";
+      document.getElementById('alert-form-latest').value = "now";
+      document.getElementById('alert-form-sampleratio').value = "1";
+      document.getElementById('alert-form-sched-type').value = "interval";
+      document.getElementById('alert-form-interval').value = "60";
+      document.getElementById('alert-form-cron').value = "*/5 * * * *";
+      document.getElementById('alert-form-priority').value = "default";
+      document.getElementById('alert-form-type').value = "number_of_results";
+      document.getElementById('alert-form-op').value = "gt";
+      document.getElementById('alert-form-threshold').value = "0";
+      document.getElementById('alert-form-trigger-mode').value = "once";
+      document.getElementById('alert-form-severity').value = "HIGH";
+      document.getElementById('alert-form-expires').value = "24h";
+      document.getElementById('alert-form-suppress').checked = false;
+      document.getElementById('alert-form-suppress-period').value = "5m";
+      document.getElementById('alert-form-suppress-fields').value = "";
+      document.getElementById('alert-action-webhook-enabled').checked = false;
+      document.getElementById('alert-form-webhook').value = "";
+      document.getElementById('alert-action-email-enabled').checked = false;
+      document.getElementById('alert-action-email-to').value = "";
+      document.getElementById('alert-action-email-subject').value = "";
+      document.getElementById('alert-action-index-enabled').checked = true;
+      document.getElementById('alert-action-index-name').value = "logccino-alerts";
+      document.getElementById('alert-action-script-enabled').checked = false;
+      document.getElementById('alert-action-script-cmd').value = "";
+    }
+
+    async function loadSavedSearchesList() {
+      const container = document.getElementById('saved-searches-table-container');
+      container.innerHTML = `<div class="p-4 text-center text-slate-400"><i data-lucide="loader" class="w-4 h-4 inline animate-spin mr-1"></i> 알람 규칙 로딩 중...</div>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/v1/saved-searches');
+        currentSavedSearches = await res.json();
+        document.getElementById('alert-rules-count').textContent = currentSavedSearches.length;
+
+        if (currentSavedSearches.length === 0) {
+          container.innerHTML = `<div class="p-6 text-center text-slate-400">등록된 알람 규칙이 없습니다. '새로운 알람 규칙' 버튼을 눌러 추가하세요.</div>`;
+          return;
+        }
+
+        const rows = currentSavedSearches.map(s => {
+          let statusBadge = '';
+          if (!s.enabled) {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono text-[10px]">DISABLED</span>';
+          } else if (s.last_status === 'TRIGGERED') {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 font-mono text-[10px] font-bold">TRIGGERED</span>';
+          } else if (s.last_status === 'SUPPRESSED') {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono text-[10px] font-bold">SUPPRESSED</span>';
+          } else if (s.last_status === 'ERROR') {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-mono text-[10px]">ERROR</span>';
+          } else {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono text-[10px]">OK</span>';
+          }
+
+          let severityBadge = '';
+          if (s.severity === 'CRITICAL') severityBadge = '<span class="text-rose-400 font-bold">CRITICAL</span>';
+          else if (s.severity === 'HIGH') severityBadge = '<span class="text-amber-400 font-bold">HIGH</span>';
+          else if (s.severity === 'MEDIUM') severityBadge = '<span class="text-yellow-400">MEDIUM</span>';
+          else severityBadge = `<span class="text-slate-400">${s.severity}</span>`;
+
+          const throttleText = s.alert_suppress ? `<span class="text-amber-400 font-mono">${s.alert_suppress_period} (${s.alert_suppress_fields || 'global'})</span>` : `<span class="text-slate-500">Off</span>`;
+
+          const actionsBadges = [];
+          if (s.action_webhook_enabled && s.webhook_url) actionsBadges.push('<span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono">Webhook</span>');
+          if (s.action_email_enabled && s.action_email_to) actionsBadges.push('<span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-mono">Email</span>');
+          if (s.action_index_enabled) actionsBadges.push('<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">Index</span>');
+          if (s.action_script_enabled) actionsBadges.push('<span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">Script</span>');
+
+          return `
+            <tr class="hover:bg-slate-800/40 transition border-b border-bordercolor/60">
+              <td class="p-3 text-center">${statusBadge}</td>
+              <td class="p-3">
+                <div class="font-bold text-slate-100">${s.name}</div>
+                <div class="text-[10px] text-slate-400 truncate max-w-xs font-mono mt-0.5">${s.ppl_query}</div>
+                <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
+                  <span class="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-700 text-slate-300">App: ${s.app || 'search'}</span>
+                  <span>Owner: ${s.owner || 'logccino'}</span>
+                </div>
+              </td>
+              <td class="p-3 font-mono text-[11px]">
+                <div>${s.interval_seconds}s (${s.cron_expression || 'Interval'})</div>
+                <div class="text-[10px] text-slate-400">범위: ${s.dispatch_earliest_time || '-15m'} ~ ${s.dispatch_latest_time || 'now'}</div>
+              </td>
+              <td class="p-3 font-mono text-[11px]">
+                <div>${s.alert_type || 'results'} ${s.condition_operator} ${s.condition_threshold}</div>
+                <div class="text-[10px] mt-0.5">${severityBadge}</div>
+              </td>
+              <td class="p-3 text-[11px]">${throttleText}</td>
+              <td class="p-3">
+                <div class="flex flex-wrap gap-1">${actionsBadges.join('') || '<span class="text-slate-500 text-[10px]">-</span>'}</div>
+              </td>
+              <td class="p-3 text-right space-x-1 whitespace-nowrap">
+                <button onclick="runSavedSearchNow('${s.id}')" class="px-2 py-1 rounded bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold transition" title="대기 없이 즉시 쿼리 실행 및 평가">
+                  Run Now
+                </button>
+                <button onclick="editSavedSearch('${s.id}')" class="px-2 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[10px] font-semibold transition">
+                  수정
+                </button>
+                <button onclick="toggleSavedSearch('${s.id}')" class="px-2 py-1 rounded ${s.enabled ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'} text-[10px] font-semibold transition">
+                  ${s.enabled ? 'Disable' : 'Enable'}
+                </button>
+                <button onclick="deleteSavedSearch('${s.id}')" class="px-1.5 py-1 rounded bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 border border-rose-500/30 text-[10px] transition">
+                  삭제
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        container.innerHTML = `
+          <table class="w-full text-left text-xs">
+            <thead class="bg-subpanel text-slate-300 font-mono text-[11px] border-b border-bordercolor">
+              <tr>
+                <th class="p-3 text-center w-24">상태</th>
+                <th class="p-3">알람 / Saved Search 명칭</th>
+                <th class="p-3 w-36">스케줄 / 시간범위</th>
+                <th class="p-3 w-40">트리거 조건 / 심각도</th>
+                <th class="p-3 w-28">Throttling</th>
+                <th class="p-3 w-28">동작 액션</th>
+                <th class="p-3 text-right w-44">실행 및 관리</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-bordercolor bg-subpanel/20">
+              ${rows}
+            </tbody>
+          </table>
+        `;
+        lucide.createIcons();
+      } catch (err) {
+        container.innerHTML = `<div class="p-4 text-center text-rose-400 text-xs">알람 목록을 불러오지 못했습니다: ${err.message}</div>`;
+      }
+    }
+
+    function editSavedSearch(id) {
+      const s = currentSavedSearches.find(x => x.id === id);
+      if (!s) return;
+
+      document.getElementById('alert-form-id').value = s.id;
+      document.getElementById('alert-form-tab-title').textContent = "알람 규칙 수정";
+      document.getElementById('alert-form-name').value = s.name || "";
+      document.getElementById('alert-form-desc').value = s.description || "";
+      document.getElementById('alert-form-app').value = s.app || "search";
+      document.getElementById('alert-form-owner').value = s.owner || "logccino";
+      document.getElementById('alert-form-sharing').value = s.sharing || "app";
+      document.getElementById('alert-form-enabled').checked = s.enabled !== false;
+
+      document.getElementById('alert-form-query').value = s.ppl_query || "";
+      document.getElementById('alert-form-earliest').value = s.dispatch_earliest_time || "-15m";
+      document.getElementById('alert-form-latest').value = s.dispatch_latest_time || "now";
+      document.getElementById('alert-form-sampleratio').value = s.dispatch_sample_ratio || 1;
+
+      document.getElementById('alert-form-sched-type').value = s.schedule_type || "interval";
+      document.getElementById('alert-form-interval').value = s.interval_seconds || 60;
+      document.getElementById('alert-form-cron').value = s.cron_expression || "*/5 * * * *";
+      document.getElementById('alert-form-priority').value = s.schedule_priority || "default";
+
+      document.getElementById('alert-form-type').value = s.alert_type || "number_of_results";
+      document.getElementById('alert-form-op').value = s.condition_operator || "gt";
+      document.getElementById('alert-form-threshold').value = s.condition_threshold ?? 0.0;
+
+      document.getElementById('alert-form-trigger-mode').value = s.trigger_mode || "once";
+      document.getElementById('alert-form-severity').value = s.severity || "HIGH";
+      document.getElementById('alert-form-expires').value = s.alert_expires || "24h";
+      document.getElementById('alert-form-suppress').checked = !!s.alert_suppress;
+      document.getElementById('alert-form-suppress-period').value = s.alert_suppress_period || "5m";
+      document.getElementById('alert-form-suppress-fields').value = s.alert_suppress_fields || "";
+
+      document.getElementById('alert-action-webhook-enabled').checked = !!s.action_webhook_enabled;
+      document.getElementById('alert-form-webhook').value = s.webhook_url || "";
+      document.getElementById('alert-action-email-enabled').checked = !!s.action_email_enabled;
+      document.getElementById('alert-action-email-to').value = s.action_email_to || "";
+      document.getElementById('alert-action-email-subject').value = s.action_email_subject || "";
+      document.getElementById('alert-action-index-enabled').checked = s.action_index_enabled !== false;
+      document.getElementById('alert-action-index-name').value = s.action_index_name || "logccino-alerts";
+      document.getElementById('alert-action-script-enabled').checked = !!s.action_script_enabled;
+      document.getElementById('alert-action-script-cmd').value = s.action_script_command || "";
+
+      switchAlertModalTab('form');
+    }
+
+    async function toggleSavedSearch(id) {
+      try {
+        const res = await fetch(`/api/v1/saved-searches/${id}/toggle`, { method: 'POST' });
+        if (res.ok) {
+          loadSavedSearchesList();
+        } else {
+          alert("상태 변경에 실패했습니다.");
+        }
+      } catch (err) {
+        alert("오류 발생: " + err.message);
+      }
+    }
+
+    async function runSavedSearchNow(id) {
+      try {
+        const res = await fetch(`/api/v1/saved-searches/${id}/run`, { method: 'POST' });
+        if (res.ok) {
+          const rec = await res.json();
+          alert(`⚡ [Run Now 완료]\n- 결과 건수: ${rec.result_count}건\n- 트리거 여부: ${rec.triggered ? '🚨 TRIGGERED' : '✅ OK'}\n- 억제(Suppressed): ${rec.suppressed ? '예 (중복 차단)' : '아니오'}\n- 실행 소요: ${rec.execution_took_ms}ms`);
+          loadSavedSearchesList();
+        } else {
+          alert("즉시 실행 실패");
+        }
+      } catch (err) {
+        alert("실행 오류: " + err.message);
+      }
+    }
+
+    async function deleteSavedSearch(id) {
+      if (!confirm("이 Splunk Saved Search 알람 규칙을 완전히 삭제하시겠습니까?")) return;
+      try {
+        const res = await fetch(`/api/v1/saved-searches/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          loadSavedSearchesList();
+        } else {
+          alert("삭제 실패");
+        }
+      } catch (err) {
+        alert("삭제 오류: " + err.message);
+      }
+    }
 
     async function handleSaveAlert(e) {
       e.preventDefault();
+      const searchId = document.getElementById('alert-form-id').value;
+
       const payload = {
         name: document.getElementById('alert-form-name').value,
-        query: document.getElementById('alert-form-query').value,
-        cron_schedule: document.getElementById('alert-form-cron').value,
-        alert_threshold: parseInt(document.getElementById('alert-form-threshold').value) || 1,
-        is_active: true
+        description: document.getElementById('alert-form-desc').value,
+        app: document.getElementById('alert-form-app').value,
+        owner: document.getElementById('alert-form-owner').value,
+        sharing: document.getElementById('alert-form-sharing').value,
+        enabled: document.getElementById('alert-form-enabled').checked,
+
+        ppl_query: document.getElementById('alert-form-query').value,
+        dispatch_earliest_time: document.getElementById('alert-form-earliest').value,
+        dispatch_latest_time: document.getElementById('alert-form-latest').value,
+        dispatch_sample_ratio: parseInt(document.getElementById('alert-form-sampleratio').value) || 1,
+
+        schedule_type: document.getElementById('alert-form-sched-type').value,
+        interval_seconds: parseInt(document.getElementById('alert-form-interval').value) || 60,
+        cron_expression: document.getElementById('alert-form-cron').value,
+        schedule_priority: document.getElementById('alert-form-priority').value,
+
+        alert_type: document.getElementById('alert-form-type').value,
+        condition_operator: document.getElementById('alert-form-op').value,
+        condition_threshold: parseFloat(document.getElementById('alert-form-threshold').value) || 0.0,
+
+        trigger_mode: document.getElementById('alert-form-trigger-mode').value,
+        severity: document.getElementById('alert-form-severity').value,
+        alert_expires: document.getElementById('alert-form-expires').value,
+        alert_suppress: document.getElementById('alert-form-suppress').checked,
+        alert_suppress_period: document.getElementById('alert-form-suppress-period').value,
+        alert_suppress_fields: document.getElementById('alert-form-suppress-fields').value,
+
+        action_webhook_enabled: document.getElementById('alert-action-webhook-enabled').checked,
+        webhook_url: document.getElementById('alert-form-webhook').value || null,
+        action_email_enabled: document.getElementById('alert-action-email-enabled').checked,
+        action_email_to: document.getElementById('alert-action-email-to').value || null,
+        action_email_subject: document.getElementById('alert-action-email-subject').value || null,
+        action_index_enabled: document.getElementById('alert-action-index-enabled').checked,
+        action_index_name: document.getElementById('alert-action-index-name').value || "logccino-alerts",
+        action_script_enabled: document.getElementById('alert-action-script-enabled').checked,
+        action_script_command: document.getElementById('alert-action-script-cmd').value || null
       };
-      await fetch('/api/v1/saved-searches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      closeNewAlertModal();
-      alert("알람 규칙 및 스케줄러가 성공적으로 등록되었습니다!");
+
+      try {
+        let res;
+        if (searchId) {
+          res = await fetch(`/api/v1/saved-searches/${searchId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          res = await fetch('/api/v1/saved-searches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        if (res.ok) {
+          alert(searchId ? "알람 규칙이 성공적으로 수정되었습니다!" : "새로운 Splunk Saved Search & 알람 규칙이 등록되었습니다!");
+          switchAlertModalTab('list');
+          loadSavedSearchesList();
+        } else {
+          const err = await res.json();
+          alert("저장 실패: " + (err.detail || JSON.stringify(err)));
+        }
+      } catch (err) {
+        alert("오류 발생: " + err.message);
+      }
+    }
+
+    async function testWebhookAction() {
+      const url = document.getElementById('alert-form-webhook').value;
+      if (!url) {
+        alert("먼저 Webhook URL을 입력해주세요.");
+        return;
+      }
+      try {
+        const res = await fetch('/api/v1/saved-searches/test-webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webhook_url: url, message: "Logccino Splunk Alert Webhook Test" })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert("✅ 웹훅 전송 성공! (HTTP " + data.status_code + ")");
+        } else {
+          alert("❌ 웹훅 전송 실패: " + (data.detail || data.status_code));
+        }
+      } catch (err) {
+        alert("❌ 웹훅 연결 실패: " + err.message);
+      }
     }
 
     async function openUsersModal() {

@@ -594,16 +594,56 @@ class LogccinoMCPTools:
         condition_threshold: float = 0.0,
         severity: str = "HIGH",
         webhook_url: Optional[str] = None,
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        app: str = "search",
+        owner: str = "logccino",
+        sharing: str = "app",
+        dispatch_earliest_time: str = "-15m",
+        dispatch_latest_time: str = "now",
+        is_scheduled: bool = True,
+        schedule_type: str = "interval",
+        cron_expression: Optional[str] = None,
+        schedule_window: str = "auto",
+        schedule_priority: str = "default",
+        alert_type: str = "number_of_results",
+        custom_condition: Optional[str] = None,
+        trigger_mode: str = "once",
+        alert_track: bool = True,
+        alert_expires: str = "24h",
+        alert_suppress: bool = False,
+        alert_suppress_period: str = "5m",
+        alert_suppress_fields: Optional[str] = None,
+        action_webhook_enabled: bool = True,
+        action_email_enabled: bool = False,
+        action_email_to: Optional[str] = None,
+        action_email_subject: Optional[str] = None,
+        action_email_priority: int = 3,
+        action_index_enabled: bool = True,
+        action_index_name: str = "logccino-alerts",
+        action_script_enabled: bool = False,
+        action_script_command: Optional[str] = None,
+        enabled: bool = True
     ) -> Dict[str, Any]:
         """
-        새로운 Splunk 스타일 PPL Saved Search / Alerting 규칙을 생성합니다.
+        새로운 Splunk 스타일 PPL Saved Search / Alerting 규칙을 생성합니다 (Splunk savedsearches.conf 완전 호환).
+        - name: 알람 / 검색 명칭
         - ppl_query: OpenSearch PPL 쿼리 (예: "source = logccino-logs-* | where level = 'ERROR' | head 10")
+        - app: Splunk App context ('search', 'enterprise_security' 등)
+        - dispatch_earliest_time: 검색 시작 시간 ('-15m', '-1h', '-24h', '-7d')
+        - dispatch_latest_time: 검색 종료 시간 ('now')
+        - schedule_type: 스케줄 방식 ('interval', 'cron', 'realtime')
+        - cron_expression: 표준 크론 표현식 (선택)
         - interval_seconds: 스케줄 실행 주기 (초)
-        - condition_operator: 트리거 조건 연산자 ('gt', 'gte', 'eq')
+        - alert_type: 트리거 유형 ('number_of_results', 'number_of_events', 'number_of_hosts', 'number_of_sources', 'custom', 'always')
+        - condition_operator: 트리거 조건 연산자 ('gt', 'gte', 'lt', 'lte', 'eq', 'neq', 'drops_by', 'rises_by')
         - condition_threshold: 트리거 임계치 숫자
-        - severity: 알람 심각도 ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW')
+        - alert_suppress: 중복 알람 억제(Throttling) 활성화 여부
+        - alert_suppress_period: 억제 기간 (예: '5m', '1h', '1d')
+        - alert_suppress_fields: 억제 기준 필드 (쉼표 구분: 'host', 'src_ip')
         - webhook_url: 알람 발송 Webhook URL (선택)
+        - action_email_enabled / action_email_to: 이메일 알람 설정
+        - action_index_enabled / action_index_name: 인덱스 보관 설정
+        - action_script_enabled / action_script_command: 커스텀 스크립트 실행 설정
         """
         from core.scheduler.engine import scheduler_engine
         from core.scheduler.models import SavedSearchCreate
@@ -612,12 +652,39 @@ class LogccinoMCPTools:
                 name=name,
                 description=description,
                 ppl_query=ppl_query,
+                app=app,
+                owner=owner,
+                sharing=sharing, # type: ignore
+                dispatch_earliest_time=dispatch_earliest_time,
+                dispatch_latest_time=dispatch_latest_time,
+                is_scheduled=is_scheduled,
+                schedule_type=schedule_type, # type: ignore
+                cron_expression=cron_expression,
                 interval_seconds=interval_seconds,
+                schedule_window=schedule_window,
+                schedule_priority=schedule_priority, # type: ignore
+                alert_type=alert_type, # type: ignore
                 condition_operator=condition_operator, # type: ignore
                 condition_threshold=condition_threshold,
+                custom_condition=custom_condition,
+                trigger_mode=trigger_mode, # type: ignore
                 severity=severity, # type: ignore
+                alert_track=alert_track,
+                alert_expires=alert_expires,
+                alert_suppress=alert_suppress,
+                alert_suppress_period=alert_suppress_period,
+                alert_suppress_fields=alert_suppress_fields,
+                action_webhook_enabled=action_webhook_enabled if webhook_url else False,
                 webhook_url=webhook_url,
-                enabled=True
+                action_email_enabled=action_email_enabled,
+                action_email_to=action_email_to,
+                action_email_subject=action_email_subject,
+                action_email_priority=action_email_priority,
+                action_index_enabled=action_index_enabled,
+                action_index_name=action_index_name,
+                action_script_enabled=action_script_enabled,
+                action_script_command=action_script_command,
+                enabled=enabled
             )
             created = scheduler_engine.create(req)
             return created.model_dump()
@@ -640,22 +707,27 @@ class LogccinoMCPTools:
         interval_seconds: Optional[int] = None,
         condition_threshold: Optional[float] = None,
         severity: Optional[str] = None,
-        webhook_url: Optional[str] = None
+        webhook_url: Optional[str] = None,
+        **kwargs: Any
     ) -> Dict[str, Any]:
         """
-        기존 Splunk Saved Search / Alert 규칙의 활성화 여부(ON/OFF), 쿼리, 주기, 임계치, 웹훅을 수정합니다.
+        기존 Splunk Saved Search / Alert 규칙의 활성화 여부(ON/OFF), 쿼리, 디스패치 시간, 주기, 임계치, 억제, 액션을 수정합니다.
         """
         from core.scheduler.engine import scheduler_engine
         from core.scheduler.models import SavedSearchUpdate
         try:
-            req = SavedSearchUpdate(
-                enabled=enabled,
-                ppl_query=ppl_query,
-                interval_seconds=interval_seconds,
-                condition_threshold=condition_threshold,
-                severity=severity, # type: ignore
-                webhook_url=webhook_url
-            )
+            payload = {
+                "enabled": enabled,
+                "ppl_query": ppl_query,
+                "interval_seconds": interval_seconds,
+                "condition_threshold": condition_threshold,
+                "severity": severity,
+                "webhook_url": webhook_url,
+                **kwargs
+            }
+            # None 값 제거
+            payload = {k: v for k, v in payload.items() if v is not None}
+            req = SavedSearchUpdate(**payload)
             updated = scheduler_engine.update(search_id, req)
             if not updated:
                 return {"error": f"Saved search with ID '{search_id}' not found."}
