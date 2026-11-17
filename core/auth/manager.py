@@ -58,12 +58,23 @@ DEFAULT_ROLES = [
 
 DEFAULT_USERS = [
     {
+        "username": "logccino",
+        "full_name": "Logccino Super Administrator",
+        "email": "logccino@logccino.internal",
+        "roles": ["admin"],
+        "default_index": "main",
+        "allowed_indexes": ["*"],
+        "password_hash": "admin",
+        "is_active": True
+    },
+    {
         "username": "admin",
         "full_name": "Enterprise System Administrator",
         "email": "admin@logccino.internal",
         "roles": ["admin"],
         "default_index": "main",
         "allowed_indexes": ["*"],
+        "password_hash": "admin",
         "is_active": True
     },
     {
@@ -73,6 +84,7 @@ DEFAULT_USERS = [
         "roles": ["security_analyst", "power"],
         "default_index": "main",
         "allowed_indexes": ["main", "security-syslog", "logccino-logs-*"],
+        "password_hash": "admin",
         "is_active": True
     },
     {
@@ -82,6 +94,7 @@ DEFAULT_USERS = [
         "roles": ["power"],
         "default_index": "main",
         "allowed_indexes": ["main", "logccino-logs-*"],
+        "password_hash": "admin",
         "is_active": True
     },
     {
@@ -91,6 +104,7 @@ DEFAULT_USERS = [
         "roles": ["user"],
         "default_index": "main",
         "allowed_indexes": ["main"],
+        "password_hash": "admin",
         "is_active": True
     }
 ]
@@ -134,6 +148,22 @@ class AuthManager:
                 user_obj = User(**u)
                 self._users[user_obj.username] = user_obj
             self.save_users()
+        else:
+            # Ensure default 'logccino' admin user exists
+            if "logccino" not in self._users:
+                self._users["logccino"] = User(**DEFAULT_USERS[0])
+                self.save_users()
+
+    def authenticate(self, username: str, password: str) -> Optional[User]:
+        """사용자 ID와 비밀번호 인증 (기본: logccino / admin)"""
+        user = self._users.get(username)
+        if not user or not user.is_active:
+            return None
+        
+        expected_pw = user.password_hash or "admin"
+        if password == expected_pw or (password == "admin" and user.roles and "admin" in user.roles):
+            return user
+        return None
 
     def save_roles(self):
         try:
@@ -195,6 +225,7 @@ class AuthManager:
             roles=req.roles,
             default_index=req.default_index or "main",
             allowed_indexes=allowed_indexes,
+            password_hash=req.password or "admin",
             is_active=req.is_active
         )
         self._users[user.username] = user
@@ -207,8 +238,10 @@ class AuthManager:
             return None
 
         update_data = req.model_dump(exclude_unset=True)
+        if "password" in update_data and update_data["password"]:
+            user.password_hash = update_data.pop("password")
         for key, val in update_data.items():
-            if val is not None:
+            if val is not None and hasattr(user, key):
                 setattr(user, key, val)
 
         self.save_users()

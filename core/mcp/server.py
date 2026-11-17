@@ -342,6 +342,37 @@ if HAS_MCP and mcp_app:
         res = mcp_tools.execute_joined_query(query=query, left_query=left_query, right_query=right_query, on=on, how=how)
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    @mcp_app.tool()
+    def call_app(
+        app_id: str,
+        action: str,
+        params: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        Unified MCP dispatcher to execute actions across all Logccino / Splunk apps:
+        - app_id: 'search', 'siem', 'sre', 'manage_apps'
+        - action: action name (e.g. 'search', 'join', 'fields', 'analyze_incidents', 'simulate_attack', 'diagnose', 'metrics')
+        - params: dictionary of parameters for the action
+        """
+        res = mcp_tools.call_app(app_id=app_id, action=action, params=params)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def execute_splunk_search(query: str, limit: int = 100) -> str:
+        """
+        Execute Splunk PPL or cross-index join query in Search & Reporting app.
+        """
+        res = mcp_tools.execute_splunk_search(query=query, limit=limit)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def get_splunk_fields(index_pattern: str = "main,logccino-logs-*") -> str:
+        """
+        Get field distribution and discovery statistics for Splunk left fields inspector.
+        """
+        res = mcp_tools.get_splunk_fields(index_pattern=index_pattern)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------

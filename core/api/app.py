@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.client.opensearch_client import opensearch_service
-from core.api.routes import ingest, search, analysis, admin, install, dashboard, collector, saved_searches, users, modules, apps
+from core.api.routes import ingest, search, analysis, admin, install, dashboard, collector, saved_searches, users, modules, apps, auth
 from core.mcp.server import mcp_app
 
 app = FastAPI(
@@ -31,6 +31,7 @@ app.include_router(saved_searches.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(modules.router, prefix="/api/v1")
 app.include_router(apps.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup_event():

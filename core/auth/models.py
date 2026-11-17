@@ -23,12 +23,13 @@ class RoleCreate(BaseModel):
     srchIndexesDefault: List[str] = ["main"]
 
 class User(BaseModel):
-    username: str = Field(..., description="로그인 계정 식별자 (e.g. admin, analyst)")
+    username: str = Field(..., description="로그인 계정 식별자 (e.g. logccino, admin, analyst)")
     full_name: str = Field(..., description="사용자 실명")
     email: Optional[str] = Field(None, description="이메일 주소")
     roles: List[str] = Field(default_factory=lambda: ["user"], description="소속 롤 목록")
     default_index: str = Field("main", description="기본 검색 인덱스 (Splunk 기본: main)")
     allowed_indexes: List[str] = Field(default_factory=lambda: ["main"], description="접근 허용 인덱스 목록")
+    password_hash: Optional[str] = Field(None, description="비밀번호 해시 또는 평문(간이인증)")
     is_active: bool = Field(True, description="활성 계정 여부")
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
@@ -39,6 +40,7 @@ class UserCreate(BaseModel):
     roles: List[str] = ["user"]
     default_index: str = "main"
     allowed_indexes: Optional[List[str]] = None
+    password: Optional[str] = "admin"
     is_active: bool = True
 
 class UserUpdate(BaseModel):
@@ -47,4 +49,15 @@ class UserUpdate(BaseModel):
     roles: Optional[List[str]] = None
     default_index: Optional[str] = None
     allowed_indexes: Optional[List[str]] = None
+    password: Optional[str] = None
     is_active: Optional[bool] = None
+
+class LoginRequest(BaseModel):
+    username: str = Field(..., description="로그인 계정 식별자 (기본값: logccino)")
+    password: str = Field(..., description="비밀번호 (기본값: admin)")
+
+class LoginResponse(BaseModel):
+    status: str = "success"
+    token: str
+    user: User
+    capabilities: List[str]

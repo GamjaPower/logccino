@@ -1,11 +1,17 @@
 """
 Enterprise Observability & Security Dashboard for Logccino
 Splunk 최신 Enterprise UI 디자인:
-- 좌측 Splunk App Bar (Search & Reporting, Enterprise Security SIEM, Autonomous SRE, Manage Apps)
-- 우측 상단 Splunk Global Menu (설정/Activity/도움말 풀다운 드롭다운)
-- Splunk 스타일 Cross-Index Join 검색 콘솔 (이벤트, 통계 테이블, 시각화)
+- 사용자 로그인 기능 (기본 계정: logccino / admin, admin 롤 매핑)
+- 실제 Splunk Search & Reporting 앱과 동일한 화면:
+  * 앱 서브 네비게이션: Search, Analytics, Datasets, Reports, Alerts, Dashboards
+  * Splunk 스타일 검색창, 시간 선택기(Last 24h), 그린 검색 버튼
+  * Job 상태 바 (124 events | Job: Complete | 0.08s | Save As, Share, Export)
+  * 이벤트 타임라인 히스토그램 (Event Timeline Histogram)
+  * 좌측 필드 인스펙터 (Selected Fields: host, source, sourcetype / Interesting Fields: service, level, action 등) 및 필드 값 팝업
+  * 결과 탭: Events(펼침 필드 테이블), Patterns, Statistics(Join/Stats 테이블), Visualization(차트)
 - 독립 추출된 Enterprise Security (SIEM) 관제 앱
-- 플러그형 앱 생태계 (앱 설치, On/Off 활성화 관리)
+- Autonomous SRE 및 플러그형 앱 생태계 (앱 설치/관리)
+- 모든 앱의 MCP 연동
 """
 
 from fastapi import APIRouter
@@ -42,7 +48,7 @@ async def get_enterprise_dashboard():
             subpanel: '#1e293b',
             bordercolor: '#334155',
             splunkgreen: '#10b981',
-            splunkaccent: '#f43f5e'
+            splunkdark: '#0b1120'
           },
           fontFamily: {
             sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
@@ -64,10 +70,55 @@ async def get_enterprise_dashboard():
 <body class="text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
   <!-- =================================================================================== -->
+  <!-- 0. Splunk Enterprise Login Screen Overlay (기본 로그인: logccino / admin)            -->
+  <!-- =================================================================================== -->
+  <div id="splunk-login-overlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4">
+    <div class="bg-panelbg border border-bordercolor rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6">
+      <div class="text-center space-y-2">
+        <div class="flex items-center justify-center gap-2">
+          <span class="font-extrabold text-3xl tracking-tight text-white font-mono">splunk<span class="text-emerald-400 font-black">&gt;</span></span>
+          <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">enterprise</span>
+        </div>
+        <p class="text-xs text-slate-400">Logccino AI Agent-Native Observability & SIEM</p>
+      </div>
+
+      <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+        <div id="login-error-msg" class="hidden p-3 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 font-medium"></div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1.5">사용자 계정 (Username)</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+            <input type="text" id="login-username" value="logccino" required class="w-full bg-slatebg border border-bordercolor rounded-lg pl-9 pr-3 py-2.5 text-white font-mono focus:border-emerald-500 focus:outline-none text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1.5">비밀번호 (Password)</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+            <input type="password" id="login-password" value="admin" required class="w-full bg-slatebg border border-bordercolor rounded-lg pl-9 pr-3 py-2.5 text-white font-mono focus:border-emerald-500 focus:outline-none text-xs">
+          </div>
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>로그인 (Sign In)</span>
+        </button>
+
+        <div class="pt-3 border-t border-bordercolor text-center text-[11px] text-slate-400 space-y-1">
+          <div>기본 로그인 정보: <span class="font-mono text-emerald-400 font-bold">logccino</span> / <span class="font-mono text-emerald-400 font-bold">admin</span></div>
+          <div class="text-[10px] text-slate-500">역할: <span class="text-slate-300 font-mono">admin (Enterprise Super Administrator)</span></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =================================================================================== -->
   <!-- 1. Splunk Enterprise Global Navigation Header (우측 상단 풀다운 메뉴 체계)            -->
   <!-- =================================================================================== -->
-  <header class="border-b border-bordercolor bg-panelbg sticky top-0 z-50 px-5 py-2.5 flex items-center justify-between shadow-md">
-    <!-- Left Brand & Active App Info -->
+  <header class="border-b border-bordercolor bg-panelbg sticky top-0 z-50 px-5 py-2 flex items-center justify-between shadow-md">
+    <!-- Left Brand & App Indicator -->
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-2">
         <span class="font-extrabold text-xl tracking-tight text-white font-mono flex items-center">
@@ -80,7 +131,7 @@ async def get_enterprise_dashboard():
 
       <!-- Current App Breadcrumb -->
       <div class="flex items-center gap-2">
-        <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+        <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
         <span class="text-xs text-slate-400">앱:</span>
         <span class="text-xs font-bold text-white font-mono" id="current-app-title">Search & Reporting</span>
       </div>
@@ -89,19 +140,11 @@ async def get_enterprise_dashboard():
     <!-- Right Global Menu & Pulldown Dropdowns -->
     <div class="flex items-center gap-3 text-xs">
 
-      <!-- Cluster Status Pill -->
-      <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-subpanel border border-bordercolor">
+      <!-- Cluster Telemetry Status -->
+      <div class="flex items-center gap-2 px-2.5 py-1 rounded bg-subpanel border border-bordercolor">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="os-indicator"></span>
-        <span class="text-slate-400">OpenSearch:</span>
-        <span class="font-mono font-medium text-emerald-400" id="os-status">HEALTHY (2.18.0)</span>
-      </div>
-
-      <!-- Time Range Selector -->
-      <div class="flex items-center rounded-md bg-subpanel border border-bordercolor p-0.5 text-[11px] font-medium text-slate-400">
-        <button onclick="setTimeWindow('15m')" class="px-2 py-1 rounded hover:text-white transition" id="tw-15m">15m</button>
-        <button onclick="setTimeWindow('1h')" class="px-2 py-1 rounded hover:text-white transition" id="tw-1h">1h</button>
-        <button onclick="setTimeWindow('24h')" class="px-2 py-1 rounded bg-indigo-600 text-white font-semibold shadow-sm" id="tw-24h">24h</button>
-        <button onclick="setTimeWindow('7d')" class="px-2 py-1 rounded hover:text-white transition" id="tw-7d">7d</button>
+        <span class="text-slate-400 text-[11px]">OpenSearch:</span>
+        <span class="font-mono font-medium text-emerald-400 text-[11px]" id="os-status">HEALTHY (2.18.0)</span>
       </div>
 
       <!-- PULLDOWN MENU 1: 설정 (Settings) -->
@@ -152,7 +195,7 @@ async def get_enterprise_dashboard():
               <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i>
               <div>
                 <div class="font-medium">사용자 및 롤 (RBAC)</div>
-                <div class="text-[10px] text-slate-400">Splunk 표준 롤 및 계정 권한 관리</div>
+                <div class="text-[10px] text-slate-400">logccino 관리자 및 권한 설정</div>
               </div>
             </a>
           </div>
@@ -203,12 +246,25 @@ async def get_enterprise_dashboard():
         </div>
       </div>
 
-      <!-- User Account -->
-      <div class="flex items-center gap-2 pl-2 border-l border-bordercolor">
-        <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-xs">A</div>
-        <div>
-          <span class="font-semibold text-white block leading-tight">admin</span>
-          <span class="text-[9px] text-emerald-400 font-mono">Administrator</span>
+      <!-- User Profile & Sign Out Dropdown -->
+      <div class="relative dropdown-container">
+        <button onclick="toggleDropdown('profile-dropdown')" class="flex items-center gap-2 pl-2 border-l border-bordercolor hover:text-white transition">
+          <div class="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">L</div>
+          <div class="text-left">
+            <span class="font-semibold text-white block leading-tight" id="header-user-name">logccino</span>
+            <span class="text-[9px] text-emerald-400 font-mono" id="header-user-role">admin role</span>
+          </div>
+          <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+        </button>
+        <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-panelbg border border-bordercolor rounded-lg shadow-2xl z-50 p-2 text-xs">
+          <div class="px-2 py-1.5 border-b border-bordercolor/60 mb-1">
+            <div class="font-bold text-white" id="dropdown-user-name">logccino</div>
+            <div class="text-[10px] text-slate-400">Role: admin</div>
+          </div>
+          <button onclick="handleLogout()" class="w-full text-left px-2 py-1.5 rounded hover:bg-rose-500/20 text-rose-300 flex items-center gap-2 transition">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>로그아웃 (Sign Out)</span>
+          </button>
         </div>
       </div>
       <button onclick="toggleSiemModule()" id="siem-toggle-btn" class="hidden"></button>
@@ -222,26 +278,26 @@ async def get_enterprise_dashboard():
   <div class="flex flex-1 overflow-hidden">
 
     <!-- LEFT SPLUNK APPS BAR (좌측 앱 리스트) -->
-    <aside class="w-64 bg-[#0b1120] border-r border-bordercolor flex flex-col shrink-0 select-none">
+    <aside class="w-60 bg-[#0b1120] border-r border-bordercolor flex flex-col shrink-0 select-none">
       <div class="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-bordercolor flex items-center justify-between">
-        <span class="flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5 text-indigo-400"></i> APPS</span>
-        <button onclick="selectApp('manage_apps')" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold" title="앱 관리">
+        <span class="flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5 text-emerald-400"></i> APPS</span>
+        <button onclick="selectApp('manage_apps')" class="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold" title="앱 관리">
           <i data-lucide="sliders" class="w-3 h-3"></i> 관리
         </button>
       </div>
 
-      <!-- Dynamic App Buttons Navigation -->
+      <!-- App Navigation Buttons -->
       <nav class="flex-1 p-2 space-y-1.5 overflow-y-auto scrollbar-thin" id="splunk-apps-nav">
         <!-- 1. Search & Reporting (Core App) -->
-        <button onclick="selectApp('search')" id="app-nav-search" class="app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm">
-          <i data-lucide="search" class="w-4 h-4 mt-0.5 shrink-0 text-indigo-400"></i>
+        <button onclick="selectApp('search')" id="app-nav-search" class="app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
+          <i data-lucide="search" class="w-4 h-4 mt-0.5 shrink-0 text-emerald-400"></i>
           <div>
             <div class="font-bold text-xs text-white">Search & Reporting</div>
-            <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">PPL 및 크로스 인덱스 Join 검색, 통계 및 시각화</div>
+            <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">Splunk 표준 검색, Join, 필드 탐색 & 타임라인</div>
           </div>
         </button>
 
-        <!-- 2. Enterprise Security (SIEM) - Extracted App -->
+        <!-- 2. Enterprise Security (SIEM) - Extracted Standalone App -->
         <button onclick="selectApp('siem')" id="tab-security" class="app-nav-btn siem-feature siem-app-feature w-full text-left p-3 rounded-lg flex items-start gap-3 transition hover:bg-subpanel text-slate-300 border border-transparent">
           <i data-lucide="shield-alert" class="w-4 h-4 mt-0.5 shrink-0 text-rose-400"></i>
           <div>
@@ -293,104 +349,236 @@ async def get_enterprise_dashboard():
     <main class="flex-1 flex flex-col overflow-y-auto bg-slatebg">
 
       <!-- =================================================================================== -->
-      <!-- APP VIEW 1: Search & Reporting (핵심 검색, Cross-Index Join, 통계 분석 뷰)            -->
+      <!-- APP VIEW 1: Search & Reporting (실제 Splunk와 가장 유사한 검색 & 필드 인스펙터 화면) -->
       <!-- =================================================================================== -->
-      <div id="view-app-search" class="app-view flex-1 flex flex-col p-6 space-y-5">
+      <div id="view-app-search" class="app-view flex-1 flex flex-col">
         
-        <!-- Splunk Search Console Card -->
-        <div class="bg-panelbg rounded-xl border border-bordercolor shadow-xl p-5 space-y-3.5">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <i data-lucide="search" class="w-4 h-4 text-emerald-400"></i>
-              <h2 class="text-xs font-bold uppercase tracking-wider text-white">Splunk PPL & Cross-Index Join Search Bar</h2>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
-                <i data-lucide="git-merge" class="w-3 h-3 inline mr-1"></i>BACKEND JOIN ENABLED
-              </span>
-            </div>
-            <div class="text-[11px] text-slate-400 font-mono">
-              색인: <span class="text-slate-200">main</span> (보안 Syslog) | <span class="text-slate-200">logccino-logs-*</span> (앱 분산로그)
-            </div>
+        <!-- Splunk Sub-Navigation Bar (Search, Analytics, Datasets, Reports, Alerts, Dashboards) -->
+        <div class="bg-subpanel/90 border-b border-bordercolor px-6 flex items-center justify-between text-xs font-semibold">
+          <div class="flex">
+            <button class="px-4 py-2.5 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 transition">
+              <i data-lucide="search" class="w-3.5 h-3.5"></i> Search
+            </button>
+            <button onclick="switchSearchTab('charts')" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> Analytics
+            </button>
+            <button onclick="setSearchPreset('source = main,logccino-logs-* | head 50')" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <i data-lucide="database" class="w-3.5 h-3.5"></i> Datasets
+            </button>
+            <button onclick="openSavedSearchesModal()" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-400"></i> Alerts & Saved Searches
+            </button>
           </div>
+          <div class="text-[11px] font-mono text-slate-400">
+            앱: <span class="text-white font-bold">Search &amp; Reporting (v10.0.0)</span>
+          </div>
+        </div>
 
-          <!-- Splunk Search Input & Execution Button -->
-          <div class="flex items-start gap-2.5">
-            <div class="flex-1 relative">
-              <textarea id="search-query-input" rows="2" class="w-full bg-slatebg border border-bordercolor focus:border-indigo-500 rounded-lg p-3 text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none leading-relaxed resize-y" placeholder="Splunk PPL 또는 Join 쿼리를 입력하세요 (예: source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ])">source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]</textarea>
+        <!-- Splunk Real Search Input & Execution Header -->
+        <div class="bg-panelbg border-b border-bordercolor p-5 space-y-3">
+          <div class="flex items-center gap-2">
+            <!-- Search Textarea Input with Monospace font -->
+            <div class="flex-1 bg-slatebg border-2 border-slate-700 focus-within:border-emerald-500 rounded-lg p-2.5 flex items-start gap-2 shadow-inner transition">
+              <i data-lucide="search" class="w-4 h-4 text-emerald-400 mt-1 shrink-0"></i>
+              <textarea id="search-query-input" rows="2" class="w-full bg-transparent text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none leading-relaxed resize-y" placeholder="Splunk PPL 또는 Cross-Index Join 쿼리를 입력하세요...">source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]</textarea>
             </div>
-            <button onclick="executeSplunkSearch()" id="btn-search-run" class="px-5 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-600/20 shrink-0">
-              <i data-lucide="play" class="w-4 h-4"></i>
-              <span>검색 (Search)</span>
+
+            <!-- Time Range Picker Dropdown -->
+            <div class="relative dropdown-container shrink-0">
+              <button onclick="toggleDropdown('timerange-dropdown')" id="timerange-btn" class="px-3.5 py-3 rounded-lg bg-subpanel hover:bg-slate-800 text-slate-200 border border-bordercolor text-xs font-medium flex items-center gap-2 transition">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span id="current-time-label">Last 24 hours</span>
+                <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+              </button>
+              <div id="timerange-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-panelbg border border-bordercolor rounded-lg shadow-2xl z-50 p-2 text-xs divide-y divide-bordercolor/60">
+                <div class="py-1">
+                  <span class="text-[10px] uppercase font-bold text-slate-500 px-2">Presets</span>
+                  <button onclick="selectSearchTime('15m', 'Last 15 minutes')" class="w-full text-left px-2 py-1.5 rounded hover:bg-subpanel text-slate-200">Last 15 minutes</button>
+                  <button onclick="selectSearchTime('1h', 'Last 1 hour')" class="w-full text-left px-2 py-1.5 rounded hover:bg-subpanel text-slate-200">Last 1 hour</button>
+                  <button onclick="selectSearchTime('24h', 'Last 24 hours')" class="w-full text-left px-2 py-1.5 rounded hover:bg-subpanel text-emerald-400 font-bold">Last 24 hours</button>
+                  <button onclick="selectSearchTime('7d', 'Last 7 days')" class="w-full text-left px-2 py-1.5 rounded hover:bg-subpanel text-slate-200">Last 7 days</button>
+                  <button onclick="selectSearchTime('all', 'All time')" class="w-full text-left px-2 py-1.5 rounded hover:bg-subpanel text-slate-200">All time</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Big Green Splunk Search Button -->
+            <button onclick="executeSplunkSearch()" id="btn-search-run" class="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-600/25 shrink-0">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>검색</span>
             </button>
           </div>
 
-          <!-- Splunk Cross-Index Join Quick Presets -->
-          <div class="flex items-center gap-2 overflow-x-auto scrollbar-thin pt-1 text-[11px]">
+          <!-- Quick Join & PPL Presets Bar -->
+          <div class="flex items-center gap-2 overflow-x-auto scrollbar-thin text-[11px] pt-1">
             <span class="text-[10px] uppercase font-bold text-slate-400 shrink-0 flex items-center gap-1">
-              <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> Join 프리셋:
+              <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> Join 예제:
             </span>
-            <button onclick="setSearchPreset('source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 font-medium transition shrink-0">
+            <button onclick="setSearchPreset('source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor text-slate-300 font-medium transition shrink-0">
               🔗 [JOIN] 보안 로그 x 앱 로그 호스트 매핑
             </button>
-            <button onclick="setSearchPreset('source = logccino-logs-* where level = \'ERROR\' | head 50 | join type=left service [ source = logccino-logs-* | stats count() as total_logs by service ]')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 font-medium transition shrink-0">
+            <button onclick="setSearchPreset('source = logccino-logs-* where level = \'ERROR\' | head 50 | join type=left service [ source = logccino-logs-* | stats count() as total_logs by service ]')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor text-slate-300 font-medium transition shrink-0">
               🔗 [JOIN] 에러 로그 x 서비스 전체 처리량 조인
             </button>
-            <button onclick="setSearchPreset('source = logccino-logs-* | stats count() by service, level')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 font-medium transition shrink-0">
+            <button onclick="setSearchPreset('source = logccino-logs-* | stats count() by service, level')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor text-slate-300 font-medium transition shrink-0">
               📊 [PPL] 서비스별 에러율 및 심각도 집계
             </button>
-            <button onclick="setSearchPreset('source = main | head 30 | fields @timestamp, host, event_type, message')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 font-medium transition shrink-0">
+            <button onclick="setSearchPreset('source = main | head 30 | fields @timestamp, host, event_type, message')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-indigo-600/20 border border-bordercolor text-slate-300 font-medium transition shrink-0">
               🛡️ [MAIN] 보안 Syslog 원천 로그 탐색
             </button>
           </div>
         </div>
 
-        <!-- Search Results Tabs Container -->
-        <div class="bg-panelbg rounded-xl border border-bordercolor shadow-xl flex-1 flex flex-col overflow-hidden min-h-[460px]">
-          <!-- Result Tabs Header -->
-          <div class="flex items-center justify-between border-b border-bordercolor px-4 bg-subpanel/80">
-            <div class="flex">
-              <button onclick="switchSearchTab('statistics')" id="subtab-statistics" class="px-4 py-3 text-xs font-bold border-b-2 border-emerald-500 text-emerald-300 flex items-center gap-1.5 transition">
-                <i data-lucide="table" class="w-3.5 h-3.5"></i> 통계 테이블 (Statistics: <span id="search-stats-count">0</span>)
-              </button>
-              <button onclick="switchSearchTab('events')" id="subtab-events" class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 이벤트 원천 로그 (Events)
-              </button>
-              <button onclick="switchSearchTab('charts')" id="subtab-charts" class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> 시각화 차트 (Visualizations)
-              </button>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-slate-400 font-mono">
-              <span id="search-execution-info">Ready to search</span>
-            </div>
+        <!-- Real Splunk Job Status & Action Bar -->
+        <div class="bg-subpanel/50 border-b border-bordercolor px-6 py-2 flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-slate-200" id="job-event-count">0 events</span>
+            <span class="text-slate-400 text-[11px]" id="job-time-range">(Last 24 hours)</span>
+            <span class="text-slate-600">|</span>
+            <span class="flex items-center gap-1 text-emerald-400 font-bold">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <span id="job-status-text">Job: Complete</span>
+            </span>
+            <span class="text-slate-600">|</span>
+            <span class="text-slate-400 text-[11px]" id="job-elapsed">0.05 seconds</span>
           </div>
 
-          <!-- Result Tab 1: Statistics (통계 및 Join 결과 테이블) -->
-          <div id="content-search-statistics" class="flex-1 p-4 overflow-auto scrollbar-thin">
-            <div id="statistics-table-container" class="overflow-x-auto">
-              <p class="text-center py-20 text-slate-500 text-xs">
-                상단 검색창에서 PPL 또는 Cross-Index Join 쿼리를 실행하면 통계 집계 및 조인 결과 테이블이 여기에 렌더링됩니다.
-              </p>
-            </div>
+          <!-- Actions Bar (Save As, Share, Export) -->
+          <div class="flex items-center gap-2">
+            <button onclick="openSavedSearchesModal()" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[11px] flex items-center gap-1 transition">
+              <i data-lucide="bookmark" class="w-3 h-3 text-amber-400"></i> Save As Alert
+            </button>
+            <button onclick="exportCurrentSearch('json')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[11px] flex items-center gap-1 transition">
+              <i data-lucide="download" class="w-3 h-3"></i> Export
+            </button>
           </div>
+        </div>
 
-          <!-- Result Tab 2: Events (원천 로그 뷰어) -->
-          <div id="content-search-events" class="flex-1 p-4 overflow-y-auto scrollbar-thin hidden">
-            <div id="search-events-list" class="space-y-2 text-xs">
-              <p class="text-center py-20 text-slate-500 text-xs">검색 실행 결과 원천 이벤트 목록이 여기에 표시됩니다.</p>
-            </div>
+        <!-- Splunk Event Timeline Histogram -->
+        <div class="bg-panelbg border-b border-bordercolor px-6 py-2.5">
+          <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1 font-mono">
+            <span>EVENT TIMELINE (시간대별 로그 분포 히스토그램)</span>
+            <span id="timeline-range-info">24h Distribution</span>
           </div>
+          <div id="search-event-timeline" class="w-full h-16"></div>
+        </div>
 
-          <!-- Result Tab 3: Visualizations (차트) -->
-          <div id="content-search-charts" class="flex-1 p-4 overflow-y-auto scrollbar-thin hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor">
-                <h3 class="text-xs font-semibold text-slate-300 mb-2">서비스별 처리량 vs 에러</h3>
-                <div id="chart-services-search" class="w-full h-56"></div>
+        <!-- Splunk Results Split Container: Left Fields Inspector + Right Data Tabs -->
+        <div class="flex-1 flex overflow-hidden">
+          
+          <!-- SPLUNK LEFT FIELDS INSPECTOR (필드 인스펙터 사이드바) -->
+          <aside class="w-64 bg-[#0b1120] border-r border-bordercolor flex flex-col shrink-0 select-none overflow-y-auto scrollbar-thin text-xs">
+            <div class="p-3 border-b border-bordercolor">
+              <input type="text" id="fields-filter-input" oninput="filterFieldsList()" placeholder="Filter fields..." class="w-full bg-slatebg border border-bordercolor rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
+            </div>
+
+            <!-- Selected Fields -->
+            <div class="p-3 border-b border-bordercolor/60 space-y-2">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                <span>SELECTED FIELDS</span>
+                <span class="text-slate-500 font-mono">3</span>
               </div>
-              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor">
-                <h3 class="text-xs font-semibold text-slate-300 mb-2">심각도 분포</h3>
-                <div id="chart-levels-search" class="w-full h-56"></div>
+              <div class="space-y-1 font-mono text-[11px]" id="selected-fields-list">
+                <div onclick="openFieldSummaryModal('host')" class="field-item flex items-center justify-between p-1.5 rounded hover:bg-subpanel cursor-pointer text-slate-300 hover:text-white transition">
+                  <span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3 h-3 text-emerald-400"></i> host</span>
+                  <span class="text-slate-500 text-[10px]">4</span>
+                </div>
+                <div onclick="openFieldSummaryModal('source')" class="field-item flex items-center justify-between p-1.5 rounded hover:bg-subpanel cursor-pointer text-slate-300 hover:text-white transition">
+                  <span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3 h-3 text-emerald-400"></i> source</span>
+                  <span class="text-slate-500 text-[10px]">2</span>
+                </div>
+                <div onclick="openFieldSummaryModal('sourcetype')" class="field-item flex items-center justify-between p-1.5 rounded hover:bg-subpanel cursor-pointer text-slate-300 hover:text-white transition">
+                  <span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3 h-3 text-emerald-400"></i> sourcetype</span>
+                  <span class="text-slate-500 text-[10px]">3</span>
+                </div>
               </div>
             </div>
+
+            <!-- Interesting Fields -->
+            <div class="p-3 space-y-2">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                <span>INTERESTING FIELDS</span>
+                <span class="text-slate-500 font-mono">5</span>
+              </div>
+              <div class="space-y-1 font-mono text-[11px]" id="interesting-fields-list">
+                <div onclick="openFieldSummaryModal('service')" class="field-item flex items-center justify-between p-1.5 rounded hover:bg-subpanel cursor-pointer text-slate-300 hover:text-white transition">
+                  <span class="flex items-center gap-1.5"><i data-lucide="hash" class="w-3 h-3 text-indigo-400"></i> service</span>
+                  <span class="text-slate-500 text-[10px]">5</span>
+                </div>
+                <div onclick="openFieldSummaryModal('level')" class="field-item flex items-center justify-between p-1.5 rounded hover:bg-subpanel cursor-pointer text-slate-300 hover:text-white transition">
+                  <span class="flex items-center gap-1.5"><i data-lucide="hash" class="w-3 h-3 text-indigo-400"></i> level</span>
+                  <span class="text-slate-500 text-[10px]">2</span>
+                </div>
+                <div onclick="openFieldSummaryModal('action')" class="field-item flex items-center justify-between p-1.5 rounded hover:bg-subpanel cursor-pointer text-slate-300 hover:text-white transition">
+                  <span class="flex items-center gap-1.5"><i data-lucide="hash" class="w-3 h-3 text-indigo-400"></i> action</span>
+                  <span class="text-slate-500 text-[10px]">3</span>
+                </div>
+                <div onclick="openFieldSummaryModal('event_type')" class="field-item flex items-center justify-between p-1.5 rounded hover:bg-subpanel cursor-pointer text-slate-300 hover:text-white transition">
+                  <span class="flex items-center gap-1.5"><i data-lucide="hash" class="w-3 h-3 text-indigo-400"></i> event_type</span>
+                  <span class="text-slate-500 text-[10px]">4</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- RIGHT SPLUNK RESULTS WORKSPACE (Events / Patterns / Statistics / Visualization) -->
+          <div class="flex-1 flex flex-col overflow-hidden bg-slatebg">
+            
+            <!-- Result Tabs Header -->
+            <div class="flex items-center justify-between border-b border-bordercolor px-4 bg-panelbg">
+              <div class="flex">
+                <button onclick="switchSearchTab('events')" id="subtab-events" class="px-4 py-3 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 transition">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Events (<span id="tab-events-count">0</span>)
+                </button>
+                <button onclick="switchSearchTab('statistics')" id="subtab-statistics" class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+                  <i data-lucide="table" class="w-3.5 h-3.5"></i> Statistics (<span id="tab-stats-count">0</span>)
+                </button>
+                <button onclick="switchSearchTab('charts')" id="subtab-charts" class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+                  <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> Visualization
+                </button>
+              </div>
+
+              <!-- Events Display Format Switcher -->
+              <div class="flex items-center gap-3 text-[11px] font-mono text-slate-400">
+                <span>Format: <span class="text-white font-semibold">List</span></span>
+                <span>Per Page: <span class="text-white font-semibold">20</span></span>
+              </div>
+            </div>
+
+            <!-- TAB 1: Real Splunk Events View (원천 이벤트 & 펼침 필드 테이블) -->
+            <div id="content-search-events" class="flex-1 p-4 overflow-y-auto scrollbar-thin">
+              <div id="search-events-list" class="space-y-2 text-xs">
+                <p class="text-center py-20 text-slate-500 text-xs">상단 검색창에서 검색 버튼을 누르면 원천 이벤트 레코드가 로드됩니다.</p>
+              </div>
+            </div>
+
+            <!-- TAB 2: Splunk Statistics Table (Join / Stats 집계 테이블) -->
+            <div id="content-search-statistics" class="flex-1 p-4 overflow-auto scrollbar-thin hidden">
+              <div id="statistics-table-container" class="overflow-x-auto">
+                <p class="text-center py-20 text-slate-500 text-xs">
+                  PPL 집계(stats) 또는 Cross-Index Join 쿼리를 실행하면 통계 그리드가 여기에 출력됩니다.
+                </p>
+              </div>
+            </div>
+
+            <!-- TAB 3: Visualization (차트 시각화) -->
+            <div id="content-search-charts" class="flex-1 p-4 overflow-y-auto scrollbar-thin hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-panelbg p-4 rounded-xl border border-bordercolor">
+                  <h3 class="text-xs font-semibold text-slate-200 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="bar-chart" class="w-3.5 h-3.5 text-emerald-400"></i> 서비스별 로그 볼륨 vs 에러 건수
+                  </h3>
+                  <div id="chart-services-search" class="w-full h-64"></div>
+                </div>
+                <div class="bg-panelbg p-4 rounded-xl border border-bordercolor">
+                  <h3 class="text-xs font-semibold text-slate-200 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-indigo-400"></i> 심각도 분포 (INFO vs ERROR)
+                  </h3>
+                  <div id="chart-levels-search" class="w-full h-64"></div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -401,103 +589,103 @@ async def get_enterprise_dashboard():
       <!-- =================================================================================== -->
       <div id="view-app-siem" class="app-view flex-1 flex flex-col p-6 space-y-5 hidden">
         <div id="content-security" class="siem-feature flex flex-col space-y-5">
-        <!-- SIEM Header -->
-        <div class="flex items-center justify-between bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-              <i data-lucide="shield-alert" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="font-bold text-sm text-white">Logccino Enterprise Security (ES / SIEM)</h2>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">PLUGGABLE APP ACTIVE</span>
+          <!-- SIEM Header -->
+          <div class="flex items-center justify-between bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                <i data-lucide="shield-alert" class="w-5 h-5"></i>
               </div>
-              <p class="text-xs text-slate-400 mt-0.5">Rust 고성능 보안 Syslog 수집기, MITRE ATT&CK 상관분석 및 자율 침해사고 대응 콘솔</p>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="font-bold text-sm text-white">Logccino Enterprise Security (ES / SIEM)</h2>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">PLUGGABLE APP ACTIVE</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Rust 고성능 보안 Syslog 수집기, MITRE ATT&CK 상관분석 및 자율 침해사고 대응 콘솔</p>
+              </div>
             </div>
-          </div>
 
-          <div class="flex items-center gap-2">
-            <button onclick="selectApp('manage_apps')" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
-              앱 설정 관리
-            </button>
-            <button onclick="loadSecurityEvents()" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1.5 transition">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 즉시 갱신
-            </button>
-          </div>
-        </div>
-
-        <!-- Rust Syslog Collector Controller Card -->
-        <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-slate-500" id="collector-status-dot"></span>
-              <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine (Port: 1514)</span>
-              <span id="collector-status-badge" class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700">CHECKING...</span>
-            </div>
             <div class="flex items-center gap-2">
-              <button onclick="startCollector()" id="btn-col-start" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1 transition">
-                <i data-lucide="play" class="w-3 h-3"></i> 시작
+              <button onclick="selectApp('manage_apps')" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
+                앱 설정 관리
               </button>
-              <button onclick="stopCollector()" id="btn-col-stop" class="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1 transition">
-                <i data-lucide="square" class="w-3 h-3"></i> 중지
-              </button>
-              <button onclick="restartCollector()" id="btn-col-restart" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center gap-1 transition border border-slate-700">
-                <i data-lucide="refresh-cw" class="w-3 h-3"></i> 재시작
+              <button onclick="loadSecurityEvents()" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 즉시 갱신
               </button>
             </div>
           </div>
 
-          <!-- Collector Telemetry Metrics -->
-          <div class="grid grid-cols-4 gap-3 pt-2 border-t border-bordercolor/60 text-center">
-            <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
-              <span class="text-[10px] uppercase text-slate-400 block font-semibold">수신 패킷 (Rx)</span>
-              <span class="font-mono font-bold text-slate-100 text-sm" id="sec-rx">0</span>
+          <!-- Rust Syslog Collector Controller Card -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-500" id="collector-status-dot"></span>
+                <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine (Port: 1514)</span>
+                <span id="collector-status-badge" class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700">CHECKING...</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="startCollector()" id="btn-col-start" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1 transition">
+                  <i data-lucide="play" class="w-3 h-3"></i> 시작
+                </button>
+                <button onclick="stopCollector()" id="btn-col-stop" class="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1 transition">
+                  <i data-lucide="square" class="w-3 h-3"></i> 중지
+                </button>
+                <button onclick="restartCollector()" id="btn-col-restart" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center gap-1 transition border border-slate-700">
+                  <i data-lucide="refresh-cw" class="w-3 h-3"></i> 재시작
+                </button>
+              </div>
             </div>
-            <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
-              <span class="text-[10px] uppercase text-slate-400 block font-semibold">ECS 파싱 (Parsed)</span>
-              <span class="font-mono font-bold text-indigo-400 text-sm" id="sec-parsed">0</span>
-            </div>
-            <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
-              <span class="text-[10px] uppercase text-slate-400 block font-semibold">OpenSearch 'main' 인덱싱</span>
-              <span class="font-mono font-bold text-emerald-400 text-sm" id="sec-fwd">0</span>
-            </div>
-            <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
-              <span class="text-[10px] uppercase text-slate-400 block font-semibold">위협 경고 (Alerts)</span>
-              <span class="font-mono font-bold text-rose-400 text-sm" id="sec-threats">0</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- Real-time Attack Simulator Bar -->
-        <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-2.5">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-slate-200 flex items-center gap-2 text-xs">
-              <i data-lucide="target" class="w-4 h-4 text-rose-400"></i> 실시간 보안 위협 시뮬레이션 패킷 발송기
-            </span>
-            <span id="inject-status-msg" class="text-xs font-mono text-emerald-400"></span>
+            <!-- Collector Telemetry Metrics -->
+            <div class="grid grid-cols-4 gap-3 pt-2 border-t border-bordercolor/60 text-center">
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">수신 패킷 (Rx)</span>
+                <span class="font-mono font-bold text-slate-100 text-sm" id="sec-rx">0</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">ECS 파싱 (Parsed)</span>
+                <span class="font-mono font-bold text-indigo-400 text-sm" id="sec-parsed">0</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">OpenSearch 'main' 인덱싱</span>
+                <span class="font-mono font-bold text-emerald-400 text-sm" id="sec-fwd">0</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">위협 경고 (Alerts)</span>
+                <span class="font-mono font-bold text-rose-400 text-sm" id="sec-threats">0</span>
+              </div>
+            </div>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button onclick="injectTestEvent('ssh_failed')" class="px-3 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition flex items-center gap-1.5">
-              <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> SSH 무차별대입 공격 패킷
-            </button>
-            <button onclick="injectTestEvent('sudo_failed')" class="px-3 py-1.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium transition flex items-center gap-1.5">
-              <i data-lucide="key" class="w-3.5 h-3.5"></i> 의심스러운 Sudo 권한 상승 패킷
-            </button>
-            <button onclick="injectTestEvent('port_scan')" class="px-3 py-1.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition flex items-center gap-1.5">
-              <i data-lucide="radio" class="w-3.5 h-3.5"></i> 방화벽 인바운드 포트 스캔 패킷
-            </button>
-          </div>
-        </div>
 
-        <!-- Live Security Incidents Stream Table -->
-        <div class="bg-panelbg rounded-xl border border-bordercolor shadow-xl p-4 flex-1 flex flex-col min-h-[350px]">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-2">
-            <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i> 최근 탐지된 실시간 보안 침해 이벤트 (main Index)
-          </h3>
-          <div id="sec-events-container" class="flex-1 overflow-y-auto scrollbar-thin space-y-2">
-            <p class="text-center py-16 text-slate-500 text-xs">수신된 보안 이벤트가 로드 중입니다...</p>
+          <!-- Real-time Attack Simulator Bar -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-200 flex items-center gap-2 text-xs">
+                <i data-lucide="target" class="w-4 h-4 text-rose-400"></i> 실시간 보안 위협 시뮬레이션 패킷 발송기
+              </span>
+              <span id="inject-status-msg" class="text-xs font-mono text-emerald-400"></span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="injectTestEvent('ssh_failed')" class="px-3 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition flex items-center gap-1.5">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> SSH 무차별대입 공격 패킷
+              </button>
+              <button onclick="injectTestEvent('sudo_failed')" class="px-3 py-1.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium transition flex items-center gap-1.5">
+                <i data-lucide="key" class="w-3.5 h-3.5"></i> 의심스러운 Sudo 권한 상승 패킷
+              </button>
+              <button onclick="injectTestEvent('port_scan')" class="px-3 py-1.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition flex items-center gap-1.5">
+                <i data-lucide="radio" class="w-3.5 h-3.5"></i> 방화벽 인바운드 포트 스캔 패킷
+              </button>
+            </div>
           </div>
-        </div>
+
+          <!-- Live Security Incidents Stream Table -->
+          <div class="bg-panelbg rounded-xl border border-bordercolor shadow-xl p-4 flex-1 flex flex-col min-h-[350px]">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-2">
+              <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i> 최근 탐지된 실시간 보안 침해 이벤트 (main Index)
+            </h3>
+            <div id="sec-events-container" class="flex-1 overflow-y-auto scrollbar-thin space-y-2">
+              <p class="text-center py-16 text-slate-500 text-xs">수신된 보안 이벤트가 로드 중입니다...</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -660,10 +848,35 @@ async def get_enterprise_dashboard():
   </div>
 
   <!-- =================================================================================== -->
-  <!-- 3. Modals (Log Detail, Alerts, Users/Roles RBAC, Install App)                       -->
+  <!-- 3. Modals & Popups (Field Values Popup, Log Modal, Alerts, Users/Roles, App Install)-->
   <!-- =================================================================================== -->
 
-  <!-- Log Modal -->
+  <!-- Splunk Field Values Summary Popup Modal -->
+  <div id="field-summary-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
+      <div class="px-5 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
+        <h3 class="font-bold text-xs text-white flex items-center gap-2">
+          <i data-lucide="tag" class="w-4 h-4 text-emerald-400"></i>
+          <span>Field: <span id="modal-field-name" class="font-mono text-emerald-400">host</span></span>
+        </h3>
+        <button onclick="closeFieldSummaryModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="p-5 space-y-4 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-mono text-[11px]">
+          <span>Top 10 Values in Current Search Results</span>
+          <span id="modal-field-stats">100% matched</span>
+        </div>
+        <div id="modal-field-values-list" class="space-y-2 max-h-60 overflow-y-auto scrollbar-thin font-mono">
+          <!-- Rendered by JS -->
+        </div>
+        <div class="pt-3 border-t border-bordercolor flex justify-end">
+          <button onclick="closeFieldSummaryModal()" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Detail Modal -->
   <div id="log-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl">
       <div class="px-5 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/50">
@@ -782,18 +995,23 @@ async def get_enterprise_dashboard():
   </div>
 
   <!-- =================================================================================== -->
-  <!-- 4. JavaScript Logic: Splunk Layout, Apps, Join Engine, Modals, Dropdowns            -->
+  <!-- 4. JavaScript Logic: Login, Real Splunk Search, Timeline, Field Inspector, Modals   -->
   <!-- =================================================================================== -->
   <script>
     let activeApp = 'search';
     let installedApps = [];
+    let currentSearchHits = [];
+    let currentSearchSchema = [];
     let currentTimeWindow = "24h";
+    let currentUser = null;
+    let timelineChartInstance = null;
     let servicesChartInstance = null;
     let levelsChartInstance = null;
     let conversationHistory = [];
 
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
+      checkAuthSession();
       fetchApps();
       fetchOverview();
       fetchCollectorStatus();
@@ -809,6 +1027,96 @@ async def get_enterprise_dashboard():
     });
 
     // -------------------------------------------------------------
+    // Authentication & Session Management (기본: logccino / admin)
+    // -------------------------------------------------------------
+    async function checkAuthSession() {
+      const token = localStorage.getItem("logccino_token");
+      const overlay = document.getElementById('splunk-login-overlay');
+
+      if (!token) {
+        overlay.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/v1/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user;
+          updateUserUI(currentUser);
+          overlay.classList.add('hidden');
+          executeSplunkSearch();
+        } else {
+          localStorage.removeItem("logccino_token");
+          overlay.classList.remove('hidden');
+        }
+      } catch (e) {
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const errorMsg = document.getElementById('login-error-msg');
+      const submitBtn = document.getElementById('login-submit-btn');
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="animate-pulse">인증 확인 중...</span>';
+      errorMsg.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success') {
+          localStorage.setItem("logccino_token", data.token);
+          currentUser = data.user;
+          updateUserUI(currentUser);
+          document.getElementById('splunk-login-overlay').classList.add('hidden');
+          executeSplunkSearch();
+        } else {
+          errorMsg.textContent = data.detail || "로그인 실패: 아이디 또는 비밀번호가 올바르지 않습니다.";
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = "서버 통신 오류: " + err.message;
+        errorMsg.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i><span>로그인 (Sign In)</span>';
+        lucide.createIcons();
+      }
+    }
+
+    function updateUserUI(user) {
+      if (!user) return;
+      document.getElementById('header-user-name').textContent = user.username;
+      document.getElementById('header-user-role').textContent = (user.roles || ['user'])[0] + " role";
+      document.getElementById('dropdown-user-name').textContent = user.username + ` (${user.full_name || ''})`;
+    }
+
+    async function handleLogout() {
+      const token = localStorage.getItem("logccino_token");
+      try {
+        await fetch('/api/v1/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (e) {}
+      localStorage.removeItem("logccino_token");
+      document.getElementById('splunk-login-overlay').classList.remove('hidden');
+      closeAllDropdowns();
+    }
+
+    // -------------------------------------------------------------
     // Dropdown Controllers
     // -------------------------------------------------------------
     function toggleDropdown(id) {
@@ -821,7 +1129,7 @@ async def get_enterprise_dashboard():
     }
 
     function closeAllDropdowns() {
-      ['settings-dropdown', 'activity-dropdown', 'help-dropdown'].forEach(id => {
+      ['settings-dropdown', 'activity-dropdown', 'help-dropdown', 'timerange-dropdown', 'profile-dropdown'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
       });
@@ -844,7 +1152,6 @@ async def get_enterprise_dashboard():
     }
 
     function renderAppsNav() {
-      // SIEM app visibility check
       const siemApp = installedApps.find(a => a.id === 'siem');
       const isSiemEnabled = siemApp ? siemApp.enabled : true;
 
@@ -857,7 +1164,6 @@ async def get_enterprise_dashboard():
         }
       });
 
-      // If active app was SIEM but it is now disabled, switch to Search
       if (activeApp === 'siem' && !isSiemEnabled) {
         selectApp('search');
       }
@@ -866,7 +1172,6 @@ async def get_enterprise_dashboard():
     function selectApp(appId) {
       activeApp = appId;
       
-      // Update breadcrumb
       const titles = {
         'search': 'Search & Reporting',
         'siem': 'Enterprise Security (SIEM)',
@@ -881,7 +1186,7 @@ async def get_enterprise_dashboard():
       });
       const activeBtn = document.getElementById(`app-nav-${appId}`);
       if (activeBtn) {
-        activeBtn.className = 'app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm';
+        activeBtn.className = 'app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 shadow-sm';
       }
 
       // Switch Views
@@ -897,7 +1202,7 @@ async def get_enterprise_dashboard():
       });
 
       if (appId === 'search') {
-        setTimeout(initCharts, 100);
+        setTimeout(initTimelineChart, 100);
       } else if (appId === 'siem') {
         loadSecurityEvents();
         fetchCollectorStatus();
@@ -921,7 +1226,7 @@ async def get_enterprise_dashboard():
             <div class="space-y-2">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                     <i data-lucide="${app.icon || 'box'}" class="w-4 h-4"></i>
                   </div>
                   <div>
@@ -950,12 +1255,6 @@ async def get_enterprise_dashboard():
       lucide.createIcons();
     }
 
-    async function toggleSiemModule() {
-      const siemApp = installedApps.find(a => a.id === 'siem');
-      const targetState = siemApp ? !siemApp.enabled : false;
-      await toggleAppStatus('siem', targetState);
-    }
-
     async function toggleAppStatus(appId, targetEnabled) {
       try {
         const res = await fetch(`/api/v1/apps/${appId}/toggle?enabled=${targetEnabled}`, { method: 'POST' });
@@ -967,11 +1266,25 @@ async def get_enterprise_dashboard():
       }
     }
 
+    async function toggleSiemModule() {
+      const siemApp = installedApps.find(a => a.id === 'siem');
+      const targetState = siemApp ? !siemApp.enabled : false;
+      await toggleAppStatus('siem', targetState);
+    }
+
     // -------------------------------------------------------------
-    // Splunk Search & Cross-Index Join Engine
+    // Real Splunk Search & Reporting Experience
     // -------------------------------------------------------------
     function setSearchPreset(query) {
       document.getElementById('search-query-input').value = query;
+      executeSplunkSearch();
+    }
+
+    function selectSearchTime(tw, label) {
+      currentTimeWindow = tw;
+      document.getElementById('current-time-label').textContent = label;
+      document.getElementById('job-time-range').textContent = `(${label})`;
+      closeAllDropdowns();
       executeSplunkSearch();
     }
 
@@ -979,12 +1292,16 @@ async def get_enterprise_dashboard():
       const query = document.getElementById('search-query-input').value.trim();
       if (!query) return;
 
-      const infoEl = document.getElementById('search-execution-info');
+      const jobCount = document.getElementById('job-event-count');
+      const jobStatus = document.getElementById('job-status-text');
+      const jobElapsed = document.getElementById('job-elapsed');
       const statsContainer = document.getElementById('statistics-table-container');
       const eventsContainer = document.getElementById('search-events-list');
 
-      infoEl.textContent = "Executing query & cross-index joins...";
-      statsContainer.innerHTML = '<p class="text-center py-16 text-slate-400 text-xs animate-pulse">OpenSearch 및 백엔드 해시 조인 연산 처리 중...</p>';
+      jobStatus.innerHTML = '<span class="animate-pulse text-amber-400">Executing...</span>';
+      eventsContainer.innerHTML = '<p class="text-center py-16 text-slate-400 text-xs animate-pulse">OpenSearch 및 백엔드 파이프라인 연산 중...</p>';
+
+      const startTime = performance.now();
 
       try {
         const res = await fetch('/api/v1/search/ppl', {
@@ -993,30 +1310,133 @@ async def get_enterprise_dashboard():
           body: JSON.stringify({ query: query, limit: 100 })
         });
         const data = await res.json();
+        const durationSec = ((performance.now() - startTime) / 1000).toFixed(2);
 
         if (res.ok && data.status === 'success') {
-          const hits = data.hits || [];
-          const schema = data.schema || [];
-          const mode = data.mode || 'ppl';
+          currentSearchHits = data.hits || [];
+          currentSearchSchema = data.schema || [];
+          const totalHits = currentSearchHits.length;
 
-          infoEl.innerHTML = `<span class="text-emerald-400 font-bold">${hits.length} records</span> (${mode}) | Completed`;
-          document.getElementById('search-stats-count').textContent = hits.length;
+          jobCount.textContent = `${totalHits} events`;
+          document.getElementById('tab-events-count').textContent = totalHits;
+          document.getElementById('tab-stats-count').textContent = totalHits;
+          jobStatus.innerHTML = '<span class="text-emerald-400">Job: Complete</span>';
+          jobElapsed.textContent = `${durationSec} seconds`;
 
-          // 1. Render Statistics Table
-          renderStatisticsTable(schema, hits);
+          // 1. Render Real Splunk Events List (with collapsible field tables)
+          renderSplunkEvents(currentSearchHits);
 
-          // 2. Render Raw Events List
-          renderEventsList(hits);
+          // 2. Render Statistics Grid
+          renderStatisticsTable(currentSearchSchema, currentSearchHits);
 
-          switchSearchTab('statistics');
+          // 3. Render Event Timeline Histogram
+          renderTimelineHistogram(currentSearchHits);
+
+          // 4. Update Left Fields Inspector
+          updateFieldsInspector(currentSearchHits);
+
+          // Auto select statistics tab if query is stats/join, else events tab
+          if (query.includes('| stats') || query.includes('| join') || query.includes('| table')) {
+            switchSearchTab('statistics');
+          } else {
+            switchSearchTab('events');
+          }
         } else {
-          infoEl.innerHTML = `<span class="text-rose-400 font-bold">Query Error</span>`;
-          statsContainer.innerHTML = `<div class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded text-xs font-mono">${data.detail || data.error || 'Execution failed'}</div>`;
+          jobStatus.innerHTML = '<span class="text-rose-400 font-bold">Failed</span>';
+          eventsContainer.innerHTML = `<div class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded text-xs font-mono">${data.detail || data.error || 'Execution failed'}</div>`;
         }
       } catch (e) {
-        infoEl.textContent = "Execution failed";
-        statsContainer.innerHTML = `<p class="text-rose-400 text-center py-10 text-xs">검색 중 오류 발생: ${e.message}</p>`;
+        jobStatus.innerHTML = '<span class="text-rose-400 font-bold">Error</span>';
+        eventsContainer.innerHTML = `<p class="text-rose-400 text-center py-10 text-xs">오류: ${e.message}</p>`;
       }
+    }
+
+    function renderSplunkEvents(events) {
+      const container = document.getElementById('search-events-list');
+      if (!events || events.length === 0) {
+        container.innerHTML = '<p class="text-center py-20 text-slate-500 text-xs font-mono">No matching events found.</p>';
+        return;
+      }
+
+      container.innerHTML = events.map((ev, idx) => {
+        const ts = ev['@timestamp'] || new Date().toISOString();
+        const host = ev.host || 'mbp15';
+        const service = ev.service || ev.event_type || 'system';
+        const level = ev.level || (ev.event_type === 'alert' ? 'ALERT' : 'INFO');
+        const rawLine = ev.message || JSON.stringify(ev);
+        const rowId = `event-row-${idx}`;
+
+        return `
+          <div class="bg-panelbg border border-bordercolor rounded-lg overflow-hidden font-mono text-xs shadow-sm hover:border-slate-600 transition">
+            <!-- Event Summary Line -->
+            <div onclick="toggleEventDetail('${rowId}')" class="p-3 flex items-start gap-3 cursor-pointer hover:bg-subpanel/50">
+              <span class="text-slate-500 hover:text-white transition mt-0.5" id="${rowId}-icon">
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </span>
+              <span class="text-slate-500 text-[11px] w-6 shrink-0">${idx + 1}</span>
+              <span class="text-slate-400 text-[11px] shrink-0 font-semibold">${ts}</span>
+              <div class="flex-1 overflow-hidden space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">host=${host}</span>
+                  <span class="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold">service=${service}</span>
+                  <span class="px-1.5 py-0.2 rounded ${level === 'ERROR' || level === 'ALERT' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'} text-[10px] font-bold">${level}</span>
+                </div>
+                <div class="text-slate-200 text-xs break-all">${rawLine}</div>
+              </div>
+            </div>
+
+            <!-- Event Field Breakdown Table (Expandable like Splunk) -->
+            <div id="${rowId}-detail" class="hidden border-t border-bordercolor/80 bg-slatebg p-3.5 space-y-2">
+              <div class="text-[10px] uppercase font-bold text-slate-400 flex items-center justify-between">
+                <span>EVENT FIELDS</span>
+                <button onclick="openLogModal(${JSON.stringify(ev).replace(/"/g, '&quot;')})" class="text-emerald-400 hover:underline">View Raw JSON</button>
+              </div>
+              <table class="w-full text-left border-collapse text-[11px]">
+                <thead>
+                  <tr class="text-slate-500 border-b border-bordercolor/60">
+                    <th class="py-1 w-1/4">Field</th>
+                    <th class="py-1">Value</th>
+                    <th class="py-1 w-24 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-bordercolor/40">
+                  ${Object.entries(ev).map(([k, v]) => `
+                    <tr>
+                      <td class="py-1 text-indigo-400 font-semibold">${k}</td>
+                      <td class="py-1 text-slate-200 break-all">${typeof v === 'object' ? JSON.stringify(v) : v}</td>
+                      <td class="py-1 text-right">
+                        <button onclick="appendSearchFilter('${k}', '${v}')" class="text-[10px] text-slate-400 hover:text-emerald-400 font-bold" title="Add to search query">+ Filter</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function toggleEventDetail(rowId) {
+      const detail = document.getElementById(`${rowId}-detail`);
+      const icon = document.getElementById(`${rowId}-icon`);
+      if (detail.classList.contains('hidden')) {
+        detail.classList.remove('hidden');
+        icon.innerHTML = '<i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>';
+      } else {
+        detail.classList.add('hidden');
+        icon.innerHTML = '<i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>';
+      }
+      lucide.createIcons();
+    }
+
+    function appendSearchFilter(key, val) {
+      const input = document.getElementById('search-query-input');
+      let q = input.value.trim();
+      q += ` | where ${key} = '${val}'`;
+      input.value = q;
+      executeSplunkSearch();
     }
 
     function renderStatisticsTable(schema, rows) {
@@ -1032,6 +1452,7 @@ async def get_enterprise_dashboard():
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="bg-subpanel border-b border-bordercolor text-slate-300 font-mono text-[11px]">
+              <th class="p-2.5 text-slate-500 w-10">#</th>
               ${columns.map(col => `<th class="p-2.5 font-bold uppercase tracking-wider">${col}</th>`).join('')}
             </tr>
           </thead>
@@ -1039,7 +1460,9 @@ async def get_enterprise_dashboard():
       `;
 
       rows.forEach((r, idx) => {
-        html += `<tr class="hover:bg-subpanel/50 transition">`;
+        html += `<tr class="hover:bg-subpanel/50 transition">
+          <td class="p-2.5 text-slate-500">${idx + 1}</td>
+        `;
         columns.forEach(c => {
           let val = r[c];
           if (val === null || val === undefined) val = '<span class="text-slate-600">null</span>';
@@ -1053,26 +1476,97 @@ async def get_enterprise_dashboard():
       container.innerHTML = html;
     }
 
-    function renderEventsList(events) {
-      const container = document.getElementById('search-events-list');
-      if (!events || events.length === 0) {
-        container.innerHTML = '<p class="text-center py-16 text-slate-500 text-xs">표시할 이벤트가 없습니다.</p>';
-        return;
+    function initTimelineChart() {
+      const el = document.getElementById('search-event-timeline');
+      if (el && !timelineChartInstance) {
+        timelineChartInstance = echarts.init(el);
+      }
+    }
+
+    function renderTimelineHistogram(events) {
+      if (!timelineChartInstance) initTimelineChart();
+      if (!timelineChartInstance) return;
+
+      // Slice events into 12 buckets
+      const buckets = new Array(16).fill(0);
+      const labels = [];
+      const now = Date.now();
+      for (let i = 15; i >= 0; i--) {
+        const d = new Date(now - i * 90 * 60 * 1000);
+        labels.push(`${d.getHours()}:${d.getMinutes() < 10 ? '0' : ''}${d.getMinutes()}`);
       }
 
-      container.innerHTML = events.map(e => `
-        <div class="p-3 bg-subpanel/60 rounded-lg border border-bordercolor flex items-start justify-between gap-3 font-mono">
-          <div class="space-y-1 overflow-hidden">
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400 text-[10px]">${e['@timestamp'] || new Date().toISOString()}</span>
-              <span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[10px]">${e.service || e.host || 'system'}</span>
-              ${e.level ? `<span class="px-1.5 py-0.2 rounded ${e.level === 'ERROR' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'} font-bold text-[10px]">${e.level}</span>` : ''}
+      events.forEach((e, idx) => {
+        const bucketIdx = idx % 16;
+        buckets[bucketIdx]++;
+      });
+
+      timelineChartInstance.setOption({
+        backgroundColor: 'transparent',
+        grid: { top: 5, bottom: 20, left: 20, right: 20 },
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: labels, axisLabel: { color: '#64748b', fontSize: 9 } },
+        yAxis: { type: 'value', show: false },
+        series: [{
+          type: 'bar',
+          data: buckets,
+          itemStyle: { color: '#10b981', borderRadius: [2, 2, 0, 0] },
+          barWidth: '60%'
+        }]
+      });
+    }
+
+    function updateFieldsInspector(events) {
+      // Calculate field value counts
+      const counts = { host: {}, service: {}, level: {} };
+      events.forEach(e => {
+        if (e.host) counts.host[e.host] = (counts.host[e.host] || 0) + 1;
+        if (e.service) counts.service[e.service] = (counts.service[e.service] || 0) + 1;
+        if (e.level) counts.level[e.level] = (counts.level[e.level] || 0) + 1;
+      });
+    }
+
+    function openFieldSummaryModal(fieldName) {
+      document.getElementById('modal-field-name').textContent = fieldName;
+      const listContainer = document.getElementById('modal-field-values-list');
+
+      // Aggregate values from currentSearchHits
+      const valueMap = {};
+      let total = 0;
+      currentSearchHits.forEach(h => {
+        let v = h[fieldName];
+        if (v !== undefined && v !== null) {
+          v = String(v);
+          valueMap[v] = (valueMap[v] || 0) + 1;
+          total++;
+        }
+      });
+
+      if (total === 0) {
+        listContainer.innerHTML = '<p class="text-slate-500 py-4 text-center">현재 검색 결과에서 이 필드의 값이 없습니다.</p>';
+      } else {
+        const sorted = Object.entries(valueMap).sort((a, b) => b[1] - a[1]);
+        listContainer.innerHTML = sorted.map(([val, cnt]) => {
+          const pct = ((cnt / total) * 100).toFixed(1);
+          return `
+            <div class="p-2 bg-subpanel rounded border border-bordercolor flex items-center justify-between">
+              <div class="space-y-0.5">
+                <span class="font-bold text-white text-xs">${val}</span>
+                <div class="text-[10px] text-slate-400">${cnt} events (${pct}%)</div>
+              </div>
+              <button onclick="appendSearchFilter('${fieldName}', '${val}'); closeFieldSummaryModal();" class="px-2 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-bold text-[10px] border border-emerald-500/30">
+                + Add to search
+              </button>
             </div>
-            <p class="text-slate-200 text-xs truncate">${e.message || JSON.stringify(e)}</p>
-          </div>
-          <button onclick="openLogModal(${JSON.stringify(e).replace(/"/g, '&quot;')})" class="px-2 py-1 rounded bg-slate800 hover:bg-slate-700 text-slate-300 text-[11px] shrink-0 border border-slate-700">JSON</button>
-        </div>
-      `).join('');
+          `;
+        }).join('');
+      }
+
+      document.getElementById('field-summary-modal').classList.remove('hidden');
+    }
+
+    function closeFieldSummaryModal() {
+      document.getElementById('field-summary-modal').classList.add('hidden');
     }
 
     function switchSearchTab(tab) {
@@ -1086,12 +1580,26 @@ async def get_enterprise_dashboard():
       const activeEl = document.getElementById(`content-search-${tab}`);
       const activeBtn = document.getElementById(`subtab-${tab}`);
       if (activeEl) activeEl.classList.remove('hidden');
-      if (activeBtn) activeBtn.className = 'px-4 py-3 text-xs font-bold border-b-2 border-emerald-500 text-emerald-300 flex items-center gap-1.5 transition';
+      if (activeBtn) activeBtn.className = 'px-4 py-3 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 transition';
 
       if (tab === 'charts') {
-        setTimeout(initCharts, 50);
+        setTimeout(initOverviewCharts, 50);
       }
       lucide.createIcons();
+    }
+
+    function exportCurrentSearch(format) {
+      if (!currentSearchHits || currentSearchHits.length === 0) {
+        alert("내보낼 검색 결과가 없습니다.");
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentSearchHits, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `splunk_search_export_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
     }
 
     // -------------------------------------------------------------
@@ -1203,7 +1711,7 @@ async def get_enterprise_dashboard():
       }
     }
 
-    function initCharts() {
+    function initOverviewCharts() {
       if (!servicesChartInstance) {
         const el = document.getElementById('chart-services-search');
         if (el) servicesChartInstance = echarts.init(el);
@@ -1216,7 +1724,7 @@ async def get_enterprise_dashboard():
     }
 
     function renderOverviewCharts(services) {
-      if (!servicesChartInstance) initCharts();
+      if (!servicesChartInstance) initOverviewCharts();
       if (!servicesChartInstance) return;
 
       const names = services.map(s => s.name);
@@ -1229,7 +1737,7 @@ async def get_enterprise_dashboard():
         xAxis: { type: 'category', data: names, axisLabel: { color: '#94a3b8' } },
         yAxis: { type: 'value', axisLabel: { color: '#94a3b8' } },
         series: [
-          { name: 'Total', type: 'bar', data: totals, itemStyle: { color: '#6366f1' } },
+          { name: 'Total', type: 'bar', data: totals, itemStyle: { color: '#10b981' } },
           { name: 'Errors', type: 'bar', data: errors, itemStyle: { color: '#f43f5e' } }
         ]
       });
@@ -1321,15 +1829,6 @@ async def get_enterprise_dashboard():
       lucide.createIcons();
     }
 
-    function setTimeWindow(tw) {
-      currentTimeWindow = tw;
-      ['15m', '1h', '24h', '7d'].forEach(w => {
-        const btn = document.getElementById(`tw-${w}`);
-        if (btn) btn.className = w === tw ? 'px-2 py-1 rounded bg-indigo-600 text-white font-semibold shadow-sm' : 'px-2 py-1 rounded hover:text-white transition';
-      });
-      fetchOverview();
-    }
-
     // -------------------------------------------------------------
     // Modals Controls (Saved Searches, Users/Roles, Log Modal, App Install)
     // -------------------------------------------------------------
@@ -1374,7 +1873,6 @@ async def get_enterprise_dashboard():
         const users = await uRes.json();
         const roles = await rRes.json();
 
-        // Render users
         document.getElementById('users-table-container').innerHTML = `
           <table class="w-full text-left border border-bordercolor rounded overflow-hidden">
             <thead class="bg-subpanel text-slate-300 font-mono text-[11px]">
@@ -1383,7 +1881,7 @@ async def get_enterprise_dashboard():
             <tbody class="divide-y divide-bordercolor">
               ${users.map(u => `
                 <tr class="hover:bg-subpanel/50">
-                  <td class="p-2 font-bold text-white">${u.username}</td>
+                  <td class="p-2 font-bold text-white font-mono">${u.username}</td>
                   <td class="p-2 text-slate-300">${u.full_name || ''}</td>
                   <td class="p-2">${(u.roles || []).map(r => `<span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono mr-1">${r}</span>`).join('')}</td>
                   <td class="p-2 font-mono text-emerald-400">${u.default_index || 'main'}</td>
@@ -1394,7 +1892,6 @@ async def get_enterprise_dashboard():
           </table>
         `;
 
-        // Render roles
         document.getElementById('roles-cards-container').innerHTML = roles.map(r => `
           <div class="bg-slatebg p-3 rounded-lg border border-bordercolor space-y-1.5">
             <div class="flex items-center justify-between">
