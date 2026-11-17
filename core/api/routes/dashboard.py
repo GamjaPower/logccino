@@ -1039,29 +1039,22 @@ async def get_enterprise_dashboard():
       function isFormatShortcut(e) {
         const isModifier = e.metaKey || e.ctrlKey;
         if (!isModifier) return false;
-        const isBackslash = e.key === '\\' || e.code === 'Backslash' || e.key === '₩' || e.keyCode === 220;
+        const isBackslash = e.key === '\\' || e.code === 'Backslash' || e.key === '₩' || e.keyCode === 220 || e.which === 220;
         const isShiftF = e.shiftKey && (e.key === 'F' || e.key === 'f' || e.code === 'KeyF');
         return isBackslash || isShiftF;
       }
 
-      const searchInput = document.getElementById('search-query-input');
-      if (searchInput) {
-        searchInput.addEventListener('keydown', (e) => {
-          if (isFormatShortcut(e)) {
-            e.preventDefault();
-            triggerQueryAutoFormat();
-          }
-        });
-      }
-
+      // 단일 캡처 리스너로 중복 실행 및 버블링 방지
       window.addEventListener('keydown', (e) => {
         if (isFormatShortcut(e)) {
-          if (activeApp === 'search') {
+          const searchInput = document.getElementById('search-query-input');
+          if (searchInput && activeApp === 'search') {
             e.preventDefault();
+            e.stopPropagation();
             triggerQueryAutoFormat();
           }
         }
-      });
+      }, true);
     });
 
     // -------------------------------------------------------------
@@ -1386,18 +1379,47 @@ async def get_enterprise_dashboard():
       if (!rawQuery) return "";
       const trimmed = rawQuery.trim();
 
-      // Multi-line toggle: 이미 다중 라인으로 정렬되어 있다면 한 줄로 깔끔하게 축약
-      if (trimmed.includes('\n')) {
-        return trimmed
-          .replace(/\r?\n\s*/g, " ")
-          .replace(/\s*\|\s*/g, " | ")
-          .replace(/\s*\[\s*/g, " [ ")
-          .replace(/\s*\]\s*/g, " ] ")
-          .replace(/\s+/g, " ")
-          .trim();
+      // 1. 따옴표 밖의 줄바꿈과 연속 공백을 단일 공백으로 정규화하여 단일 라인 베이스 생성
+      let normalized = "";
+      let inD = false;
+      let inS = false;
+      let esc = false;
+      for (let i = 0; i < trimmed.length; i++) {
+        const ch = trimmed[i];
+        if (esc) {
+          normalized += ch;
+          esc = false;
+          continue;
+        }
+        if (ch === '\\') {
+          esc = true;
+          normalized += ch;
+          continue;
+        }
+        if (ch === '"' && !inS) {
+          inD = !inD;
+          normalized += ch;
+          continue;
+        }
+        if (ch === "'" && !inD) {
+          inS = !inS;
+          normalized += ch;
+          continue;
+        }
+        if (inD || inS) {
+          normalized += ch;
+          continue;
+        }
+        if (ch === '\n' || ch === '\r' || ch === '\t') {
+          normalized += ' ';
+          continue;
+        }
+        normalized += ch;
       }
 
-      // 파이프(|)와 서브서치([ ... ])를 기준으로 Splunk 표준 다중 라인 및 들여쓰기 정렬
+      const singleLine = normalized.replace(/\s+/g, ' ').trim();
+
+      // 2. 파이프(|)와 서브서치([ ... ])를 기준으로 Splunk 표준 다중 라인 및 4칸 들여쓰기 정렬
       let formatted = "";
       let bracketDepth = 0;
       const indentStep = "    "; // Splunk 표준 4칸 들여쓰기
@@ -1405,8 +1427,8 @@ async def get_enterprise_dashboard():
       let inSingleQuote = false;
       let escape = false;
 
-      for (let i = 0; i < trimmed.length; i++) {
-        const ch = trimmed[i];
+      for (let i = 0; i < singleLine.length; i++) {
+        const ch = singleLine[i];
 
         // 이스케이프 문자 처리
         if (escape) {
@@ -1442,7 +1464,7 @@ async def get_enterprise_dashboard():
           bracketDepth++;
           formatted = formatted.trimEnd();
           formatted += '\n' + indentStep.repeat(bracketDepth) + '[ ';
-          while (i + 1 < trimmed.length && trimmed[i + 1] === ' ') {
+          while (i + 1 < singleLine.length && singleLine[i + 1] === ' ') {
             i++;
           }
           continue;
@@ -1461,7 +1483,7 @@ async def get_enterprise_dashboard():
           formatted = formatted.trimEnd();
           const currentIndent = indentStep.repeat(bracketDepth);
           formatted += '\n' + currentIndent + '| ';
-          while (i + 1 < trimmed.length && trimmed[i + 1] === ' ') {
+          while (i + 1 < singleLine.length && singleLine[i + 1] === ' ') {
             i++;
           }
           continue;
@@ -1470,7 +1492,14 @@ async def get_enterprise_dashboard():
         formatted += ch;
       }
 
-      return formatted.trim();
+      const multiLineFormatted = formatted.trim();
+
+      // 3. 만약 현재 쿼리가 이미 완벽하게 다중라인으로 정렬된 상태라면 -> 단일 라인으로 축약 (Toggle)
+      // 그렇지 않다면 (단일 라인이거나 정리가 안 된 다중 라인) -> 항상 완벽하게 다중라인으로 정렬!
+      if (trimmed === multiLineFormatted) {
+        return singleLine;
+      }
+      return multiLineFormatted;
     }
 
     function triggerQueryAutoFormat() {
