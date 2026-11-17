@@ -83,7 +83,7 @@ async def get_enterprise_dashboard():
         <p class="text-xs text-slate-400">Logccino AI Agent-Native Observability & SIEM</p>
       </div>
 
-      <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+      <form onsubmit="event.preventDefault(); handleLoginSubmit(event); return false;" class="space-y-4 text-xs">
         <div id="login-error-msg" class="hidden p-3 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 font-medium"></div>
 
         <div>
@@ -3125,7 +3125,7 @@ async def get_enterprise_dashboard():
           currentUser = data.user;
           updateUserUI(currentUser);
           overlay.classList.add('hidden');
-          executeSplunkSearch();
+          try { executeSplunkSearch(); } catch (err) { console.error("Search init error:", err); }
         } else {
           localStorage.removeItem("logccino_token");
           overlay.classList.remove('hidden');
@@ -3159,7 +3159,7 @@ async def get_enterprise_dashboard():
           currentUser = data.user;
           updateUserUI(currentUser);
           document.getElementById('splunk-login-overlay').classList.add('hidden');
-          executeSplunkSearch();
+          try { executeSplunkSearch(); } catch (err) { console.error("Search init error:", err); }
         } else {
           errorMsg.textContent = data.detail || "로그인 실패: 아이디 또는 비밀번호가 올바르지 않습니다.";
           errorMsg.classList.remove('hidden');
@@ -3193,6 +3193,10 @@ async def get_enterprise_dashboard():
       document.getElementById('splunk-login-overlay').classList.remove('hidden');
       closeAllDropdowns();
     }
+
+    window.handleLoginSubmit = handleLoginSubmit;
+    window.checkAuthSession = checkAuthSession;
+    window.handleLogout = handleLogout;
 
     // -------------------------------------------------------------
     // Dropdown Controllers
@@ -3372,7 +3376,8 @@ async def get_enterprise_dashboard():
       } else if (appId === 'siem') {
         loadSecurityEvents();
         fetchCollectorStatus();
-        loadDetectionScenarios();\n        loadAutonomousIncidents();
+        loadDetectionScenarios();
+        loadAutonomousIncidents();
       } else if (appId === 'collectors') {
         fetchCollectorsAllStatus();
       } else if (appId === 'manage_apps') {
@@ -4415,7 +4420,7 @@ async def get_enterprise_dashboard():
           snmpBadge.className = isSnmpRunning ? 'px-2 py-0.5 rounded font-mono text-[10px] bg-indigo-500/20 text-indigo-300 font-bold' : 'px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 font-bold';
         }
         if (snmpCount) snmpCount.textContent = (snmp.collected_metrics_total || 0) + ' metrics';
-        if (snmpAgents) snmpAgents.textContent = (snmp.agents_configured?.length || 0) + '대';
+        if (snmpAgents) snmpAgents.textContent = ((snmp.agents_configured && snmp.agents_configured.length) || 0) + '대';
 
         const snmpEngineBadge = document.getElementById('col-snmp-engine-badge');
         if (snmpEngineBadge) {
@@ -4473,7 +4478,8 @@ async def get_enterprise_dashboard():
 
     async function injectCollectorSyslogEvent(eventType) {
       const msg = document.getElementById('col-syslog-inject-msg');
-      const selectedProto = document.querySelector('input[name="syslog-proto"]:checked')?.value || 'udp';
+      const protoRadio = document.querySelector('input[name="syslog-proto"]:checked');
+      const selectedProto = (protoRadio && protoRadio.value) ? protoRadio.value : 'udp';
       msg.textContent = `${selectedProto.toUpperCase()} 패킷 발송 중...`;
 
       try {
@@ -4742,7 +4748,13 @@ async def get_enterprise_dashboard():
         if (el) {
           if (sub === target) {
             el.classList.remove('hidden');
-            if (target === 'monitoring') loadDetectionScenarios();\n        loadAutonomousIncidents();\n            if (target === 'response') loadAutonomousIncidents();
+            if (target === 'monitoring') {
+              loadDetectionScenarios();
+              loadAutonomousIncidents();
+            }
+            if (target === 'response') {
+              loadAutonomousIncidents();
+            }
           } else {
             el.classList.add('hidden');
           }
@@ -5732,7 +5744,7 @@ async def get_enterprise_dashboard():
         box.innerHTML = `
           <div class="space-y-1 text-xs">
             <div class="flex items-center justify-between font-bold text-amber-400">
-              <span>영향 서비스: ${d.impacted_services?.length || 2}개 Pod</span>
+              <span>영향 서비스: ${(d.impacted_services && d.impacted_services.length) || 2}개 Pod</span>
               <span class="text-[10px] text-slate-400 font-mono">Blast Radius 2단계</span>
             </div>
             <p class="text-slate-300 text-[11px]">${d.mitigation_summary || '핫픽스 패치 및 환경변수 -Dlog4j2.formatMsgNoLookups=true 권고'}</p>
@@ -5978,8 +5990,10 @@ async def get_enterprise_dashboard():
 
       if (isNewWithCurrentQuery) {
         resetAlertForm();
-        const currentQuery = document.getElementById('search-query-input')?.value || "source = main | head 50";
-        const currentTime = document.getElementById('current-time-label')?.textContent || "-15m";
+        const searchInputEl = document.getElementById('search-query-input');
+        const currentQuery = (searchInputEl && searchInputEl.value) ? searchInputEl.value : "source = main | head 50";
+        const timeLabelEl = document.getElementById('current-time-label');
+        const currentTime = (timeLabelEl && timeLabelEl.textContent) ? timeLabelEl.textContent : "-15m";
         document.getElementById('alert-form-query').value = currentQuery;
         document.getElementById('alert-form-earliest').value = currentTime.includes('15m') ? '-15m' : (currentTime.includes('1h') ? '-1h' : '-24h');
         document.getElementById('alert-form-name').value = `[Saved Alert] ${currentQuery.slice(0, 30)}...`;
@@ -6124,7 +6138,8 @@ async def get_enterprise_dashboard():
           body: JSON.stringify({ enabled: !currentEnabled })
         });
         if (res.ok) {
-          loadDetectionScenarios();\n        loadAutonomousIncidents();
+          loadDetectionScenarios();
+          loadAutonomousIncidents();
         } else {
           alert("상태 변경 실패");
         }
@@ -6143,7 +6158,8 @@ async def get_enterprise_dashboard():
 - 트리거 여부: ${rec.triggered ? '🚨 TRIGGERED (위협 탐지)' : '✅ OK (정상)'}
 - 억제(Suppressed): ${rec.suppressed ? '예 (Throttling 적용)' : '아니오'}
 - 실행 소요: ${rec.execution_took_ms}ms`);
-          loadDetectionScenarios();\n        loadAutonomousIncidents();
+          loadDetectionScenarios();
+          loadAutonomousIncidents();
         } else {
           alert("시나리오 즉시 실행에 실패했습니다.");
         }
@@ -6159,8 +6175,8 @@ async def get_enterprise_dashboard():
       document.getElementById('tune-scenario-id').value = scenario.id;
       document.getElementById('tune-scenario-name').textContent = scenario.name;
       document.getElementById('tune-scenario-rationale').textContent = scenario.ai_rationale || scenario.description || '클로드 스킬이 생성한 탐지 시나리오입니다.';
-      document.getElementById('tune-scenario-threshold').value = scenario.condition_threshold ?? 0;
-      document.getElementById('tune-scenario-interval').value = scenario.interval_seconds ?? 60;
+      document.getElementById('tune-scenario-threshold').value = (scenario.condition_threshold !== undefined && scenario.condition_threshold !== null) ? scenario.condition_threshold : 0;
+      document.getElementById('tune-scenario-interval').value = (scenario.interval_seconds !== undefined && scenario.interval_seconds !== null) ? scenario.interval_seconds : 60;
       document.getElementById('tune-scenario-suppress').value = scenario.alert_suppress_period || "5m";
       document.getElementById('tune-scenario-enabled').checked = Boolean(scenario.enabled);
       document.getElementById('tune-scenario-webhook').value = scenario.webhook_url || "";
@@ -6191,7 +6207,8 @@ async def get_enterprise_dashboard():
         });
         if (res.ok) {
           closeScenarioTuneModal();
-          loadDetectionScenarios();\n        loadAutonomousIncidents();
+          loadDetectionScenarios();
+          loadAutonomousIncidents();
         } else {
           alert("시나리오 튜닝 저장에 실패했습니다.");
         }
@@ -6401,7 +6418,7 @@ async def get_enterprise_dashboard():
 
       document.getElementById('alert-form-type').value = s.alert_type || "number_of_results";
       document.getElementById('alert-form-op').value = s.condition_operator || "gt";
-      document.getElementById('alert-form-threshold').value = s.condition_threshold ?? 0.0;
+      document.getElementById('alert-form-threshold').value = (s.condition_threshold !== undefined && s.condition_threshold !== null) ? s.condition_threshold : 0.0;
 
       document.getElementById('alert-form-trigger-mode').value = s.trigger_mode || "once";
       document.getElementById('alert-form-severity').value = s.severity || "HIGH";
