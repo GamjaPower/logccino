@@ -171,6 +171,59 @@ if HAS_MCP and mcp_app:
         res = mcp_tools.get_collector_status()
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    @mcp_app.tool()
+    def list_saved_searches() -> str:
+        """
+        List all configured Splunk-style Saved Searches & PPL Alert rules.
+        Includes rule ID, name, PPL query, interval schedule, trigger threshold, and last execution status.
+        """
+        res = mcp_tools.list_saved_searches()
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def run_saved_search(search_id: str) -> str:
+        """
+        Execute a Splunk-style saved search / alert rule immediately on-demand (Run Now).
+        Evaluates the PPL query and returns matched count, trigger outcome, and sample evidence logs.
+        """
+        res = mcp_tools.run_saved_search(search_id=search_id)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def create_saved_search(
+        name: str,
+        ppl_query: str,
+        interval_seconds: int = 60,
+        condition_operator: str = "gt",
+        condition_threshold: float = 0.0,
+        severity: str = "HIGH",
+        webhook_url: Optional[str] = None,
+        description: Optional[str] = None
+    ) -> str:
+        """
+        Create a new Splunk-style scheduled PPL saved search & real-time alert rule.
+        Executes ppl_query on schedule (interval_seconds) and triggers an alert if matched events meet the condition.
+        """
+        res = mcp_tools.create_saved_search(
+            name=name,
+            ppl_query=ppl_query,
+            interval_seconds=interval_seconds,
+            condition_operator=condition_operator,
+            condition_threshold=condition_threshold,
+            severity=severity,
+            webhook_url=webhook_url,
+            description=description
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def get_alert_history(limit: int = 20, triggered_only: bool = True) -> str:
+        """
+        Get the timeline of recent PPL alert triggers, matched counts, and dispatched notifications.
+        """
+        res = mcp_tools.get_alert_history(limit=limit, triggered_only=triggered_only)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------
@@ -254,6 +307,20 @@ Instructions:
    - 🌐 3. 주요 위협 IP 및 공격 대상 계정 (Top Threat Actors & Targeted Accounts)
    - 🔍 4. 상세 타임라인 및 침해 영향도 분석 (Timeline & Compromise Impact)
    - 🛡️ 5. 긴급 방어 조치 및 방화벽/계정 보안 권고 (Mitigation: IP 차단, 2FA 강제, 권한 회수 등)"""
+
+    @mcp_app.prompt("alert-triage-analyst")
+    def alert_triage_analyst_prompt(search_id: str = "") -> str:
+        """Claude/Antigravity용 Splunk Saved Search & PPL 실시간 알람 긴급 트리아지 분석 프롬프트"""
+        target_clause = f" for alert ID '{search_id}'" if search_id else ""
+        return f"""You are investigating a triggered Splunk-style saved search alert{target_clause}:
+1. Call `list_saved_searches` to retrieve the current alert definitions, PPL queries, and trigger thresholds.
+2. Call `get_alert_history(limit=10, triggered_only=True)` to inspect recent trigger events and sample matched logs.
+3. If investigating a specific rule, call `run_saved_search(search_id='{search_id or 'alert-ssh-bruteforce'}')` to verify live event counts and root cause.
+4. Deliver a concise incident triage report in Korean:
+   - 🚨 1. 알람 발생 현황 (Alert Name, Severity, Matched Events vs Threshold)
+   - 🔎 2. 실행된 PPL 쿼리 및 매칭 원인 (PPL Query & Root Cause)
+   - 💥 3. 영향받은 서비스/호스트/사용자 (Blast Radius)
+   - ⚡ 4. 권장 긴급 조치 가이드 (Immediate Mitigation)"""
 
 def run_mcp_server(transport: str = "stdio"):
     """MCP 서버 실행 (stdio 또는 sse)"""

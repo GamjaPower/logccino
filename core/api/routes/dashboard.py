@@ -241,6 +241,9 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         <button onclick="sendQuickPrompt('최근 발생한 의심스러운 sudo 권한 상승 및 실패한 SSH 로그인 명령 추적해줘')" class="text-[11px] bg-subpanel hover:bg-amber-600/20 border border-bordercolor hover:border-amber-500/40 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
           <i data-lucide="key" class="w-3 h-3 text-amber-400"></i> [PRIVILEGE] 비인가 Sudo 권한 상승
         </button>
+        <button onclick="sendQuickPrompt('등록된 Splunk PPL 알람 목록 및 최근 트리거된 내역 요약해줘')" class="text-[11px] bg-subpanel hover:bg-amber-600/20 border border-bordercolor hover:border-amber-500/40 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
+          <i data-lucide="bell-ring" class="w-3 h-3 text-amber-400"></i> [PPL ALERT] 활성 알람 & 트리거 현황
+        </button>
         <button onclick="sendQuickPrompt('notification-service 429 쿼터 초과 및 발송 실패 원인 분석해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
           [ANOMALY] 알림 쿼터 초과 진단
         </button>
@@ -309,6 +312,9 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
             </button>
             <button onclick="switchTab('security')" id="tab-security" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="shield" class="w-3.5 h-3.5 text-rose-400"></i> 보안 수집기 (<span id="sec-alert-count">0</span>)
+            </button>
+            <button onclick="switchTab('alerts')" id="tab-alerts" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-400"></i> PPL 알람 (<span id="saved-searches-count">4</span>)
             </button>
             <button onclick="switchTab('mcp')" id="tab-mcp" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="network" class="w-3.5 h-3.5"></i> MCP 게이트웨이
@@ -465,6 +471,59 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
             </div>
           </div>
         </div>
+
+        <!-- Tab 5: Splunk Saved Searches & PPL Alert Engine Console -->
+        <div id="content-alerts" class="flex-1 p-3.5 hidden overflow-y-auto max-h-[430px] scrollbar-thin text-xs space-y-3">
+          <!-- Control Bar -->
+          <div class="p-3 bg-subpanel rounded-lg border border-bordercolor flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-white text-xs">Splunk Saved Searches & PPL Alert Engine</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">SCHEDULER ACTIVE</span>
+                </div>
+                <p class="text-[10px] text-slate-400">OpenSearch PPL 쿼리를 주기적으로 실행하여 임계치 초과 시 실시간 알람 트리거</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="openNewAlertModal()" class="px-2.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[11px] flex items-center gap-1 transition shadow-sm">
+                <i data-lucide="plus" class="w-3 h-3"></i> 새 알람 등록
+              </button>
+              <button onclick="loadSavedSearches(); loadAlertHistory();" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700" title="새로고침">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Saved Searches Table / List -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between px-1">
+              <span class="font-bold text-slate-300 text-xs flex items-center gap-1">
+                <i data-lucide="list-checks" class="w-3.5 h-3.5 text-indigo-400"></i> 등록된 PPL Saved Searches (<span id="saved-searches-list-count">0</span>)
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">5초 주기 자동 스케줄링</span>
+            </div>
+            <div id="saved-searches-list" class="space-y-2">
+              <p class="text-slate-500 text-center py-6 text-xs">알람 목록을 로딩 중입니다...</p>
+            </div>
+          </div>
+
+          <!-- Triggered Alerts Timeline Feed -->
+          <div class="space-y-1.5 pt-2 border-t border-bordercolor/60">
+            <div class="flex items-center justify-between px-1">
+              <span class="font-bold text-slate-300 text-xs flex items-center gap-1">
+                <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-amber-400"></i> 최근 트리거된 알람 타임라인 (Alert Feed)
+              </span>
+              <button onclick="loadAlertHistory()" class="text-slate-400 hover:text-white text-xs flex items-center gap-1 transition">
+                <i data-lucide="refresh-cw" class="w-3 h-3"></i> 갱신
+              </button>
+            </div>
+            <div id="alert-history-list" class="space-y-1.5 max-h-[180px] overflow-y-auto scrollbar-thin">
+              <p class="text-slate-500 text-center py-4 text-xs">최근 트리거된 알람이 없습니다.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Bottom Panel: Enterprise Infrastructure Telemetry Grid -->
@@ -516,6 +575,99 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- New Saved Search & PPL Alert Modal -->
+  <div id="new-alert-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden text-xs">
+      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <i data-lucide="bell-plus" class="w-4 h-4 text-amber-400"></i> 새로운 Splunk Saved Search & PPL 알람 생성
+        </h3>
+        <button onclick="closeNewAlertModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="new-alert-form" onsubmit="saveNewAlert(event)" class="p-5 overflow-y-auto scrollbar-thin space-y-4">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">알람 규칙 이름 *</label>
+          <input type="text" id="alert-name" required placeholder="예: [SRE] 알림 서비스 429 쿼터 초과 긴급 감시"
+                 class="w-full bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-sans">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">상세 설명</label>
+          <input type="text" id="alert-desc" placeholder="예: 알림 발송 실패율이 급증할 때 슬랙으로 실시간 경고 전송"
+                 class="w-full bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-sans">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-slate-300 font-semibold">PPL 쿼리 (OpenSearch Piped Processing Language) *</label>
+            <select onchange="applyAlertTemplate(this.value)" class="bg-slatebg border border-bordercolor rounded px-2 py-0.5 text-[11px] text-slate-300 font-sans">
+              <option value="">-- 프리셋 템플릿 선택 --</option>
+              <option value="ssh">SSH 무차별 대입 실패 감시</option>
+              <option value="sudo">비인가 Sudo 실행 감시</option>
+              <option value="5xx">5xx 서버 에러 급증 감시</option>
+              <option value="firewall">UFW 방화벽 차단 감시</option>
+            </select>
+          </div>
+          <textarea id="alert-ppl" required rows="3" placeholder="source = logccino-logs-* | where level = 'ERROR' | head 50"
+                    class="w-full bg-slatebg border border-bordercolor rounded-lg p-3 text-emerald-400 font-mono text-xs focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">실행 주기 (초) *</label>
+            <input type="number" id="alert-interval" value="60" min="10" required
+                   class="w-full bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">트리거 연산자</label>
+            <select id="alert-operator" class="w-full bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-indigo-500">
+              <option value="gt">초과 ( &gt; )</option>
+              <option value="gte">이상 ( &gt;= )</option>
+              <option value="eq">일치 ( == )</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">임계치 (건수)</label>
+            <input type="number" id="alert-threshold" value="0" min="0" required
+                   class="w-full bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">심각도 등급</label>
+            <select id="alert-severity" class="w-full bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-indigo-500">
+              <option value="CRITICAL">CRITICAL (심각)</option>
+              <option value="HIGH" selected>HIGH (높음)</option>
+              <option value="MEDIUM">MEDIUM (보통)</option>
+              <option value="LOW">LOW (낮음)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Webhook URL (Slack, Teams 등)</label>
+            <input type="url" id="alert-webhook" placeholder="https://hooks.slack.com/services/..."
+                   class="w-full bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="px-1 pt-2 flex items-center justify-between border-t border-bordercolor/60">
+          <span class="text-[10px] text-slate-400 font-mono">저장 시 즉시 스케줄러에 등록되어 5초 내 실행 준비</span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeNewAlertModal()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">
+              취소
+            </button>
+            <button type="submit" class="px-4 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-md shadow-indigo-600/30 flex items-center gap-1">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> 알람 규칙 생성
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     let conversationHistory = [];
     let currentLogsContext = "";
@@ -529,7 +681,9 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
       refreshOverview();
       loadMCPConfigs();
       fetchCollectorStatus();
+      loadSavedSearches();
       setInterval(fetchCollectorStatus, 4000);
+      setInterval(loadSavedSearches, 6000);
     });
 
     function setTimeWindow(tw) {
@@ -808,7 +962,7 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
     }
 
     function switchTab(tab) {
-      ['evidence', 'charts', 'mcp', 'security'].forEach(t => {
+      ['evidence', 'charts', 'mcp', 'security', 'alerts'].forEach(t => {
         const el = document.getElementById(`content-${t}`);
         const tabBtn = document.getElementById(`tab-${t}`);
         if (el) el.classList.add('hidden');
@@ -826,6 +980,9 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         }, 50);
       } else if (tab === 'security') {
         loadSecurityEvents();
+      } else if (tab === 'alerts') {
+        loadSavedSearches();
+        loadAlertHistory();
       }
       lucide.createIcons();
     }
@@ -961,6 +1118,207 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         }).join('');
       } catch (e) {
         listDom.innerHTML = `<p class="text-rose-400 text-center py-4 text-xs">보안 로그 조회 실패: ${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    async function loadSavedSearches() {
+      const listDom = document.getElementById('saved-searches-list');
+      try {
+        const res = await fetch('/api/v1/saved-searches');
+        const searches = await res.json();
+        
+        const countBadge = document.getElementById('saved-searches-count');
+        const listCount = document.getElementById('saved-searches-list-count');
+        if (countBadge) countBadge.textContent = searches.length;
+        if (listCount) listCount.textContent = searches.length;
+
+        if (!listDom) return;
+        if (searches.length === 0) {
+          listDom.innerHTML = '<p class="text-slate-500 text-center py-6 text-xs">등록된 PPL Saved Search가 없습니다. 우측 상단의 [새 알람 등록] 버튼을 눌러 추가하세요.</p>';
+          return;
+        }
+
+        listDom.innerHTML = searches.map(s => {
+          const sevColor = s.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+                           s.severity === 'HIGH' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+                           'bg-blue-500/20 text-blue-300 border-blue-500/40';
+          
+          let statusColor = 'bg-slate-800 text-slate-400 border-slate-700';
+          if (s.last_status === 'TRIGGERED') statusColor = 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse';
+          else if (s.last_status === 'OK') statusColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+          else if (s.last_status === 'DISABLED') statusColor = 'bg-slate-800 text-slate-500 border-slate-700';
+
+          return `
+            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor flex flex-col gap-2 transition hover:border-slate-700">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="px-1.5 py-0.5 rounded font-mono font-bold text-[9px] border ${sevColor}">${s.severity}</span>
+                  <span class="font-bold text-white text-xs">${escapeHtml(s.name)}</span>
+                  <span class="px-1.5 py-0.5 rounded font-mono text-[9px] border ${statusColor}">${s.last_status}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="runAlertNow('${s.id}')" class="px-2 py-0.5 rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-semibold flex items-center gap-1 transition" title="PPL 즉시 실행">
+                    <i data-lucide="play" class="w-3 h-3"></i> 실행
+                  </button>
+                  <button onclick="toggleAlert('${s.id}', ${!s.enabled})" class="px-2 py-0.5 rounded ${s.enabled ? 'bg-slate-800 text-slate-300 hover:text-white' : 'bg-slate-800 text-slate-500'} border border-slate-700 text-[10px] font-semibold transition">
+                    ${s.enabled ? 'ON' : 'OFF'}
+                  </button>
+                  <button onclick="deleteAlert('${s.id}')" class="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition" title="삭제">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="bg-subpanel p-2 rounded border border-bordercolor/60 font-mono text-[10px] text-emerald-400 truncate">
+                ${escapeHtml(s.ppl_query)}
+              </div>
+
+              <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                <span>주기: ${s.interval_seconds}s | 조건: 결과수 ${s.condition_operator} ${s.condition_threshold}</span>
+                <span>최근 건수: <strong class="text-white">${s.last_result_count}</strong> | ${s.last_run ? s.last_run.split('T')[1].slice(0, 8) : '미실행'}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+        lucide.createIcons();
+      } catch (e) {
+        if (listDom) listDom.innerHTML = `<p class="text-rose-400 text-center py-4 text-xs">알람 목록 조회 실패: ${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    async function runAlertNow(id) {
+      try {
+        const res = await fetch(`/api/v1/saved-searches/${id}/run`, { method: 'POST' });
+        const record = await res.json();
+        alert(`[PPL 알람 실행 완료]\n규칙: ${record.saved_search_name}\n결과: ${record.result_count}건 매칭 (트리거: ${record.triggered ? '🚨 경고 발생' : '✅ 정상'})\n소요: ${record.execution_took_ms}ms`);
+        await loadSavedSearches();
+        await loadAlertHistory();
+      } catch (e) {
+        alert("알람 실행 실패: " + e.message);
+      }
+    }
+
+    async function toggleAlert(id, enabled) {
+      try {
+        await fetch(`/api/v1/saved-searches/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: enabled })
+        });
+        await loadSavedSearches();
+      } catch (e) {
+        alert("알람 상태 변경 실패: " + e.message);
+      }
+    }
+
+    async function deleteAlert(id) {
+      if (!confirm("정말 이 Saved Search 알람 규칙을 삭제하시겠습니까?")) return;
+      try {
+        await fetch(`/api/v1/saved-searches/${id}`, { method: 'DELETE' });
+        await loadSavedSearches();
+      } catch (e) {
+        alert("알람 삭제 실패: " + e.message);
+      }
+    }
+
+    async function loadAlertHistory() {
+      const historyDom = document.getElementById('alert-history-list');
+      if (!historyDom) return;
+      try {
+        const res = await fetch('/api/v1/saved-searches/alerts/history?triggered_only=true&limit=20');
+        const history = await res.json();
+        if (history.length === 0) {
+          historyDom.innerHTML = '<p class="text-slate-500 text-center py-4 text-xs">최근 트리거된 알람이 없습니다.</p>';
+          return;
+        }
+
+        historyDom.innerHTML = history.map(h => {
+          const ts = (h.timestamp || '').replace('T', ' ').split('.')[0];
+          return `
+            <div class="p-2 bg-slatebg rounded border border-rose-500/30 text-xs flex flex-col gap-1">
+              <div class="flex items-center justify-between text-[10px]">
+                <div class="flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.5 rounded font-mono font-bold text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/40">TRIGGERED</span>
+                  <span class="font-bold text-slate-200">${escapeHtml(h.saved_search_name)}</span>
+                </div>
+                <span class="text-slate-500 font-mono text-[9px]">${escapeHtml(ts)}</span>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                <span>매칭 건수: <strong class="text-rose-400">${h.result_count}건</strong> (${h.operator} ${h.threshold})</span>
+                <span>${h.webhook_sent ? '웹훅 발송됨' : '웹훅 없음'} | ${h.execution_took_ms}ms</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        historyDom.innerHTML = `<p class="text-rose-400 text-center py-2 text-xs">이력 조회 실패: ${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    function openNewAlertModal() {
+      document.getElementById('new-alert-modal').classList.remove('hidden');
+    }
+
+    function closeNewAlertModal() {
+      document.getElementById('new-alert-modal').classList.add('hidden');
+    }
+
+    function applyAlertTemplate(val) {
+      const pplEl = document.getElementById('alert-ppl');
+      const nameEl = document.getElementById('alert-name');
+      const intervalEl = document.getElementById('alert-interval');
+      const sevEl = document.getElementById('alert-severity');
+
+      if (val === 'ssh') {
+        nameEl.value = '[SEC] SSH 로그인 실패 및 침해 시도 감시';
+        pplEl.value = "source = logccino-logs-* | where security.action = 'ssh_login_failure' or security.action = 'ssh_login_failed' | head 50";
+        intervalEl.value = "60";
+        sevEl.value = "CRITICAL";
+      } else if (val === 'sudo') {
+        nameEl.value = '[SEC] 비인가 Sudo 권한 상승 명령 감시';
+        pplEl.value = "source = logccino-logs-* | where program = 'sudo' or security.action = 'sudo_escalation' | head 50";
+        intervalEl.value = "120";
+        sevEl.value = "HIGH";
+      } else if (val === '5xx') {
+        nameEl.value = '[SRE] 전사 마이크로서비스 5xx 심각 장애 감시';
+        pplEl.value = "source = logccino-logs-* | where level = 'ERROR' | head 50";
+        intervalEl.value = "60";
+        sevEl.value = "HIGH";
+      } else if (val === 'firewall') {
+        nameEl.value = '[SEC] 경계 방화벽 UFW 드롭 감시';
+        pplEl.value = "source = logccino-logs-* | where security.action = 'firewall_drop' | head 50";
+        intervalEl.value = "180";
+        sevEl.value = "MEDIUM";
+      }
+    }
+
+    async function saveNewAlert(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('alert-name').value.trim(),
+        description: document.getElementById('alert-desc').value.trim() || null,
+        ppl_query: document.getElementById('alert-ppl').value.trim(),
+        interval_seconds: parseInt(document.getElementById('alert-interval').value) || 60,
+        condition_operator: document.getElementById('alert-operator').value,
+        condition_threshold: parseFloat(document.getElementById('alert-threshold').value) || 0.0,
+        severity: document.getElementById('alert-severity').value,
+        webhook_url: document.getElementById('alert-webhook').value.trim() || null,
+        enabled: true
+      };
+
+      try {
+        const res = await fetch('/api/v1/saved-searches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        closeNewAlertModal();
+        document.getElementById('new-alert-form').reset();
+        await loadSavedSearches();
+        alert("새로운 PPL Saved Search 알람 규칙이 등록되었습니다!");
+      } catch (err) {
+        alert("알람 등록 실패: " + err.message);
       }
     }
 

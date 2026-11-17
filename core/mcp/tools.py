@@ -538,4 +538,85 @@ class LogccinoMCPTools:
             "message": "Syslog collector is not currently running. It can be started from the Logccino dashboard or API."
         }
 
+    def list_saved_searches(self) -> List[Dict[str, Any]]:
+        """
+        Splunk 스타일로 등록된 PPL 기반 Saved Search 및 실시간 알람 규칙 목록을 조회합니다.
+        각 알람의 PPL 쿼리, 실행 주기, 트리거 임계치, 최근 상태(OK/TRIGGERED/ERROR)가 포함됩니다.
+        """
+        from core.scheduler.engine import scheduler_engine
+        return [s.model_dump() for s in scheduler_engine.get_all()]
+
+    def run_saved_search(self, search_id: str) -> Dict[str, Any]:
+        """
+        특정 Saved Search / Alert 쿼리를 즉시 실행(Run Now)하여 PPL 결과를 평가하고
+        임계치 도달 여부 및 매칭된 샘플 로그를 반환합니다.
+        """
+        import asyncio
+        from core.scheduler.engine import scheduler_engine
+        try:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    record = pool.submit(asyncio.run, scheduler_engine.run_now(search_id)).result()
+            else:
+                record = asyncio.run(scheduler_engine.run_now(search_id))
+
+            if not record:
+                return {"error": f"Saved search with ID '{search_id}' not found."}
+            return record.model_dump()
+        except Exception as e:
+            return {"error": f"Failed to run saved search: {str(e)}"}
+
+    def create_saved_search(
+        self,
+        name: str,
+        ppl_query: str,
+        interval_seconds: int = 60,
+        condition_operator: str = "gt",
+        condition_threshold: float = 0.0,
+        severity: str = "HIGH",
+        webhook_url: Optional[str] = None,
+        description: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        새로운 Splunk 스타일 PPL Saved Search / Alerting 규칙을 생성합니다.
+        - ppl_query: OpenSearch PPL 쿼리 (예: "source = logccino-logs-* | where level = 'ERROR' | head 10")
+        - interval_seconds: 스케줄 실행 주기 (초)
+        - condition_operator: 트리거 조건 연산자 ('gt', 'gte', 'eq')
+        - condition_threshold: 트리거 임계치 숫자
+        - severity: 알람 심각도 ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW')
+        - webhook_url: 알람 발송 Webhook URL (선택)
+        """
+        from core.scheduler.engine import scheduler_engine
+        from core.scheduler.models import SavedSearchCreate
+        try:
+            req = SavedSearchCreate(
+                name=name,
+                description=description,
+                ppl_query=ppl_query,
+                interval_seconds=interval_seconds,
+                condition_operator=condition_operator, # type: ignore
+                condition_threshold=condition_threshold,
+                severity=severity, # type: ignore
+                webhook_url=webhook_url,
+                enabled=True
+            )
+            created = scheduler_engine.create(req)
+            return created.model_dump()
+        except Exception as e:
+            return {"error": f"Failed to create saved search: {str(e)}"}
+
+    def get_alert_history(self, limit: int = 20, triggered_only: bool = True) -> List[Dict[str, Any]]:
+        """
+        스케줄러에 의해 감지 및 트리거된 최근 PPL 알람 이력 타임라인을 조회합니다.
+        """
+        from core.scheduler.engine import scheduler_engine
+        history = scheduler_engine.get_alert_history(limit=limit, triggered_only=triggered_only)
+        return [h.model_dump() for h in history]
+
 mcp_tools = LogccinoMCPTools()

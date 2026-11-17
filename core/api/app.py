@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.client.opensearch_client import opensearch_service
-from core.api.routes import ingest, search, analysis, admin, install, dashboard, collector
+from core.api.routes import ingest, search, analysis, admin, install, dashboard, collector, saved_searches
 from core.mcp.server import mcp_app
 
 app = FastAPI(
@@ -27,6 +27,17 @@ app.include_router(search.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 app.include_router(collector.router, prefix="/api/v1")
+app.include_router(saved_searches.router, prefix="/api/v1")
+
+@app.on_event("startup")
+async def startup_event():
+    from core.scheduler.engine import scheduler_engine
+    scheduler_engine.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    from core.scheduler.engine import scheduler_engine
+    scheduler_engine.stop()
 
 # Remote MCP over SSE 라우트 마운트 (Claude Desktop 원격 연동용)
 if mcp_app:
