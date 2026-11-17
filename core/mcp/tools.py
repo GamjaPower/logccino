@@ -237,6 +237,7 @@ class LogccinoMCPTools:
 
         body = {
             "size": 0,
+            "track_total_hits": True,
             "query": {"bool": {"filter": filter_clauses}} if filter_clauses else {"match_all": {}},
             "aggs": {
                 "groups": {
@@ -261,11 +262,14 @@ class LogccinoMCPTools:
                 key = b.get("key")
                 total = b.get("doc_count", 0)
                 err = b.get("error_count", {}).get("doc_count", 0)
+                err_rate = round((err / total * 100), 2) if total > 0 else 0
+                status = "경고 🔴" if err_rate >= 1.0 else ("주의 ⚠️" if err_rate >= 0.1 else "정상 ✅")
                 summary_table.append({
                     group_by: key,
                     "total_volume": total,
                     "error_volume": err,
-                    "error_percentage": round((err / total * 100), 2) if total > 0 else 0
+                    "error_percentage": err_rate,
+                    "status": status
                 })
 
             if not summary_table:
@@ -335,19 +339,21 @@ class LogccinoMCPTools:
                 level_counts = {lb["key"]: lb["doc_count"] for lb in b.get("levels", {}).get("buckets", [])}
                 error_count = level_counts.get("ERROR", 0) + level_counts.get("FATAL", 0)
                 error_rate = round((error_count / total_doc * 100), 2) if total_doc > 0 else 0
+                status = "경고 🔴" if error_rate >= 1.0 else ("주의 ⚠️" if error_rate >= 0.1 else "정상 ✅")
                 service_summaries.append({
                     "service": svc_name,
                     "total_logs": total_doc,
                     "error_count": error_count,
                     "error_rate_pct": error_rate,
+                    "status": status,
                     "level_breakdown": level_counts
                 })
 
             if not service_summaries:
                 service_summaries = [
-                    {"service": "payment-service", "total_logs": 14200000, "error_count": 42600, "error_rate_pct": 0.30, "level_breakdown": {"INFO": 14157400, "ERROR": 42600}},
-                    {"service": "auth-service", "total_logs": 8900000, "error_count": 1200, "error_rate_pct": 0.01, "level_breakdown": {"INFO": 8898800, "ERROR": 1200}},
-                    {"service": "notification-service", "total_logs": 3100000, "error_count": 89000, "error_rate_pct": 2.87, "level_breakdown": {"INFO": 3011000, "ERROR": 89000}}
+                    {"service": "payment-service", "total_logs": 14200000, "error_count": 42600, "error_rate_pct": 0.30, "status": "주의 ⚠️", "level_breakdown": {"INFO": 14157400, "ERROR": 42600}},
+                    {"service": "auth-service", "total_logs": 8900000, "error_count": 1200, "error_rate_pct": 0.01, "status": "정상 ✅", "level_breakdown": {"INFO": 8898800, "ERROR": 1200}},
+                    {"service": "notification-service", "total_logs": 3100000, "error_count": 89000, "error_rate_pct": 2.87, "status": "경고 🔴", "level_breakdown": {"INFO": 3011000, "ERROR": 89000}}
                 ]
 
             return {
@@ -360,9 +366,9 @@ class LogccinoMCPTools:
                 "time_window": time_window,
                 "services_count": 3,
                 "services": [
-                    {"service": "payment-service", "total_logs": 14200000, "error_count": 42600, "error_rate_pct": 0.30, "level_breakdown": {"INFO": 14157400, "ERROR": 42600}},
-                    {"service": "auth-service", "total_logs": 8900000, "error_count": 1200, "error_rate_pct": 0.01, "level_breakdown": {"INFO": 8898800, "ERROR": 1200}},
-                    {"service": "notification-service", "total_logs": 3100000, "error_count": 89000, "error_rate_pct": 2.87, "level_breakdown": {"INFO": 3011000, "ERROR": 89000}}
+                    {"service": "payment-service", "total_logs": 14200000, "error_count": 42600, "error_rate_pct": 0.30, "status": "주의 ⚠️", "level_breakdown": {"INFO": 14157400, "ERROR": 42600}},
+                    {"service": "auth-service", "total_logs": 8900000, "error_count": 1200, "error_rate_pct": 0.01, "status": "정상 ✅", "level_breakdown": {"INFO": 8898800, "ERROR": 1200}},
+                    {"service": "notification-service", "total_logs": 3100000, "error_count": 89000, "error_rate_pct": 2.87, "status": "경고 🔴", "level_breakdown": {"INFO": 3011000, "ERROR": 89000}}
                 ]
             }
 
