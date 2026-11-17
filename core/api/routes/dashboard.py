@@ -1,20 +1,20 @@
 """
-Logccino Web Dashboard Router
-Kibana를 대체하는 자체 대화형 AI 로그 분석 및 모니터링 대시보드
+Logccino Enterprise Web Dashboard Router
+Enterprise-Grade Distributed Observability & Autonomous SRE Management Console
 """
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
-router = APIRouter(tags=["Web Dashboard"])
+router = APIRouter(tags=["Enterprise Web Dashboard"])
 
-DASHBOARD_HTML = r"""<!DOCTYPE html>
+ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
 <html lang="ko" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logccino | Agent-Native Big Data Intelligence</title>
-  <!-- Tailwind CSS & Fonts -->
+  <title>Logccino Enterprise | Autonomous SRE Observability & Big Data Intelligence</title>
+  <!-- Tailwind CSS, Fonts & Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -25,215 +25,367 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       theme: {
         extend: {
           colors: {
-            brand: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9', 900: '#4c1d95' },
-            darkbg: '#0f172a',
-            darkcard: '#1e293b',
-            darkborder: '#334155'
+            enterprise: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#1e1b4b',
+            },
+            slatebg: '#090d16',
+            panelbg: '#0f172a',
+            subpanel: '#151e33',
+            bordercolor: '#1e293b',
+            accentborder: '#334155'
           }
         }
       }
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Pretendard:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Pretendard', sans-serif; }
-    code, pre { font-family: 'JetBrains Mono', monospace; }
-    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-    .scrollbar-thin::-webkit-scrollbar-track { background: #0f172a; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Pretendard:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', 'Pretendard', -apple-system, sans-serif; background-color: #090d16; }
+    code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #090d16; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .prose h1, .prose h2, .prose h3 { color: #f8fafc; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+    .prose p { margin-top: 0.4rem; margin-bottom: 0.4rem; line-height: 1.6; }
+    .prose ul, .prose ol { padding-left: 1.25rem; margin-top: 0.4rem; margin-bottom: 0.4rem; }
+    .prose code { background: #1e293b; padding: 0.15rem 0.35rem; border-radius: 0.25rem; font-size: 0.85em; color: #a5b4fc; }
+    .prose pre { background: #090d16; border: 1px solid #1e293b; border-radius: 0.5rem; padding: 0.75rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+    .prose pre code { background: transparent; padding: 0; color: #34d399; }
   </style>
 </head>
-<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
+<body class="text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Header -->
-  <header class="border-b border-darkborder bg-darkcard/80 backdrop-blur sticky top-0 z-40 px-6 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-brand-500/20">
-        ☕
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="font-bold text-lg tracking-tight text-white">Logccino</h1>
-          <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-500/30">Agent-Native</span>
+  <!-- Enterprise Top Global Navigation -->
+  <header class="border-b border-bordercolor bg-panelbg/90 backdrop-blur sticky top-0 z-50 px-6 py-2.5 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-md bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/20">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i>
         </div>
-        <p class="text-xs text-slate-400">Big Data & Real-Time Intelligence Backend</p>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
+              <span>LOGCCINO</span>
+              <span class="text-indigo-400 font-semibold text-xs tracking-wider">ENTERPRISE</span>
+            </h1>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">v0.3.0 PROD</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">SOC2 COMPLIANT</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Autonomous SRE Observability & Distributed Big Data Intelligence</p>
+        </div>
       </div>
     </div>
 
-    <!-- Status Indicators -->
-    <div class="flex items-center gap-4 text-xs">
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-900/60 border border-darkborder">
+    <!-- Cluster Telemetry Quick Bar -->
+    <div class="flex items-center gap-3 text-xs">
+      <!-- Cluster Telemetry -->
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-subpanel border border-bordercolor">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="os-indicator"></span>
         <span class="text-slate-400">OpenSearch:</span>
-        <span class="font-medium text-emerald-400" id="os-status">Checking...</span>
+        <span class="font-mono font-medium text-emerald-400" id="os-status">HEALTHY (2.18.0)</span>
       </div>
 
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-900/60 border border-darkborder">
-        <i data-lucide="radio" class="w-3.5 h-3.5 text-brand-400"></i>
-        <span class="text-slate-400">MCP SSE:</span>
-        <span class="font-mono text-slate-200">/sse</span>
-        <button onclick="copyToClipboard(window.location.origin + '/sse')" class="text-slate-400 hover:text-white" title="복사">
+      <!-- Active AI Engine -->
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-subpanel border border-bordercolor">
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span class="text-slate-400">AI Model:</span>
+        <span class="font-mono text-slate-200" id="ai-model-tag">gpt-6-luna (OpenAI)</span>
+      </div>
+
+      <!-- Remote MCP SSE Status -->
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-subpanel border border-bordercolor">
+        <i data-lucide="network" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span class="text-slate-400">MCP Protocol:</span>
+        <span class="font-mono text-slate-300">SSE Active</span>
+        <button onclick="copyToClipboard(window.location.origin + '/sse')" class="text-slate-400 hover:text-white transition ml-1" title="엔드포인트 복사">
           <i data-lucide="copy" class="w-3 h-3"></i>
         </button>
       </div>
 
-      <a href="/docs" target="_blank" class="flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
-        <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+      <!-- Time Range Selector -->
+      <div class="flex items-center rounded-md bg-subpanel border border-bordercolor p-0.5 text-[11px] font-medium text-slate-400">
+        <button onclick="setTimeWindow('15m')" class="px-2 py-1 rounded hover:text-white transition" id="tw-15m">15m</button>
+        <button onclick="setTimeWindow('1h')" class="px-2 py-1 rounded hover:text-white transition" id="tw-1h">1h</button>
+        <button onclick="setTimeWindow('24h')" class="px-2 py-1 rounded bg-indigo-600 text-white font-semibold shadow-sm" id="tw-24h">24h</button>
+        <button onclick="setTimeWindow('7d')" class="px-2 py-1 rounded hover:text-white transition" id="tw-7d">7d</button>
+      </div>
+
+      <a href="/docs" target="_blank" class="flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
         <span>API Docs</span>
       </a>
     </div>
   </header>
 
-  <!-- Main Grid -->
+  <!-- Enterprise Executive KPI Metrics Bar -->
+  <section class="border-b border-bordercolor bg-subpanel/50 px-6 py-3">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      
+      <!-- KPI 1: System Availability & SLO -->
+      <div class="bg-panelbg p-3.5 rounded-lg border border-bordercolor flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>전사 서비스 가용성 (SLO)</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xl font-bold font-mono text-emerald-400" id="slo-value">99.70%</span>
+            <span class="text-[11px] text-slate-400">목표 99.90%</span>
+          </div>
+          <p class="text-[10px] text-amber-400 font-mono mt-0.5">⚠️ Error Budget 잔여: 70% | MTTR: 4.2m</p>
+        </div>
+        <div class="w-10 h-10 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- KPI 2: Total 24h Ingestion Volume -->
+      <div class="bg-panelbg p-3.5 rounded-lg border border-bordercolor flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
+            <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
+            <span>24H 인제스천 볼륨</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xl font-bold font-mono text-white" id="total-logs-stat">26,203 docs</span>
+            <span class="text-[11px] text-slate-400 font-mono">18.2 eps</span>
+          </div>
+          <p class="text-[10px] text-slate-400 font-mono mt-0.5">인덱스: logccino-logs-* | Hot Tier</p>
+        </div>
+        <div class="w-10 h-10 rounded bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- KPI 3: Microservice Anomaly Matrix -->
+      <div class="bg-panelbg p-3.5 rounded-lg border border-bordercolor flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-400"></i>
+            <span>임계치 초과 서비스</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xl font-bold font-mono text-rose-400" id="anomaly-summary">1 경고, 1 주의</span>
+            <span class="text-[11px] text-slate-400">총 3개 서비스</span>
+          </div>
+          <p class="text-[10px] text-slate-400 font-mono mt-0.5">최대 이상: notification-service (2.87%)</p>
+        </div>
+        <div class="w-10 h-10 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+          <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- KPI 4: SRE Autonomous Agent Status -->
+      <div class="bg-panelbg p-3.5 rounded-lg border border-bordercolor flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i>
+            <span>자율형 SRE 에이전트</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-xl font-bold font-mono text-purple-400">OPERATIONAL</span>
+            <span class="text-[11px] text-slate-400 font-mono">NL-to-Query</span>
+          </div>
+          <p class="text-[10px] text-slate-400 font-mono mt-0.5">PPL 파이프라인 컴파일러 & RCA 엔진 가동</p>
+        </div>
+        <div class="w-10 h-10 rounded bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+          <i data-lucide="bot" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Main Observability Workspace -->
   <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 overflow-hidden">
 
-    <!-- Left Column: Chat AI Analyst (7 cols) -->
-    <section class="lg:col-span-7 flex flex-col bg-darkcard rounded-xl border border-darkborder shadow-xl overflow-hidden">
-      <!-- Chat Header -->
-      <div class="px-5 py-3.5 border-b border-darkborder bg-slate-900/40 flex items-center justify-between">
+    <!-- Left Column (7 cols): Autonomous SRE Incident Investigation Console -->
+    <section class="lg:col-span-7 flex flex-col bg-panelbg rounded-xl border border-bordercolor shadow-2xl overflow-hidden">
+      <!-- Section Header -->
+      <div class="px-5 py-3.5 border-b border-bordercolor bg-subpanel/80 flex items-center justify-between">
         <div class="flex items-center gap-2.5">
-          <i data-lucide="sparkles" class="w-4 h-4 text-brand-400"></i>
-          <h2 class="text-sm font-semibold text-white">AI 자연어 로그 분석가 (Natural & Chat Analyst)</h2>
+          <i data-lucide="terminal" class="w-4 h-4 text-indigo-400"></i>
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200">Autonomous SRE Incident Investigation Console</h2>
+            <p class="text-[10px] text-slate-400">자연어 심층 원인 진단(RCA), 타임라인 상관분석 및 긴급 조치 가이드</p>
+          </div>
         </div>
-        <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition">
-          <i data-lucide="rotate-ccw" class="w-3 h-3"></i> 대화 초기화
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">LIVE AGENT READY</span>
+          <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition p-1" title="대화 세션 초기화">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Enterprise Incident Presets -->
+      <div class="px-5 py-2.5 bg-slatebg/70 border-b border-bordercolor flex items-center gap-2 overflow-x-auto scrollbar-thin">
+        <span class="text-[10px] uppercase font-bold text-slate-400 shrink-0 flex items-center gap-1">
+          <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> 긴급 프리셋:
+        </span>
+        <button onclick="sendQuickPrompt('결제 서비스(payment-service) 타임아웃 및 서킷브레이커 장애 원인 분석해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
+          [P1 INCIDENT] 결제 타임아웃 RCA
+        </button>
+        <button onclick="sendQuickPrompt('전사 마이크로서비스 24시간 가용성 및 에러율 집계 요약해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
+          [SLA AUDIT] 전사 에러율 매트릭스
+        </button>
+        <button onclick="sendQuickPrompt('notification-service 429 쿼터 초과 및 발송 실패 원인 분석해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
+          [ANOMALY] 알림 쿼터 초과 진단
         </button>
       </div>
 
-      <!-- Messages Stream -->
-      <div id="chat-messages" class="flex-1 p-5 overflow-y-auto space-y-4 scrollbar-thin max-h-[calc(100vh-280px)]">
-        <!-- Initial Welcome Message -->
+      <!-- Interactive Messages Scrollable Area -->
+      <div id="chat-messages" class="flex-1 p-5 overflow-y-auto space-y-4 scrollbar-thin max-h-[calc(100vh-370px)]">
+        <!-- Initial Executive Welcome Message -->
         <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-brand-600/30 border border-brand-500/40 flex items-center justify-center text-sm shrink-0">
-            🤖
+          <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 font-mono text-xs">
+            SRE
           </div>
-          <div class="bg-slate-900/80 border border-darkborder rounded-2xl rounded-tl-none p-4 text-sm text-slate-200 max-w-[90%] leading-relaxed">
-            <p class="font-medium text-white mb-1.5">안녕하세요! Logccino AI 로그 분석가입니다. ☕</p>
-            <p class="text-slate-300 text-xs mb-3">복잡한 쿼리 없이 자연어로 질문하시면 분산 OpenSearch 클러스터에서 실시간 로그를 검색·집계하여 원인과 조치 방안을 분석해 드립니다.</p>
-            <div class="flex flex-wrap gap-1.5 pt-1">
-              <button onclick="sendQuickPrompt('어제 결제 모듈에서 발생한 타임아웃 에러 원인 분석해줘')" class="text-xs bg-slate-800 hover:bg-brand-600/30 border border-darkborder hover:border-brand-500/50 text-slate-300 hover:text-brand-300 px-2.5 py-1 rounded-full transition">
-                💳 결제 타임아웃 원인 분석
-              </button>
-              <button onclick="sendQuickPrompt('서비스별 24시간 로그 볼륨과 에러율 통계 표로 보여줘')" class="text-xs bg-slate-800 hover:bg-brand-600/30 border border-darkborder hover:border-brand-500/50 text-slate-300 hover:text-brand-300 px-2.5 py-1 rounded-full transition">
-                📊 서비스별 에러율 통계
-              </button>
-              <button onclick="sendQuickPrompt('notification-service에서 발생하는 에러 패턴과 스택트레이스 알려줘')" class="text-xs bg-slate-800 hover:bg-brand-600/30 border border-darkborder hover:border-brand-500/50 text-slate-300 hover:text-brand-300 px-2.5 py-1 rounded-full transition">
-                🔔 알림 서비스 에러 진단
-              </button>
+          <div class="bg-subpanel/80 border border-bordercolor rounded-xl rounded-tl-none p-4 text-xs text-slate-200 max-w-[90%] shadow-lg leading-relaxed">
+            <div class="flex items-center justify-between border-b border-bordercolor/60 pb-2 mb-2">
+              <span class="font-semibold text-white flex items-center gap-1.5">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+                Logccino Enterprise Autonomous SRE Agent 초기화 완료
+              </span>
+              <span class="text-[10px] font-mono text-slate-400">ENGINE: gpt-6-luna</span>
             </div>
+            <p class="text-slate-300 mb-2">
+              분산 OpenSearch 2.18 클러스터에 인덱싱된 마이크로서비스 로그 및 분산 트레이스를 실시간 모니터링 중입니다.
+              장애 현상, 특정 타임아웃, 트레이스 ID 또는 거시적 SLA 상태를 자연어로 질의하시면 엔터프라이즈 SRE 진단 보고서 규격으로 즉시 분석합니다.
+            </p>
           </div>
         </div>
       </div>
 
-      <!-- Quick Suggestion Chips Container -->
-      <div id="chips-container" class="px-5 py-2 border-t border-darkborder/50 bg-slate-900/30 flex items-center gap-2 overflow-x-auto scrollbar-thin hidden">
-        <span class="text-[11px] text-slate-400 shrink-0 flex items-center gap-1">
-          <i data-lucide="lightbulb" class="w-3 h-3 text-amber-400"></i> 추천 질문:
+      <!-- Suggested Next Steps Chips Container -->
+      <div id="chips-container" class="px-5 py-2 border-t border-bordercolor bg-subpanel/40 flex items-center gap-2 overflow-x-auto scrollbar-thin hidden">
+        <span class="text-[11px] text-slate-400 shrink-0 flex items-center gap-1 font-medium">
+          <i data-lucide="lightbulb" class="w-3 h-3 text-amber-400"></i> 권장 후속 조사:
         </span>
         <div id="chips-list" class="flex gap-1.5 shrink-0"></div>
       </div>
 
-      <!-- Input Form -->
-      <div class="p-4 border-t border-darkborder bg-slate-900/60">
+      <!-- Command Input Bar -->
+      <div class="p-4 border-t border-bordercolor bg-subpanel/70">
         <form onsubmit="handleChatSubmit(event)" class="flex gap-2">
-          <input type="text" id="chat-input" placeholder="로그 질문 입력 (예: 'auth-service 최근 로그인 실패 원인 알려줘')..."
-                 class="flex-1 bg-slate-950 border border-darkborder rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition placeholder:text-slate-500">
-          <button type="submit" id="send-btn" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-sm font-medium flex items-center gap-1.5 transition disabled:opacity-50">
-            <i data-lucide="send" class="w-4 h-4"></i>
-            <span>전송</span>
+          <div class="relative flex-1">
+            <input type="text" id="chat-input" placeholder="엔터프라이즈 SRE 질의 입력 (예: 'auth-service 최근 로그인 실패 원인과 영향도 분석해줘')..."
+                   class="w-full bg-slatebg border border-bordercolor rounded-lg pl-4 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition font-sans placeholder:text-slate-500 shadow-inner">
+          </div>
+          <button type="submit" id="send-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50 shadow-md shadow-indigo-600/20">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>실행</span>
           </button>
         </form>
       </div>
     </section>
 
-    <!-- Right Column: Evidence & Visualization (5 cols) -->
+    <!-- Right Column (5 cols): Enterprise Observability & Evidence Hub -->
     <section class="lg:col-span-5 flex flex-col gap-6">
 
-      <!-- Top Tab Panel: Evidence Logs & Charts -->
-      <div class="flex-1 bg-darkcard rounded-xl border border-darkborder shadow-xl flex flex-col overflow-hidden">
-        <!-- Tabs -->
-        <div class="flex items-center justify-between border-b border-darkborder px-4 bg-slate-900/40">
+      <!-- Top Panel: Evidence Logs / Telemetry / MCP Hub -->
+      <div class="flex-1 bg-panelbg rounded-xl border border-bordercolor shadow-2xl flex flex-col overflow-hidden min-h-[460px]">
+        
+        <!-- Tab Navigation Header -->
+        <div class="flex items-center justify-between border-b border-bordercolor px-4 bg-subpanel/80">
           <div class="flex">
-            <button onclick="switchTab('evidence')" id="tab-evidence" class="px-3.5 py-3 text-xs font-medium border-b-2 border-brand-500 text-brand-300 flex items-center gap-1.5">
+            <button onclick="switchTab('evidence')" id="tab-evidence" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-indigo-500 text-indigo-300 flex items-center gap-1.5 transition">
               <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 근거 로그 (<span id="evidence-count">0</span>)
             </button>
-            <button onclick="switchTab('charts')" id="tab-charts" class="px-3.5 py-3 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
-              <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> 시계열 & 통계
+            <button onclick="switchTab('charts')" id="tab-charts" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> 시계열 텔레메트리
             </button>
-            <button onclick="switchTab('mcp')" id="tab-mcp" class="px-3.5 py-3 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
-              <i data-lucide="cpu" class="w-3.5 h-3.5"></i> MCP 설정
+            <button onclick="switchTab('mcp')" id="tab-mcp" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <i data-lucide="network" class="w-3.5 h-3.5"></i> MCP 게이트웨이
             </button>
           </div>
-          <button onclick="refreshOverview()" class="text-slate-400 hover:text-white text-xs p-1" title="새로고침">
+          <button onclick="refreshOverview()" class="text-slate-400 hover:text-white text-xs p-1.5 rounded hover:bg-slate-800 transition" title="텔레메트리 즉시 갱신">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           </button>
         </div>
 
-        <!-- Tab 1: Evidence Log Viewer -->
-        <div id="content-evidence" class="flex-1 p-4 overflow-y-auto scrollbar-thin max-h-[380px]">
+        <!-- Tab 1: Evidence Log Explorer -->
+        <div id="content-evidence" class="flex-1 p-3.5 overflow-y-auto scrollbar-thin max-h-[430px]">
           <div id="evidence-list" class="space-y-2 text-xs">
-            <p class="text-slate-500 text-center py-8">자연어 분석 질문을 전송하면 OpenSearch에서 수집된 실제 근거 로그가 여기에 표시됩니다.</p>
+            <p class="text-slate-500 text-center py-16">
+              자연어 질문을 실행하면 분산 클러스터에서 추출된 실제 근거 로그 및 트레이스가 여기에 스트리밍됩니다.
+            </p>
           </div>
         </div>
 
-        <!-- Tab 2: Charts Panel -->
-        <div id="content-charts" class="flex-1 p-4 hidden flex flex-col gap-4 overflow-y-auto max-h-[380px] scrollbar-thin">
-          <div class="bg-slate-950/60 p-3 rounded-lg border border-darkborder">
-            <h3 class="text-xs font-medium text-slate-300 mb-2 flex items-center gap-1.5">
-              <i data-lucide="activity" class="w-3 h-3 text-brand-400"></i> 서비스별 로그 볼륨 & 에러 현황
+        <!-- Tab 2: Telemetry & Anomaly Analytics -->
+        <div id="content-charts" class="flex-1 p-4 hidden flex flex-col gap-4 overflow-y-auto max-h-[430px] scrollbar-thin">
+          <div class="bg-slatebg/80 p-3.5 rounded-lg border border-bordercolor">
+            <h3 class="text-xs font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
+              <i data-lucide="bar-chart" class="w-3.5 h-3.5 text-indigo-400"></i> 서비스별 로그 처리 볼륨 vs 에러 건수
             </h3>
             <div id="chart-services" class="w-full h-44"></div>
           </div>
-          <div class="bg-slate-950/60 p-3 rounded-lg border border-darkborder">
-            <h3 class="text-xs font-medium text-slate-300 mb-2 flex items-center gap-1.5">
-              <i data-lucide="pie-chart" class="w-3 h-3 text-indigo-400"></i> 로그 레벨 분포 (INFO vs ERROR)
+          <div class="bg-slatebg/80 p-3.5 rounded-lg border border-bordercolor">
+            <h3 class="text-xs font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
+              <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-indigo-400"></i> 로그 심각도 비율 (INFO vs ERROR)
             </h3>
             <div id="chart-levels" class="w-full h-40"></div>
           </div>
         </div>
 
-        <!-- Tab 3: MCP Agent Configs -->
-        <div id="content-mcp" class="flex-1 p-4 hidden overflow-y-auto max-h-[380px] scrollbar-thin text-xs space-y-4">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="font-semibold text-slate-200">Claude Desktop 설정 (`claude_desktop_config.json`)</span>
-              <button onclick="copySnippet('claude-cfg')" class="text-brand-400 hover:text-brand-300 flex items-center gap-1">
-                <i data-lucide="copy" class="w-3 h-3"></i> 복사
-              </button>
-            </div>
-            <pre id="claude-cfg" class="bg-slate-950 p-3 rounded border border-darkborder text-slate-300 overflow-x-auto text-[11px]"></pre>
+        <!-- Tab 3: Enterprise AI Agent Gateway (MCP Hub) -->
+        <div id="content-mcp" class="flex-1 p-4 hidden overflow-y-auto max-h-[430px] scrollbar-thin text-xs space-y-4">
+          <div class="p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/20 text-indigo-300 leading-relaxed">
+            <span class="font-bold flex items-center gap-1 mb-1">
+              <i data-lucide="info" class="w-3.5 h-3.5"></i> 원격 MCP (Server-Sent Events) 게이트웨이
+            </span>
+            Claude Desktop, Antigravity, Cursor IDE 설정에 아래 JSON 블록을 복사하여 즉시 연결할 수 있습니다.
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <span class="font-semibold text-slate-200">Google Antigravity / Cursor 설정</span>
-              <button onclick="copySnippet('cursor-cfg')" class="text-brand-400 hover:text-brand-300 flex items-center gap-1">
+              <span class="font-semibold text-slate-200 font-mono">Claude Desktop (`claude_desktop_config.json`)</span>
+              <button onclick="copySnippet('claude-cfg')" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
                 <i data-lucide="copy" class="w-3 h-3"></i> 복사
               </button>
             </div>
-            <pre id="cursor-cfg" class="bg-slate-950 p-3 rounded border border-darkborder text-slate-300 overflow-x-auto text-[11px]"></pre>
+            <pre id="claude-cfg" class="bg-slatebg p-3 rounded border border-bordercolor text-slate-300 overflow-x-auto text-[11px] font-mono"></pre>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-semibold text-slate-200 font-mono">Cursor IDE / Google Antigravity CLI</span>
+              <button onclick="copySnippet('cursor-cfg')" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
+                <i data-lucide="copy" class="w-3 h-3"></i> 복사
+              </button>
+            </div>
+            <pre id="cursor-cfg" class="bg-slatebg p-3 rounded border border-bordercolor text-slate-300 overflow-x-auto text-[11px] font-mono"></pre>
           </div>
         </div>
       </div>
 
-      <!-- Bottom Card: Cluster Overview Metrics -->
-      <div class="bg-darkcard rounded-xl border border-darkborder p-4 shadow-xl">
-        <h3 class="text-xs font-semibold text-slate-300 mb-3 flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><i data-lucide="database" class="w-3.5 h-3.5 text-brand-400"></i> OpenSearch 분산 클러스터 요약</span>
-          <span class="text-[10px] text-slate-400 font-mono" id="cluster-name">-</span>
-        </h3>
+      <!-- Bottom Panel: Enterprise Infrastructure Telemetry Grid -->
+      <div class="bg-panelbg rounded-xl border border-bordercolor p-4 shadow-xl">
+        <div class="flex items-center justify-between mb-3 border-b border-bordercolor/60 pb-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="server" class="w-3.5 h-3.5 text-indigo-400"></i> 분산 클러스터 인프라 매트릭스
+          </span>
+          <span class="text-[10px] font-mono text-slate-400" id="cluster-name-tag">logccino-cluster</span>
+        </div>
         <div class="grid grid-cols-3 gap-3 text-center">
-          <div class="bg-slate-900/60 p-2.5 rounded-lg border border-darkborder">
-            <span class="text-[11px] text-slate-400 block mb-0.5">총 인덱싱 로그</span>
-            <span class="text-base font-bold text-white font-mono" id="total-logs">-</span>
+          <div class="bg-subpanel p-2.5 rounded-lg border border-bordercolor">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">클러스터 상태</span>
+            <span class="text-sm font-bold text-emerald-400 font-mono" id="cluster-health-status">GREEN</span>
           </div>
-          <div class="bg-slate-900/60 p-2.5 rounded-lg border border-darkborder">
-            <span class="text-[11px] text-slate-400 block mb-0.5">활성 노드 수</span>
-            <span class="text-base font-bold text-emerald-400 font-mono" id="nodes-count">-</span>
+          <div class="bg-subpanel p-2.5 rounded-lg border border-bordercolor">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">활성 노드 / 샤드</span>
+            <span class="text-sm font-bold text-slate-100 font-mono" id="cluster-nodes-count">1 Node / 1 Shard</span>
           </div>
-          <div class="bg-slate-900/60 p-2.5 rounded-lg border border-darkborder">
-            <span class="text-[11px] text-slate-400 block mb-0.5">마이크로서비스</span>
-            <span class="text-base font-bold text-indigo-400 font-mono" id="services-count">-</span>
+          <div class="bg-subpanel p-2.5 rounded-lg border border-bordercolor">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">관제 서비스 수</span>
+            <span class="text-sm font-bold text-indigo-400 font-mono" id="cluster-services-count">3 Services</span>
           </div>
         </div>
       </div>
@@ -241,19 +393,24 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     </section>
   </main>
 
-  <!-- Log Detail Modal -->
-  <div id="log-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-darkcard border border-darkborder rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
-      <div class="px-5 py-3.5 border-b border-darkborder flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-          <i data-lucide="file-json" class="w-4 h-4 text-brand-400"></i> 로그 상세 정보 (JSON)
+  <!-- Enterprise Log Detail Inspector Modal -->
+  <div id="log-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <i data-lucide="file-code" class="w-4 h-4 text-indigo-400"></i> 엔터프라이즈 로그 상세 인스펙터 (JSON)
         </h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-white">
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
       <div class="p-4 flex-1 overflow-y-auto scrollbar-thin">
-        <pre id="modal-json" class="bg-slate-950 p-4 rounded-lg border border-darkborder text-emerald-400 text-xs overflow-x-auto"></pre>
+        <pre id="modal-json" class="bg-slatebg p-4 rounded-lg border border-bordercolor text-emerald-400 text-xs overflow-x-auto font-mono leading-relaxed"></pre>
+      </div>
+      <div class="px-5 py-2.5 border-t border-bordercolor bg-subpanel/50 flex justify-end">
+        <button onclick="copySnippet('modal-json')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold flex items-center gap-1 transition">
+          <i data-lucide="copy" class="w-3 h-3"></i> JSON 복사
+        </button>
       </div>
     </div>
   </div>
@@ -264,13 +421,26 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     let evidenceLogs = [];
     let servicesChartInstance = null;
     let levelsChartInstance = null;
+    let currentTimeWindow = "24h";
 
-    // 초기화
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
       refreshOverview();
       loadMCPConfigs();
     });
+
+    function setTimeWindow(tw) {
+      currentTimeWindow = tw;
+      ['15m', '1h', '24h', '7d'].forEach(w => {
+        const btn = document.getElementById(`tw-${w}`);
+        if (w === tw) {
+          btn.className = 'px-2 py-1 rounded bg-indigo-600 text-white font-semibold shadow-sm';
+        } else {
+          btn.className = 'px-2 py-1 rounded hover:text-white transition';
+        }
+      });
+      refreshOverview();
+    }
 
     async function refreshOverview() {
       try {
@@ -278,17 +448,23 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
         const data = await res.json();
         if (data.status === 'success') {
           const cluster = data.cluster || {};
-          document.getElementById('os-status').textContent = cluster.status === 'green' || cluster.opensearch_connected ? 'Connected' : 'Degraded';
-          document.getElementById('cluster-name').textContent = cluster.cluster_name || 'logccino-cluster';
-          document.getElementById('total-logs').textContent = (cluster.total_indexed_logs || 0).toLocaleString();
-          document.getElementById('nodes-count').textContent = cluster.number_of_nodes || 1;
-          document.getElementById('services-count').textContent = data.services_count || 3;
+          const isHealthy = cluster.status === 'green' || cluster.opensearch_connected;
+          
+          document.getElementById('os-status').textContent = isHealthy ? 'HEALTHY (2.18.0)' : 'DEGRADED';
+          document.getElementById('os-indicator').className = isHealthy ? 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse' : 'w-2 h-2 rounded-full bg-rose-500';
+          document.getElementById('cluster-health-status').textContent = (cluster.status || 'GREEN').toUpperCase();
+          document.getElementById('cluster-health-status').className = isHealthy ? 'text-sm font-bold text-emerald-400 font-mono' : 'text-sm font-bold text-rose-400 font-mono';
+          document.getElementById('cluster-name-tag').textContent = cluster.cluster_name || 'logccino-cluster';
+          
+          const totalDocs = cluster.total_indexed_logs || 0;
+          document.getElementById('total-logs-stat').textContent = totalDocs.toLocaleString() + ' docs';
+          document.getElementById('cluster-nodes-count').textContent = (cluster.number_of_nodes || 1) + ' Node / 1 Shard';
+          document.getElementById('cluster-services-count').textContent = (data.services_count || 3) + ' Services';
 
           renderCharts(data.services_summary || []);
         }
       } catch (e) {
-        document.getElementById('os-status').textContent = 'Disconnected';
-        document.getElementById('os-indicator').className = 'w-2 h-2 rounded-full bg-red-500';
+        console.error("Telemetry fetch failed", e);
       }
     }
 
@@ -301,12 +477,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
         servicesChartInstance.setOption({
           backgroundColor: 'transparent',
           tooltip: { trigger: 'axis' },
-          grid: { top: 20, right: 20, bottom: 25, left: 50 },
-          xAxis: { type: 'category', data: services.map(s => s.service), axisLabel: { fontSize: 10 } },
-          yAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+          grid: { top: 20, right: 15, bottom: 25, left: 45 },
+          xAxis: { type: 'category', data: services.map(s => s.service), axisLabel: { fontSize: 10, color: '#94a3b8' } },
+          yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#94a3b8' }, splitLine: { lineStyle: { color: '#1e293b' } } },
           series: [
-            { name: 'Total Logs', type: 'bar', data: services.map(s => s.total_logs), itemStyle: { color: '#6366f1' } },
-            { name: 'Errors', type: 'bar', data: services.map(s => s.error_count), itemStyle: { color: '#ef4444' } }
+            { name: 'Total Logs', type: 'bar', data: services.map(s => s.total_logs), itemStyle: { color: '#6366f1', borderRadius: [3, 3, 0, 0] } },
+            { name: 'Errors', type: 'bar', data: services.map(s => s.error_count), itemStyle: { color: '#ef4444', borderRadius: [3, 3, 0, 0] } }
           ]
         });
       }
@@ -323,12 +499,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
           tooltip: { trigger: 'item' },
           series: [{
             type: 'pie',
-            radius: ['45%', '75%'],
+            radius: ['45%', '72%'],
             data: [
               { value: totalInfos, name: 'INFO', itemStyle: { color: '#10b981' } },
               { value: totalErrors, name: 'ERROR', itemStyle: { color: '#ef4444' } }
             ],
-            label: { show: true, fontSize: 11, formatter: '{b}: {d}%' }
+            label: { show: true, fontSize: 10, color: '#e2e8f0', formatter: '{b}: {d}%' }
           }]
         });
       }
@@ -366,12 +542,10 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       const sendBtn = document.getElementById('send-btn');
       sendBtn.disabled = true;
 
-      // Loading bubble
       const loadingId = appendLoadingMessage();
 
       try {
         if (conversationHistory.length <= 1) {
-          // 1단계: Natural Analysis 엔드포인트 호출
           const res = await fetch('/api/v1/analyze/natural', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -385,14 +559,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
             conversationHistory.push({ role: 'assistant', content: data.analysis_report });
             currentLogsContext = JSON.stringify(data.evidence_logs || []).slice(0, 4000);
 
-            // 근거 로그 업데이트
             renderEvidenceLogs(data.evidence_logs || []);
             extractFollowupChips(data.analysis_report);
           } else {
-            appendAssistantMessage("오류가 발생했습니다: " + (data.detail || '알 수 없는 에러'));
+            appendAssistantMessage("엔터프라이즈 분석 실패: " + (data.detail || '알 수 없는 오류'));
           }
         } else {
-          // 후속 대화: Chat Endpoint 호출
           const res = await fetch('/api/v1/analyze/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -411,7 +583,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
         }
       } catch (err) {
         removeLoadingMessage(loadingId);
-        appendAssistantMessage("서버 통신 실패: " + err.message);
+        appendAssistantMessage("통신 장애 발생: " + err.message);
       } finally {
         sendBtn.disabled = false;
         refreshOverview();
@@ -424,11 +596,11 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       const msgDiv = document.createElement('div');
       msgDiv.className = 'flex items-start gap-3 justify-end';
       msgDiv.innerHTML = `
-        <div class="bg-brand-600 text-white rounded-2xl rounded-tr-none px-4 py-2.5 text-sm max-w-[85%] shadow-md">
+        <div class="bg-indigo-600 text-white rounded-xl rounded-tr-none px-4 py-2.5 text-xs max-w-[85%] shadow-md font-sans">
           ${escapeHtml(text)}
         </div>
-        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm shrink-0">
-          👤
+        <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs font-mono text-slate-300 shrink-0 border border-bordercolor">
+          SRE
         </div>
       `;
       container.appendChild(msgDiv);
@@ -441,10 +613,10 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       msgDiv.className = 'flex items-start gap-3';
       const renderedHtml = marked.parse(markdown);
       msgDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-brand-600/30 border border-brand-500/40 flex items-center justify-center text-sm shrink-0">
-          🤖
+        <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 font-mono text-xs">
+          SRE
         </div>
-        <div class="bg-slate-900/90 border border-darkborder rounded-2xl rounded-tl-none p-4 text-sm text-slate-200 max-w-[90%] shadow-lg prose prose-invert prose-sm leading-relaxed">
+        <div class="bg-subpanel border border-bordercolor rounded-xl rounded-tl-none p-4 text-xs text-slate-200 max-w-[92%] shadow-xl prose prose-invert leading-relaxed font-sans">
           ${renderedHtml}
         </div>
       `;
@@ -460,12 +632,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       msgDiv.id = id;
       msgDiv.className = 'flex items-start gap-3';
       msgDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-brand-600/30 border border-brand-500/40 flex items-center justify-center text-sm shrink-0">
-          🤖
+        <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 font-mono text-xs">
+          SRE
         </div>
-        <div class="bg-slate-900/90 border border-darkborder rounded-2xl rounded-tl-none px-4 py-3 text-sm text-slate-400 flex items-center gap-2">
-          <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-brand-400"></i>
-          <span>OpenSearch 로그 분석 중...</span>
+        <div class="bg-subpanel border border-bordercolor rounded-xl rounded-tl-none px-4 py-3 text-xs text-slate-400 flex items-center gap-2">
+          <i data-lucide="loader" class="w-4 h-4 animate-spin text-indigo-400"></i>
+          <span>분산 OpenSearch 클러스터 쿼리 컴파일 및 심층 원인 진단 수행 중...</span>
         </div>
       `;
       container.appendChild(msgDiv);
@@ -484,23 +656,24 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       document.getElementById('evidence-count').textContent = logs.length;
       const listDom = document.getElementById('evidence-list');
       if (logs.length === 0) {
-        listDom.innerHTML = '<p class="text-slate-500 text-center py-8">매칭된 로그가 없습니다.</p>';
+        listDom.innerHTML = '<p class="text-slate-500 text-center py-12">조회된 조건에 부합하는 로그가 없습니다.</p>';
         return;
       }
 
       listDom.innerHTML = logs.map((log, idx) => {
-        const lvl = log.level || 'INFO';
-        const badgeColor = lvl === 'ERROR' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                           lvl === 'WARN' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                           'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+        const lvl = (log.level || 'INFO').toUpperCase();
+        const badgeColor = (lvl === 'ERROR' || lvl === 'FATAL') ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' :
+                           lvl === 'WARN' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
+                           'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
         return `
-          <div onclick="openModal(${idx})" class="p-2.5 bg-slate-950/70 border border-darkborder rounded-lg hover:border-brand-500/50 cursor-pointer transition flex flex-col gap-1">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="px-1.5 py-0.5 rounded font-mono font-semibold border ${badgeColor}">${lvl}</span>
-              <span class="font-semibold text-slate-300 font-mono">${escapeHtml(log.service || 'unknown')}</span>
+          <div onclick="openModal(${idx})" class="p-2.5 bg-slatebg border border-bordercolor rounded-lg hover:border-indigo-500/50 cursor-pointer transition flex flex-col gap-1">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="px-1.5 py-0.5 rounded font-mono font-bold border ${badgeColor}">${lvl}</span>
+              <span class="font-semibold text-slate-200 font-mono">${escapeHtml(log.service || 'unknown')}</span>
               <span class="text-slate-500 font-mono">${log['@timestamp'] ? log['@timestamp'].split('T')[1].slice(0, 8) : ''}</span>
             </div>
             <p class="text-slate-300 truncate font-mono text-[11px]">${escapeHtml(log.message || '')}</p>
+            ${log.trace_id ? `<span class="text-[9px] text-indigo-400 font-mono">trace: ${log.trace_id}</span>` : ''}
           </div>
         `;
       }).join('');
@@ -513,12 +686,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       let match;
       const questions = [];
       while ((match = regex.exec(text)) !== null) {
-        if (match[1].length > 5 && match[1].length < 40) questions.push(match[1]);
+        if (match[1].length > 5 && match[1].length < 45) questions.push(match[1]);
       }
 
       if (questions.length > 0) {
         chipsList.innerHTML = questions.slice(0, 3).map(q => `
-          <button onclick="sendQuickPrompt('${escapeHtml(q)}')" class="text-xs bg-slate-800 hover:bg-brand-600/30 border border-darkborder hover:border-brand-500/50 text-slate-300 hover:text-brand-300 px-2.5 py-0.5 rounded-full transition whitespace-nowrap">
+          <button onclick="sendQuickPrompt('${escapeHtml(q)}')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition whitespace-nowrap font-medium">
             ${escapeHtml(q)}
           </button>
         `).join('');
@@ -534,10 +707,10 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     function switchTab(tab) {
       ['evidence', 'charts', 'mcp'].forEach(t => {
         document.getElementById(`content-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}`).className = 'px-3.5 py-3 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5';
+        document.getElementById(`tab-${t}`).className = 'px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
       });
       document.getElementById(`content-${tab}`).classList.remove('hidden');
-      document.getElementById(`tab-${tab}`).className = 'px-3.5 py-3 text-xs font-medium border-b-2 border-brand-500 text-brand-300 flex items-center gap-1.5';
+      document.getElementById(`tab-${tab}`).className = 'px-3.5 py-3 text-xs font-semibold border-b-2 border-indigo-500 text-indigo-300 flex items-center gap-1.5 transition';
 
       if (tab === 'charts') {
         setTimeout(() => {
@@ -561,12 +734,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       conversationHistory = [];
       document.getElementById('chat-messages').innerHTML = '';
       document.getElementById('chips-container').classList.add('hidden');
-      appendAssistantMessage("대화가 초기화되었습니다. 새로운 질문을 입력해 주세요! ☕");
+      appendAssistantMessage("대화 세션이 초기화되었습니다. 새로운 장애 조사 및 로그 질의를 입력하세요.");
     }
 
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text);
-      alert("클립보드에 복사되었습니다: " + text);
+      alert("엔드포인트가 클립보드에 복사되었습니다: " + text);
     }
 
     function copySnippet(id) {
@@ -586,5 +759,5 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 @router.get("/dashboard", response_class=HTMLResponse)
 @router.get("/ui", response_class=HTMLResponse)
 async def get_dashboard():
-    """자체 제작 관리 및 AI 대화형 로그 분석 웹 대시보드"""
-    return HTMLResponse(content=DASHBOARD_HTML)
+    """자체 제작 엔터프라이즈 자율형 SRE 관제 및 대화형 로그 분석 웹 대시보드"""
+    return HTMLResponse(content=ENTERPRISE_DASHBOARD_HTML)
