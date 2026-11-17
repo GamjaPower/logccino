@@ -44,9 +44,13 @@ DEFAULT_APPS = {
         "is_system": False,
         "default_route": "siem",
         "nav_items": [
-            {"title": "Security Posture", "action": "open_siem_posture", "icon": "shield"},
-            {"title": "Incident Review", "action": "open_incident_review", "icon": "alert-triangle"},
-            {"title": "Syslog Engine", "action": "open_syslog_engine", "icon": "server"}
+            {"title": "Overview & Engine", "action": "open_siem_overview", "icon": "shield"},
+            {"title": "AI Triage & Swarm", "action": "open_siem_triage", "icon": "cpu"},
+            {"title": "Threat Hunting", "action": "open_siem_hunting", "icon": "search"},
+            {"title": "MITRE Storyboard", "action": "open_siem_storyboard", "icon": "git-commit"},
+            {"title": "Autonomous SOAR", "action": "open_siem_soar", "icon": "zap"},
+            {"title": "CTI & Deception", "action": "open_siem_intel", "icon": "crosshair"},
+            {"title": "SOC Copilot & Audit", "action": "open_siem_copilot", "icon": "bot"}
         ]
     },
     "sre": {

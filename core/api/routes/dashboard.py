@@ -883,39 +883,68 @@ async def get_enterprise_dashboard():
       <!-- =================================================================================== -->
       <!-- APP VIEW 2: Enterprise Security (SIEM) - 독립 추출된 보안 관제 앱                   -->
       <!-- =================================================================================== -->
-      <div id="view-app-siem" class="app-view flex-1 flex flex-col p-6 space-y-5 hidden">
-        <div id="content-security" class="siem-feature flex flex-col space-y-5">
-          <!-- SIEM Header -->
-          <div class="flex items-center justify-between bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                <i data-lucide="shield-alert" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h2 class="font-bold text-sm text-white">Logccino Enterprise Security (ES / SIEM)</h2>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">PLUGGABLE APP ACTIVE</span>
-                </div>
-                <p class="text-xs text-slate-400 mt-0.5">Rust 고성능 보안 Syslog 수집기, MITRE ATT&CK 상관분석 및 자율 침해사고 대응 콘솔</p>
-              </div>
+      <div id="view-app-siem" class="app-view flex-1 flex flex-col p-6 space-y-4 hidden">
+        <div id="content-security" class="siem-feature flex flex-col space-y-4">
+        <!-- SIEM Header -->
+        <div class="flex items-center justify-between bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <i data-lucide="shield-alert" class="w-5 h-5"></i>
             </div>
-
-            <div class="flex items-center gap-2">
-              <button onclick="selectApp('manage_apps')" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
-                앱 설정 관리
-              </button>
-              <button onclick="loadSecurityEvents()" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1.5 transition">
-                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 즉시 갱신
-              </button>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="font-bold text-sm text-white">Logccino Autonomous AI SIEM & Enterprise Security</h2>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">30 NEXT-GEN AI FEATURES ACTIVE</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">Rust 고성능 Syslog 수집기, 자율 트리아지, 생성형 위협 헌팅, MITRE 스토리보드, 능동 SOAR 및 SOC 코파일럿</p>
             </div>
           </div>
 
+          <div class="flex items-center gap-2">
+            <button onclick="selectApp('manage_apps')" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
+              앱 설정 관리
+            </button>
+            <button onclick="loadSecurityEvents()" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1.5 transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 즉시 갱신
+            </button>
+          </div>
+        </div>
+
+        <!-- SIEM 6대 전략 영역 서브 내비게이션 탭 -->
+        <div class="flex items-center gap-1 border-b border-bordercolor pb-2 overflow-x-auto scrollbar-thin text-xs">
+          <button onclick="switchSiemSubTab('overview')" id="siem-subtab-overview" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/30">
+            <i data-lucide="activity" class="w-3.5 h-3.5"></i> Overview & Engine
+          </button>
+          <button onclick="switchSiemSubTab('triage')" id="siem-subtab-triage" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="cpu" class="w-3.5 h-3.5"></i> P1: AI Triage & Swarm
+          </button>
+          <button onclick="switchSiemSubTab('hunting')" id="siem-subtab-hunting" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i> P2: Threat Hunting
+          </button>
+          <button onclick="switchSiemSubTab('storyboard')" id="siem-subtab-storyboard" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="git-commit" class="w-3.5 h-3.5"></i> P3: MITRE Storyboard
+          </button>
+          <button onclick="switchSiemSubTab('soar')" id="siem-subtab-soar" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> P4: Autonomous SOAR
+          </button>
+          <button onclick="switchSiemSubTab('intel')" id="siem-subtab-intel" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> P5: CTI & Deception
+          </button>
+          <button onclick="switchSiemSubTab('copilot')" id="siem-subtab-copilot" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="bot" class="w-3.5 h-3.5"></i> P6: SOC Copilot & Audit
+          </button>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 1: Overview & Rust Syslog Engine                           -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-overview" class="siem-subview space-y-4">
           <!-- Rust Syslog Collector Controller Card -->
           <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-slate-500" id="collector-status-dot"></span>
-                <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine (Port: 1514)</span>
+                <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine (Port: 1514 UDP/TCP)</span>
                 <span id="collector-status-badge" class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700">CHECKING...</span>
               </div>
               <div class="flex items-center gap-2">
@@ -982,6 +1011,342 @@ async def get_enterprise_dashboard():
               <p class="text-center py-16 text-slate-500 text-xs">수신된 보안 이벤트가 로드 중입니다...</p>
             </div>
           </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 2: Pillar 1 - AI Triage & Swarm                            -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-triage" class="siem-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 01: 자율 다차원 인시던트 트리아지 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="cpu" class="w-4 h-4 text-rose-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 01. 자율 다차원 인시던트 트리아지 (CoT)</h3>
+                </div>
+                <button onclick="runSampleTriage()" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition">
+                  트리아지 실행
+                </button>
+              </div>
+              <div id="triage-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">알람 데이터 유입 시 거짓 양성을 10초 내 자동 분류하고 CoT 추론 체인을 생성합니다.</p>
+              </div>
+            </div>
+
+            <!-- Feature 02: 동적 가상 분석관 스웜 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 02. 가상 분석관 스웜 (IR & Malware & Network)</h3>
+                </div>
+                <button onclick="runSampleSwarm()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
+                  스웜 토론 소집
+                </button>
+              </div>
+              <div id="swarm-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">3개 페르소나 분석관 에이전트의 다단계 토론을 통해 오판율 75% 감소 합의 결론을 도출합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 03: 근본 원인(Root-Cause) 인과 그래프 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="git-branch" class="w-4 h-4 text-emerald-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 03. 인과 추론 근본 원인(Patient Zero) DAG 그래프</h3>
+              </div>
+              <button onclick="runSampleAttackGraph()" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">
+                공격 그래프 생성
+              </button>
+            </div>
+            <div id="attack-graph-box" class="p-4 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+              <p class="text-slate-400">최초 침투점(Patient Zero)부터 현재 감염 상태까지의 인과 추론 방향성 비순환 그래프(DAG)를 시각화합니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 3: Pillar 2 - Threat Hunting & PPL                         -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-hunting" class="siem-subview space-y-4 hidden">
+          <!-- Feature 06: 자연어 NL-to-PPL 합성기 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+              <h3 class="text-xs font-bold text-white uppercase">Feature 06. 자연어 기반 제로샷 PPL/Join 쿼리 자동 합성</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="nl-hunt-input" type="text" value="어제 로그인 실패가 5번 넘은 호스트와 해당 호스트의 5xx 에러 조인해줘" class="flex-1 bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500" />
+              <button onclick="synthesizeNLQuery()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs rounded-lg transition flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i> PPL 쿼리 합성
+              </button>
+            </div>
+            <div id="nl-hunt-output" class="hidden p-3 bg-slatebg rounded-lg border border-amber-500/30 text-xs font-mono text-emerald-400 whitespace-pre overflow-x-auto"></div>
+          </div>
+
+          <!-- Feature 07: 가설 주도형 자율 위협 헌팅 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="compass" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 07. 가설 주도형 자율 위협 헌팅 (전수 데이터 탐사)</h3>
+              </div>
+              <button onclick="loadHuntingHypotheses()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
+                가설 전수 탐사 실행
+              </button>
+            </div>
+            <div id="hypotheses-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <p class="text-slate-400 col-span-3 text-center py-6">가설 탐사 실행 버튼을 누르면 자율 에이전트가 탐색을 개시합니다.</p>
+            </div>
+          </div>
+
+          <!-- Feature 10: 레드팀 헌팅 시뮬레이터 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 10. 공격자 관점(Red Team Persona) 헌팅 시뮬레이터</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <select id="sel-threat-actor" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
+                  <option value="APT29">APT29 (Cozy Bear - Russia SVR)</option>
+                  <option value="Lazarus Group">Lazarus Group (북한 해킹 그룹)</option>
+                </select>
+                <button onclick="runAdversaryEmulation()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
+                  역추적 시뮬레이션
+                </button>
+              </div>
+            </div>
+            <div id="adversary-emu-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+              <p class="text-slate-400">APT 그룹의 TTP 페르소나를 장착하여 은닉된 역추적 PPL 쿼리를 생성합니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 4: Pillar 3 - MITRE ATT&CK Storyboard                      -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-storyboard" class="siem-subview space-y-4 hidden">
+          <!-- Feature 11: MITRE ATT&CK 킬체인 스토리보드 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="git-commit" class="w-4 h-4 text-rose-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 11. MITRE ATT&CK 킬체인 실시간 스토리보드</h3>
+              </div>
+              <button onclick="loadMitreStoryboard()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
+                스토리보드 로드
+              </button>
+            </div>
+            <div id="mitre-storyboard-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-3">
+              <p class="text-slate-400">알람 이벤트를 14개 ATT&CK 전술에 실시간 매핑하고 킬체인 진행률을 시각화합니다.</p>
+            </div>
+          </div>
+
+          <!-- Feature 13: 횡적 이동 경로 재구성 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="repeat" class="w-4 h-4 text-amber-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 13. 계정-네트워크 횡적 이동(Lateral Movement) 재구성</h3>
+              </div>
+              <button onclick="loadLateralMovement()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
+                경로 추적
+              </button>
+            </div>
+            <div id="lateral-movement-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+              <p class="text-slate-400">피벗(Pivoting) 과정과 도용된 크리덴셜 경로(Bastion -> App -> DB)를 시각화합니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 5: Pillar 4 - Autonomous SOAR                              -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-soar" class="siem-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 16: 동적 플레이북 자동 합성 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 16. 인시던트 맞춤형 5단계 플레이북 합성</h3>
+                </div>
+                <button onclick="loadAdaptivePlaybook()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">
+                  플레이북 생성
+                </button>
+              </div>
+              <div id="playbook-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">인시던트 특성에 맞춘 실시간 5단계 대응 절차(격리, 차단, 덤프)를 자동 작성합니다.</p>
+              </div>
+            </div>
+
+            <!-- Feature 18: 실시간 능동 대응 오케스트레이터 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 18. 실시간 능동 대응 오케스트레이터 (1초 내 차단)</h3>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="executeActiveAction('block_ip', '198.51.100.42')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs rounded transition flex items-center gap-1">
+                  <i data-lucide="slash" class="w-3 h-3"></i> IP 198.51.100.42 방화벽 DROP
+                </button>
+                <button onclick="executeActiveAction('revoke_session', 'sst96')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs rounded transition flex items-center gap-1">
+                  <i data-lucide="lock" class="w-3 h-3"></i> 사용자 sst96 세션 강제 무효화
+                </button>
+                <button onclick="executeActiveAction('isolate_host', 'bastion-gateway')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded transition flex items-center gap-1">
+                  <i data-lucide="server" class="w-3 h-3"></i> Bastion 호스트 네트워크 격리
+                </button>
+              </div>
+              <div id="active-response-log" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs font-mono text-emerald-400 min-h-[60px]">
+                대응 명령 실행 대기 중...
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 20: 사후 보고서 자동 생성 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 20. 인시던트 사후 보고서(Post-Mortem) 자동 생성</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <select id="sel-report-audience" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
+                  <option value="executive">경영진 보고용 (Executive Summary)</option>
+                  <option value="kisa_regulatory">KISA 법적 신고용 (침해사고 신고서)</option>
+                  <option value="technical">기술팀 포스트모텀 (Technical Root Cause)</option>
+                </select>
+                <button onclick="generatePostMortemReport()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
+                  보고서 즉시 생성
+                </button>
+              </div>
+            </div>
+            <div id="post-mortem-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs whitespace-pre-wrap font-mono text-slate-200">
+              대상자별 양식(경영진 1장 요약 / KISA 법적 신고 / 기술 상세)을 1초 만에 자동 작성합니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 6: Pillar 5 - Threat Intel & Deception                     -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-intel" class="siem-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 21: 비정형 CTI RAG -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="database" class="w-4 h-4 text-indigo-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 21. 비정형 사이버 위협 인텔리전스 RAG</h3>
+                </div>
+                <button onclick="queryCTIRAG()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
+                  CTI RAG 검색
+                </button>
+              </div>
+              <input id="cti-rag-input" type="text" value="CVE-2026-3819 웹 프레임워크 원격 코드 실행 취약점" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-xs text-white" />
+              <div id="cti-rag-result" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">PDF 백서, CISA 권고문, PoC 문서를 벡터 검색하여 내부 관측치와 교차 대조합니다.</p>
+              </div>
+            </div>
+
+            <!-- Feature 22: 동적 카나리 허니팟 토큰 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="crosshair" class="w-4 h-4 text-emerald-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 22. 동적 허니팟 & 카나리 토큰 자동 합성 (오탐 0%)</h3>
+                </div>
+                <button onclick="deployCanaryToken()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">
+                  카나리 토큰 배포
+                </button>
+              </div>
+              <div id="canary-token-result" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">진짜처럼 보이는 가짜 AWS Key 및 DB 접속 정보를 생성하여 건드리는 순간 즉시 경보를 발생시킵니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 24: APT 조직 추론기 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="globe" class="w-4 h-4 text-rose-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 24. 공격자 프로파일링 및 배후 조직(APT Attribution) 추론</h3>
+              </div>
+              <button onclick="profileAPTAttribution()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
+                APT 배후 추론
+              </button>
+            </div>
+            <div id="apt-profile-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+              <p class="text-slate-400">공격 수법, 컴파일 시각, C2 통신 주기를 분석하여 국가 배후 해킹 조직을 추론합니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 7: Pillar 6 - SOC Copilot & Governance                     -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-copilot" class="siem-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 26: 실시간 대화형 SOC 코파일럿 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3 flex flex-col h-[380px]">
+              <div class="flex items-center gap-2">
+                <i data-lucide="bot" class="w-4 h-4 text-emerald-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 26. 대화형 실시간 SOC 코파일럿 (MCP Tool Execution)</h3>
+              </div>
+              <div id="copilot-chat-history" class="flex-1 overflow-y-auto space-y-2 bg-slatebg p-3 rounded-lg border border-bordercolor/60 text-xs">
+                <div class="text-slate-400">Logccino SOC Copilot입니다. 무엇을 조사하거나 조치할까요? (예: "트리아지 실행해줘", "공격자 IP 차단해줘")</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="copilot-input" type="text" placeholder="지시사항 입력 (예: 최근 알람 트리아지해줘)" class="flex-1 bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-xs text-white" onkeydown="if(event.key==='Enter') sendCopilotMsg()" />
+                <button onclick="sendCopilotMsg()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">전송</button>
+              </div>
+            </div>
+
+            <!-- Feature 27: 교대 근무 인수인계 & 음성 브리핑 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="mic" class="w-4 h-4 text-indigo-400"></i>
+                    <h3 class="text-xs font-bold text-white uppercase">Feature 27. 교대 인수인계 5줄 요약 & 음성 브리핑</h3>
+                  </div>
+                  <button onclick="loadShiftHandover()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
+                    인수인계 생성
+                  </button>
+                </div>
+                <div id="shift-handover-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                  <p class="text-slate-400">지난 12시간 발생 인시던트를 5줄 요약 및 브리핑 음성(TTS) 스크립트로 합성합니다.</p>
+                </div>
+              </div>
+              <div class="pt-2">
+                <button onclick="speakHandoverAudio()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition">
+                  <i data-lucide="volume-2" class="w-4 h-4 text-indigo-400"></i> 음성 브리핑 재생 (Web Speech TTS)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 29: ISMS-P / ISO 27001 상시 감사기 -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 29. 규제 준수(ISMS-P / ISO 27001) 상시 감사기</h3>
+              </div>
+              <button onclick="runComplianceAudit()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
+                상시 감사 검사
+              </button>
+            </div>
+            <div id="compliance-audit-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+              <p class="text-slate-400">로그 1년 이상 보존, 관리자 권한 분립, 접근 통제 항목을 상시 자동 감사합니다.</p>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -2869,6 +3234,556 @@ async def get_enterprise_dashboard():
     async function startCollector() { await fetch('/api/v1/collector/start', { method: 'POST' }); fetchCollectorStatus(); }
     async function stopCollector() { await fetch('/api/v1/collector/stop', { method: 'POST' }); fetchCollectorStatus(); }
     async function restartCollector() { await fetch('/api/v1/collector/restart', { method: 'POST' }); fetchCollectorStatus(); }
+
+    // -------------------------------------------------------------
+    // Next-Gen AI SIEM 30대 핵심 기능 UI 인터랙션 컨트롤러
+    // -------------------------------------------------------------
+    let currentShiftTts = "";
+
+    function switchSiemSubTab(tabName) {
+      document.querySelectorAll('.siem-subtab-btn').forEach(btn => {
+        btn.classList.remove('bg-rose-600/20', 'text-rose-300', 'border', 'border-rose-500/30');
+        btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-subpanel');
+      });
+      const activeBtn = document.getElementById(`siem-subtab-${tabName}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200', 'hover:bg-subpanel');
+        activeBtn.classList.add('bg-rose-600/20', 'text-rose-300', 'border', 'border-rose-500/30');
+      }
+
+      ['overview', 'triage', 'hunting', 'storyboard', 'soar', 'intel', 'copilot'].forEach(sub => {
+        const el = document.getElementById(`siem-subview-${sub}`);
+        if (el) {
+          if (sub === tabName) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    async function runSampleTriage() {
+      const box = document.getElementById('triage-result-box');
+      box.innerHTML = '<span class="text-rose-400">자율 트리아지 CoT 추론 진행 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/triage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            alert_data: {
+              incident_id: 'INC-TRIAGE-' + Date.now().toString().slice(-4),
+              host: 'bastion-gateway',
+              user: 'sst96',
+              severity: 'high',
+              message: 'Failed password for invalid user admin from 198.51.100.42 port 49210 ssh2'
+            }
+          })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-bordercolor/60">
+              <span class="font-bold text-white text-xs">판정: ${d.is_false_positive ? '✅ 오탐(False Positive)' : '🚨 진성 위협 (True Positive)'}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300">신뢰도 ${(d.confidence_score * 100).toFixed(1)}% | ${d.adjusted_severity.toUpperCase()}</span>
+            </div>
+            <div class="space-y-1 text-slate-300">
+              <span class="font-semibold text-rose-400 block text-[11px]">CoT (Chain of Thought) 추론 단계:</span>
+              ${d.reasoning_chain.map(r => `<div class="pl-2 border-l border-rose-500/40 text-[11px] text-slate-300">${r}</div>`).join('')}
+            </div>
+            <div class="p-2 bg-panelbg rounded border border-bordercolor text-[11px] text-amber-300">
+              💡 <strong>권고 조치:</strong> ${d.recommended_action}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">트리아지 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function runSampleSwarm() {
+      const box = document.getElementById('swarm-result-box');
+      box.innerHTML = '<span class="text-indigo-400">가상 분석관 3인(IR, Malware, Network) 소집 및 토론 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/swarm-debate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            incident_id: 'INC-SWARM-01',
+            incident_context: { host: 'bastion-gateway', summary: 'SSH brute force with suspicious cron dump' }
+          })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-emerald-400">합의 결론: ${d.consensus_decision}</span>
+              <span class="text-[10px] font-mono text-indigo-300">합의 신뢰도: ${(d.consensus_confidence * 100).toFixed(0)}%</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              ${d.personas.map(p => `
+                <div class="p-2 bg-panelbg rounded border border-bordercolor/80 space-y-1">
+                  <div class="font-bold text-[10px] text-white">${p.persona}</div>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${p.stance === 'Malicious' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}">${p.stance}</span>
+                  <p class="text-[10px] text-slate-300">${p.analysis}</p>
+                </div>
+              `).join('')}
+            </div>
+            <p class="text-[11px] text-slate-200 bg-subpanel p-2 rounded border border-bordercolor">${d.synthesis_report}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">스웜 토론 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function runSampleAttackGraph() {
+      const box = document.getElementById('attack-graph-box');
+      box.innerHTML = '<span class="text-emerald-400">인과 추론 알고리즘(Graph-of-Thought) 실행 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/attack-graph', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            incident_id: 'INC-DAG-01',
+            seed_event: { host: 'bastion-gateway', src_ip: '198.51.100.42', user: 'sst96' }
+          })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center justify-between pb-1 border-b border-bordercolor">
+              <span class="font-bold text-rose-400">🚨 최초 침투점(Patient Zero): ${d.patient_zero}</span>
+              <span class="text-[10px] font-mono text-slate-400">분석 소요 시간: ${d.elapsed_time_sec}s</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              ${d.nodes.map((n, idx) => `
+                <div class="px-2.5 py-1.5 rounded-lg border text-xs flex items-center gap-1.5 ${n.is_patient_zero ? 'bg-rose-500/20 border-rose-500/50 text-rose-200 font-bold' : 'bg-panelbg border-bordercolor text-slate-200'}">
+                  <span>${n.label}</span>
+                  <span class="text-[9px] uppercase px-1 rounded bg-slate-800 text-slate-400 font-mono">${n.type}</span>
+                </div>
+                ${idx < d.nodes.length - 1 ? '<span class="text-emerald-400 font-bold">&rarr;</span>' : ''}
+              `).join('')}
+            </div>
+            <p class="text-[11px] text-slate-300 bg-panelbg p-2 rounded border border-bordercolor">${d.root_cause_narrative}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">그래프 생성 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function synthesizeNLQuery() {
+      const q = document.getElementById('nl-hunt-input').value;
+      const out = document.getElementById('nl-hunt-output');
+      out.classList.remove('hidden');
+      out.textContent = 'PPL 쿼리 파이프라인 합성 중...';
+      try {
+        const res = await fetch('/api/v1/siem/nl-to-ppl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ natural_query: q })
+        });
+        const d = await res.json();
+        out.innerHTML = `
+          <div class="space-y-2">
+            <div class="text-amber-400 font-bold text-xs">[합성된 PPL / Cross-Index Join 쿼리]</div>
+            <div class="p-2 bg-slate-950 rounded border border-amber-500/40 text-emerald-300 font-mono text-[11px]">${d.synthesized_ppl}</div>
+            <div class="text-slate-400 text-[10px]">${d.explanation}</div>
+            <button onclick="applySynthesizedQuery('${d.synthesized_ppl.replace(/'/g, "\\'").replace(/\n/g, " ")}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] transition">Search 앱으로 보내기</button>
+          </div>
+        `;
+      } catch (e) {
+        out.textContent = '쿼리 합성 실패: ' + e.message;
+      }
+    }
+
+    function applySynthesizedQuery(query) {
+      selectApp('search');
+      const input = document.getElementById('spl-query-input');
+      if (input) {
+        input.value = query;
+        runQuery();
+      }
+    }
+
+    async function loadHuntingHypotheses() {
+      const c = document.getElementById('hypotheses-container');
+      c.innerHTML = '<span class="text-indigo-400 col-span-3 text-center py-6">3대 능동 가설 전수 데이터 탐사 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/hunting-hypotheses');
+        const list = await res.json();
+        c.innerHTML = list.map(h => `
+          <div class="p-3 bg-panelbg rounded-xl border border-bordercolor flex flex-col justify-between space-y-2 shadow">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono text-indigo-400 font-bold">${h.hypothesis_id}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${h.status === 'finding_detected' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${h.status.toUpperCase()}</span>
+              </div>
+              <h4 class="font-bold text-xs text-white mt-1">${h.title}</h4>
+              <p class="text-[10px] text-slate-400 mt-1">${h.description}</p>
+            </div>
+            <div class="pt-2 border-t border-bordercolor/60">
+              <span class="text-[10px] text-rose-400 block font-mono">발견 건수: ${h.findings_count}건</span>
+              <p class="text-[10px] text-slate-300 mt-0.5">${h.findings_summary}</p>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        c.innerHTML = `<span class="text-rose-400 col-span-3">가설 로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function runAdversaryEmulation() {
+      const actor = document.getElementById('sel-threat-actor').value;
+      const box = document.getElementById('adversary-emu-box');
+      box.innerHTML = `<span class="text-rose-400">${actor} TTP 역추적 쿼리 생성 중...</span>`;
+      try {
+        const res = await fetch('/api/v1/siem/adversary-emulation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threat_actor: actor })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="font-bold text-white text-xs">${d.threat_actor} 시뮬레이션 결과</div>
+            <p class="text-[11px] text-slate-300">${d.assessment_summary}</p>
+            <div class="space-y-1">
+              ${d.hunting_queries.map(q => `
+                <div class="p-2 bg-slate-950 rounded border border-bordercolor text-[11px]">
+                  <span class="font-bold text-indigo-300">[${q.tactic}]</span>
+                  <div class="font-mono text-emerald-400 text-[10px] mt-0.5">${q.ppl}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">시뮬레이션 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadMitreStoryboard() {
+      const box = document.getElementById('mitre-storyboard-box');
+      box.innerHTML = '<span class="text-rose-400">MITRE ATT&CK 킬체인 스토리보드 로드 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/mitre-storyboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ incident_id: 'INC-2026-ATTACK' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-3">
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-white">공격자 킬체인 침투 진행률 (${d.current_highest_stage})</span>
+                <span class="font-mono font-bold text-rose-400">${d.kill_chain_progress_pct}%</span>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-rose-500 h-full rounded-full transition-all duration-500" style="width: ${d.kill_chain_progress_pct}%"></div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+              ${d.mapped_techniques.map(t => `
+                <div class="p-2 bg-panelbg rounded border border-bordercolor space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-[10px] text-indigo-400 font-bold">${t.technique_id}</span>
+                    <span class="text-[9px] px-1 rounded bg-rose-500/20 text-rose-300">${t.matched_events_count}건</span>
+                  </div>
+                  <div class="font-bold text-[11px] text-white">${t.technique_name}</div>
+                  <span class="text-[10px] text-slate-400 block">${t.tactic}</span>
+                </div>
+              `).join('')}
+            </div>
+            <p class="text-[11px] text-slate-300 bg-subpanel p-2 rounded border border-bordercolor">${d.narrative_summary}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadLateralMovement() {
+      const box = document.getElementById('lateral-movement-box');
+      box.innerHTML = '<span class="text-amber-400">횡적 이동 경로 추적 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/lateral-movement?host=bastion-gateway');
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white">출발: ${d.source_origin} &rarr; 타깃: ${d.target_destination}</span>
+              <span class="text-[10px] font-mono text-amber-400">총 전이 홉: ${d.total_hops} Hops</span>
+            </div>
+            <div class="space-y-1.5">
+              ${d.hops.map(h => `
+                <div class="p-2 bg-slate-950 rounded border border-bordercolor flex items-center justify-between text-xs">
+                  <div>
+                    <span class="font-bold text-indigo-300">Hop ${h.step}: ${h.from_entity} &rarr; ${h.to_entity}</span>
+                    <span class="text-[10px] text-slate-400 block">프로토콜: ${h.protocol} | 탈취 계정: ${h.compromised_credential}</span>
+                  </div>
+                  <span class="text-[10px] font-mono text-slate-500">${h.timestamp}</span>
+                </div>
+              `).join('')}
+            </div>
+            <p class="text-[11px] text-amber-300 bg-panelbg p-2 rounded border border-bordercolor">${d.mitigation_advice}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">추적 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadAdaptivePlaybook() {
+      const box = document.getElementById('playbook-box');
+      box.innerHTML = '<span class="text-emerald-400">5단계 맞춤 대응 플레이북 실시간 합성 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/adaptive-playbook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ incident_id: 'INC-SOAR-01' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-bordercolor">
+              <span class="font-bold text-white text-xs">${d.incident_type} (${d.business_criticality})</span>
+              <span class="text-[10px] font-mono text-emerald-400">예상 MTTR: ${d.estimated_mttr_seconds}초</span>
+            </div>
+            <div class="space-y-1.5">
+              ${d.steps.map(s => `
+                <div class="p-2 bg-slate-950 rounded border border-bordercolor flex items-center justify-between text-xs">
+                  <div>
+                    <span class="font-bold text-slate-200">Step ${s.step_number}. ${s.action_type.toUpperCase()}</span>
+                    <span class="text-[10px] text-slate-400 block">대상: ${s.target} | 벤더: ${s.command_payload.vendor || 'OS'}</span>
+                  </div>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">READY</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">플레이북 합성 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function executeActiveAction(action, target) {
+      const log = document.getElementById('active-response-log');
+      log.textContent = `[실행 중] ${action} on ${target}...`;
+      try {
+        const res = await fetch('/api/v1/siem/active-response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action_type: action, target: target, simulate_only: false })
+        });
+        const d = await res.json();
+        log.innerHTML = `✓ [집행 성공] ${d.vendor_executed} &bull; ${d.output_message} (${d.executed_at})`;
+      } catch (e) {
+        log.textContent = `✗ 실패: ${e.message}`;
+      }
+    }
+
+    async function generatePostMortemReport() {
+      const aud = document.getElementById('sel-report-audience').value;
+      const box = document.getElementById('post-mortem-box');
+      box.textContent = '보고서 작성 중...';
+      try {
+        const res = await fetch('/api/v1/siem/post-mortem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ incident_id: 'INC-2026-BREACH-01', audience: aud })
+        });
+        const d = await res.json();
+        box.textContent = d.report_content;
+      } catch (e) {
+        box.textContent = '보고서 생성 실패: ' + e.message;
+      }
+    }
+
+    async function queryCTIRAG() {
+      const q = document.getElementById('cti-rag-input').value;
+      const box = document.getElementById('cti-rag-result');
+      box.innerHTML = '<span class="text-indigo-400">비정형 CTI RAG 검색 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/cti-rag', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ indicator_or_text: q })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="font-bold text-white text-xs">${d.actionable_intel_summary}</div>
+            <div class="space-y-1">
+              ${d.top_matches.map(m => `
+                <div class="p-2 bg-slate-950 rounded border border-bordercolor text-[11px]">
+                  <span class="font-bold text-indigo-300">[${m.source}] ${m.threat_category}</span>
+                  <p class="text-slate-300 mt-0.5 text-[10px]">${m.description}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">CTI 검색 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function deployCanaryToken() {
+      const box = document.getElementById('canary-token-result');
+      box.innerHTML = '<span class="text-emerald-400">동적 카나리 허니팟 토큰 생성 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/deploy-canary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_env: 'prod-bastion' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-emerald-400">카나리 토큰 배포 완료: ${d.token_id}</span>
+              <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">100% 신뢰도</span>
+            </div>
+            <div class="p-2 bg-slate-950 rounded border border-bordercolor text-[11px] font-mono text-slate-300">
+              <div>위치: ${d.deployed_location}</div>
+              <div>마스킹 값: ${d.token_value_masked}</div>
+              <div>연동 룰: ${d.trigger_alert_rule_id}</div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">카나리 배포 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function profileAPTAttribution() {
+      const box = document.getElementById('apt-profile-box');
+      box.innerHTML = '<span class="text-rose-400">APT 배후 해킹 그룹 추론 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/apt-attribution', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ incident_id: 'INC-2026-BREACH-01' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-bordercolor">
+              <span class="font-bold text-white text-xs">추론 조직: ${d.attributed_actor} (${d.country_of_origin})</span>
+              <span class="font-mono text-rose-400 text-xs font-bold">신뢰도 ${(d.confidence_score * 100).toFixed(0)}%</span>
+            </div>
+            <p class="text-[11px] text-slate-300">${d.tactical_briefing}</p>
+            <div class="space-y-0.5">
+              <span class="text-[10px] text-slate-400 font-semibold">매칭된 공격 수법(TTPs):</span>
+              ${d.matching_ttps.map(t => `<div class="pl-2 border-l border-rose-500/40 text-[10px] text-slate-300 font-mono">${t}</div>`).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">APT 추론 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function sendCopilotMsg() {
+      const input = document.getElementById('copilot-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+
+      const hist = document.getElementById('copilot-chat-history');
+      hist.innerHTML += `<div class="text-right"><span class="inline-block p-2 rounded-lg bg-indigo-600 text-white font-medium text-[11px]">${text}</span></div>`;
+      hist.scrollTop = hist.scrollHeight;
+
+      try {
+        const res = await fetch('/api/v1/siem/copilot-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_prompt: text })
+        });
+        const d = await res.json();
+        hist.innerHTML += `
+          <div class="text-left space-y-1">
+            <span class="inline-block p-2 rounded-lg bg-panelbg text-slate-200 border border-bordercolor text-[11px]">${d.ai_response_text}</span>
+            ${d.tools_executed.length > 0 ? `<div class="text-[10px] font-mono text-emerald-400">⚡ 실행된 MCP 도구: ${d.tools_executed.map(t => t.tool).join(', ')}</div>` : ''}
+          </div>
+        `;
+        hist.scrollTop = hist.scrollHeight;
+      } catch (e) {
+        hist.innerHTML += `<div class="text-left text-rose-400 text-[10px]">오류: ${e.message}</div>`;
+      }
+    }
+
+    async function loadShiftHandover() {
+      const box = document.getElementById('shift-handover-box');
+      box.innerHTML = '<span class="text-indigo-400">교대 인수인계 보고서 및 음성 합성 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/shift-handover?hours=12');
+        const d = await res.json();
+        currentShiftTts = d.audio_tts_script;
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="font-bold text-white text-xs">${d.shift_title}</div>
+            <div class="space-y-1">
+              ${d.five_line_summary.map(line => `<div class="text-[11px] text-slate-300 font-mono">${line}</div>`).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">인수인계 로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    function speakHandoverAudio() {
+      if (!currentShiftTts) {
+        alert("먼저 '인수인계 생성' 버튼을 클릭해 주세요.");
+        return;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(currentShiftTts);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        alert("현재 브라우저에서 SpeechSynthesis API를 지원하지 않습니다.");
+      }
+    }
+
+    async function runComplianceAudit() {
+      const box = document.getElementById('compliance-audit-box');
+      box.innerHTML = '<span class="text-amber-400">ISMS-P / ISO 27001 상시 감사 수행 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/compliance-audit?standard=ISMS-P');
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-bordercolor">
+              <span class="font-bold text-white text-xs">${d.standard_name} 규제 준수율</span>
+              <span class="font-mono text-emerald-400 text-xs font-bold">${d.compliance_rate_pct}% (${d.compliant_checks}/${d.total_checks} 항목 준수)</span>
+            </div>
+            <p class="text-[11px] text-slate-300">${d.executive_verdict}</p>
+            <div class="space-y-1">
+              ${d.checks.map(c => `
+                <div class="p-2 bg-slate-950 rounded border border-bordercolor flex items-center justify-between text-[11px]">
+                  <div>
+                    <span class="font-bold text-indigo-300">[${c.clause_id}] ${c.clause_name}</span>
+                    <span class="text-[10px] text-slate-400 block">${c.evidence_collected}</span>
+                  </div>
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${c.compliance_status === 'COMPLIANT' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${c.compliance_status}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">감사 실패: ${e.message}</span>`;
+      }
+    }
 
     // -------------------------------------------------------------
     // SRE Chat & Telemetry Overview

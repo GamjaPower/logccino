@@ -932,6 +932,67 @@ class LogccinoMCPTools:
                 return self.get_collector_status()
             elif action == "simulate_attack":
                 return self.simulate_security_event(kind=params.get("kind", "ssh_failed"))
+            # 30대 차세대 AI SIEM 액션 디스패치
+            elif action == "triage":
+                return self.triage_incident(params.get("alert_data", {}))
+            elif action == "persona_swarm":
+                return self.run_persona_swarm(params.get("incident_id", "INC-01"), params.get("incident_context", {}))
+            elif action == "attack_graph":
+                return self.synthesize_attack_graph(params.get("incident_id", "INC-01"), params.get("seed_event", {}))
+            elif action == "noise_eliminator":
+                return self.eliminate_noise_and_tune(params.get("recurring_alerts", []))
+            elif action == "entity_storyboard":
+                return self.storyboard_entity(params.get("entity_id", "bastion-gateway"), params.get("lookback_days", 30))
+            elif action == "nl_to_ppl":
+                return self.synthesize_ppl_query(params.get("query", ""))
+            elif action == "hunting_hypotheses":
+                return {"hypotheses": self.run_threat_hunting_hypotheses()}
+            elif action == "cti_detection":
+                return self.synthesize_cti_detection_rule(params.get("cti_doc", ""), params.get("register", True))
+            elif action == "blind_spots":
+                return self.probe_telemetry_blind_spots()
+            elif action == "adversary_emulation":
+                return self.emulate_adversary_hunting(params.get("threat_actor", "APT29"))
+            elif action == "mitre_storyboard":
+                return self.build_mitre_storyboard(params.get("incident_id", "INC-01"))
+            elif action == "timeline":
+                return self.stitch_cross_telemetry_timeline()
+            elif action == "lateral_movement":
+                return self.reconstruct_lateral_movement(params.get("host", "bastion-gateway"))
+            elif action == "exfiltration":
+                return self.narrate_data_exfiltration()
+            elif action == "config_tampering":
+                return self.storyboard_config_tampering()
+            elif action == "adaptive_playbook":
+                return self.synthesize_adaptive_playbook(params.get("incident_id", "INC-01"), params.get("context"))
+            elif action == "simulate_impact":
+                return self.simulate_remediation_impact(params.get("action_type", "block_ip"), params.get("target", "198.51.100.42"))
+            elif action == "active_response":
+                return self.execute_active_response(params.get("action_type", "block_ip"), params.get("target", "198.51.100.42"), params.get("simulate_only", False))
+            elif action == "sweep_persistence":
+                return self.sweep_persistence_mechanisms(params.get("host", "bastion-gateway"))
+            elif action == "post_mortem":
+                return self.generate_post_mortem_report(params.get("incident_id", "INC-01"), params.get("audience", "executive"))
+            elif action == "cti_rag":
+                return self.query_cti_rag(params.get("indicator", ""))
+            elif action == "deploy_canary":
+                return self.deploy_canary_token(params.get("target_env", "prod-bastion"))
+            elif action == "blast_radius":
+                return self.assess_supply_chain_blast_radius(params.get("package", "log4j-core-2.14.1"))
+            elif action == "apt_attribution":
+                return self.attribute_threat_actor(params.get("incident_id", "INC-01"))
+            elif action == "darkweb":
+                return self.correlate_darkweb_leaks(params.get("user", "sst96@company.internal"))
+            elif action == "copilot_chat":
+                return self.soc_copilot_chat(params.get("prompt", ""), params.get("session_id", "soc-01"))
+            elif action == "shift_handover":
+                return self.generate_shift_handover(params.get("hours", 12))
+            elif action == "detection_tuning":
+                return {"tuning_suggestions": self.autotune_detection_rules()}
+            elif action == "compliance_audit":
+                return self.audit_compliance_continuous(params.get("standard", "ISMS-P"))
+            elif action == "war_game":
+                return self.evaluate_war_game_action(params.get("scenario_id", "WG-2026-01"), params.get("action", ""))
             else:
                 return {"error": f"Unknown siem action: {action}"}
 
@@ -1033,5 +1094,164 @@ class LogccinoMCPTools:
         except Exception:
             pass
         return {"status": "simulated", "kind": kind, "target": "main"}
+
+    # =========================================================================
+    # Next-Gen AI SIEM 30대 핵심 기능 (docs/plan.txt 준수)
+    # =========================================================================
+    # [Pillar 1: AI 자율 트리아지 & 심층 조사]
+    def triage_incident(self, alert_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Feature 01: 자율 다차원 인시던트 트리아지 에이전트 (CoT 거짓 양성 95% 분류)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.triage.triage_incident(alert_data).model_dump()
+
+    def run_persona_swarm(self, incident_id: str, incident_context: Dict[str, Any]) -> Dict[str, Any]:
+        """Feature 02: 동적 가상 분석관 스웜 (IR, Malware, Network 전문가 토론 합의)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.triage.run_persona_swarm(incident_id, incident_context).model_dump()
+
+    def synthesize_attack_graph(self, incident_id: str, seed_event: Dict[str, Any]) -> Dict[str, Any]:
+        """Feature 03: 인과 추론 기반 근본 원인(Root-Cause) DAG 그래프 합성기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.triage.synthesize_causal_attack_graph(incident_id, seed_event).model_dump()
+
+    def eliminate_noise_and_tune(self, recurring_alerts: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Feature 04: 비정상 이상치 자율 학습 및 노이즈 소멸기 (70% 삭감)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.triage.eliminate_noise_and_tune(recurring_alerts).model_dump()
+
+    def storyboard_entity(self, entity_id: str, lookback_days: int = 30) -> Dict[str, Any]:
+        """Feature 05: 실시간 위협 엔티티 프로파일링 & 이상 행동 서사화"""
+        from core.siem.engine import siem_engine
+        return siem_engine.triage.storyboard_entity(entity_id, lookback_days).model_dump()
+
+    # [Pillar 2: 생성형 위협 헌팅 & PPL/SPL 쿼리 합성]
+    def synthesize_ppl_query(self, natural_query: str) -> Dict[str, Any]:
+        """Feature 06: 자연어 기반 제로샷 PPL/SPL Cross-Index Join 자동 합성"""
+        from core.siem.engine import siem_engine
+        return siem_engine.hunting.nl_to_ppl_synthesizer(natural_query).model_dump()
+
+    def run_threat_hunting_hypotheses(self) -> List[Dict[str, Any]]:
+        """Feature 07: 가설 주도형 자율 위협 헌팅 에이전트 (미탐 위협 능동 탐색)"""
+        from core.siem.engine import siem_engine
+        return [h.model_dump() for h in siem_engine.hunting.run_autonomous_hunting_hypotheses()]
+
+    def synthesize_cti_detection_rule(self, cti_doc: str, register_in_saved_searches: bool = True) -> Dict[str, Any]:
+        """Feature 08: 글로벌 CTI 기반 자동 탐지 룰 생성 및 savedsearches 등록"""
+        from core.siem.engine import siem_engine
+        return siem_engine.hunting.synthesize_detection_rules_from_cti(cti_doc, register_in_saved_searches).model_dump()
+
+    def probe_telemetry_blind_spots(self) -> Dict[str, Any]:
+        """Feature 09: 미탐 위협 사각지대(Blind Spot) 능동 탐사기 (MITRE 매트릭스 대조)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.hunting.probe_telemetry_blind_spots().model_dump()
+
+    def emulate_adversary_hunting(self, threat_actor: str = "APT29") -> Dict[str, Any]:
+        """Feature 10: 공격자 관점(Red Team Persona) 헌팅 시뮬레이터"""
+        from core.siem.engine import siem_engine
+        return siem_engine.hunting.emulate_adversary_hunting(threat_actor).model_dump()
+
+    # [Pillar 3: 인과 공격 스토리보드 & MITRE ATT&CK 동적 매핑]
+    def build_mitre_storyboard(self, incident_id: str) -> Dict[str, Any]:
+        """Feature 11: MITRE ATT&CK 킬체인 실시간 스토리보드 생성기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.storyboard.build_mitre_storyboard(incident_id).model_dump()
+
+    def stitch_cross_telemetry_timeline(self) -> Dict[str, Any]:
+        """Feature 12: 다중 데이터소스 교차 타임라인 정합성 합성기 (UTC 시간대 교정)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.storyboard.stitch_cross_telemetry_timeline().model_dump()
+
+    def reconstruct_lateral_movement(self, host: str = "bastion-gateway") -> Dict[str, Any]:
+        """Feature 13: 계정-네트워크 횡적 이동(Lateral Movement) 경로 재구성기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.storyboard.reconstruct_lateral_movement(host).model_dump()
+
+    def narrate_data_exfiltration(self) -> Dict[str, Any]:
+        """Feature 14: 데이터 유출 잠행 채널 탐지 및 서사화 (DNS 터널링/슬로우 유출)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.storyboard.narrate_exfiltration_channels().model_dump()
+
+    def storyboard_config_tampering(self) -> Dict[str, Any]:
+        """Feature 15: 비인가 클라우드/K8s RBAC 변조 이력 내러티브"""
+        from core.siem.engine import siem_engine
+        return siem_engine.storyboard.storyboard_config_tampering().model_dump()
+
+    # [Pillar 4: 자율 대응 플레이북 및 능동 복구]
+    def synthesize_adaptive_playbook(self, incident_id: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Feature 16: 인시던트 맞춤형 동적 플레이북 자동 합성기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.soar.synthesize_adaptive_playbook(incident_id, context).model_dump()
+
+    def simulate_remediation_impact(self, action_type: str, target: str) -> Dict[str, Any]:
+        """Feature 17: 무중단 격리 및 차단 액션 안전성 시뮬레이터 (비즈니스 장애 방지)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.soar.simulate_remediation_impact(action_type, target).model_dump()
+
+    def execute_active_response(self, action_type: str, target: str, simulate_only: bool = False) -> Dict[str, Any]:
+        """Feature 18: 멀티 벤더 실시간 능동 대응 오케스트레이터 (UFW/IAM/EDR)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.soar.execute_active_response(action_type, target, simulate_only).model_dump()
+
+    def sweep_persistence_mechanisms(self, target_host: str = "bastion-gateway") -> Dict[str, Any]:
+        """Feature 19: 공격자 거점(Persistence) 자율 소탕 및 무력화기 (Cron/SSH키)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.soar.sweep_persistence_mechanisms(target_host).model_dump()
+
+    def generate_post_mortem_report(self, incident_id: str, audience: str = "executive") -> Dict[str, Any]:
+        """Feature 20: 인시던트 사후 보고서 및 KISA 규제 감사 자동 생성기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.soar.generate_incident_post_mortem(incident_id, audience).model_dump()
+
+    # [Pillar 5: 위협 인텔리전스(CTI) 융합 & 생성형 디셉션]
+    def query_cti_rag(self, indicator_or_text: str) -> Dict[str, Any]:
+        """Feature 21: 비정형 사이버 위협 인텔리전스 RAG 합성기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.intel.query_unstructured_cti_rag(indicator_or_text).model_dump()
+
+    def deploy_canary_token(self, target_env: str = "prod-bastion") -> Dict[str, Any]:
+        """Feature 22: 동적 허니팟 및 카나리 토큰 자동 합성기 (100% 신뢰도)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.intel.deploy_synthetic_canary_tokens(target_env).model_dump()
+
+    def assess_supply_chain_blast_radius(self, package_or_cve: str = "log4j-core-2.14.1") -> Dict[str, Any]:
+        """Feature 23: 공급망 및 오픈소스 취약점 영향도 분석기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.intel.assess_supply_chain_blast_radius(package_or_cve).model_dump()
+
+    def attribute_threat_actor(self, incident_id: str) -> Dict[str, Any]:
+        """Feature 24: 공격자 프로파일링 및 배후 조직(APT Attribution) 추론기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.intel.profile_threat_actor_attribution(incident_id).model_dump()
+
+    def correlate_darkweb_leaks(self, user_or_ip: str = "sst96@company.internal") -> Dict[str, Any]:
+        """Feature 25: 다크웹 유출 계정 및 크리덴셜 실시간 상관 탐지기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.intel.correlate_darkweb_leaks(user_or_ip).model_dump()
+
+    # [Pillar 6: 대화형 SOC 코파일럿 & 보안 거버넌스]
+    def soc_copilot_chat(self, user_prompt: str, session_id: str = "soc-copilot-01") -> Dict[str, Any]:
+        """Feature 26: 보안관제 대화형 실시간 코파일럿 (MCP Tool Execution)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.copilot.soc_copilot_chat(user_prompt, session_id).model_dump()
+
+    def generate_shift_handover(self, hours: int = 12) -> Dict[str, Any]:
+        """Feature 27: 교대 근무 인수인계 및 음성 브리핑 생성기 (5줄 요약+TTS)"""
+        from core.siem.engine import siem_engine
+        return siem_engine.copilot.generate_shift_handover_briefing(hours).model_dump()
+
+    def autotune_detection_rules(self) -> List[Dict[str, Any]]:
+        """Feature 28: SIEM 탐지 규칙(Detection-as-Code) 자율 튜닝 및 최적화기"""
+        from core.siem.engine import siem_engine
+        return [s.model_dump() for s in siem_engine.copilot.autotune_detection_rules()]
+
+    def audit_compliance_continuous(self, standard: str = "ISMS-P") -> Dict[str, Any]:
+        """Feature 29: 규제 준수(ISMS-P, ISO 27001) 상시 감사기"""
+        from core.siem.engine import siem_engine
+        return siem_engine.copilot.audit_compliance_continuous(standard).model_dump()
+
+    def evaluate_war_game_action(self, scenario_id: str, user_action: str) -> Dict[str, Any]:
+        """Feature 30: 보안 분석관 역량 강화 가상 코칭 에이전트 평가"""
+        from core.siem.engine import siem_engine
+        return siem_engine.copilot.evaluate_war_game_action(scenario_id, user_action).model_dump()
 
 mcp_tools = LogccinoMCPTools()

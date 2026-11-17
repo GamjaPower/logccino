@@ -43,23 +43,43 @@
     "default_route": "siem",
     "nav_items": [
       {
-        "title": "Security Posture",
-        "action": "open_siem_posture",
+        "title": "Overview & Engine",
+        "action": "open_siem_overview",
         "icon": "shield"
       },
       {
-        "title": "Incident Review",
-        "action": "open_incident_review",
-        "icon": "alert-triangle"
+        "title": "AI Triage & Swarm",
+        "action": "open_siem_triage",
+        "icon": "cpu"
       },
       {
-        "title": "Syslog Engine",
-        "action": "open_syslog_engine",
-        "icon": "server"
+        "title": "Threat Hunting",
+        "action": "open_siem_hunting",
+        "icon": "search"
+      },
+      {
+        "title": "MITRE Storyboard",
+        "action": "open_siem_storyboard",
+        "icon": "git-commit"
+      },
+      {
+        "title": "Autonomous SOAR",
+        "action": "open_siem_soar",
+        "icon": "zap"
+      },
+      {
+        "title": "CTI & Deception",
+        "action": "open_siem_intel",
+        "icon": "crosshair"
+      },
+      {
+        "title": "SOC Copilot & Audit",
+        "action": "open_siem_copilot",
+        "icon": "bot"
       }
     ],
     "created_at": "2026-11-17T10:52:59.299972+00:00",
-    "updated_at": "2026-11-17T12:23:47.295772+00:00"
+    "updated_at": "2026-11-17T12:38:57.205515+00:00"
   },
   "sre": {
     "id": "sre",
@@ -85,6 +105,6 @@
       }
     ],
     "created_at": "2026-11-17T10:52:59.299984+00:00",
-    "updated_at": "2026-11-17T12:23:47.188351+00:00"
+    "updated_at": "2026-11-17T12:38:57.128136+00:00"
   }
 }

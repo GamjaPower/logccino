@@ -411,6 +411,165 @@ if HAS_MCP and mcp_app:
         res = mcp_tools.get_splunk_fields(index_pattern=index_pattern)
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    # -------------------------------------------------------------------------
+    # Next-Gen AI SIEM 30대 핵심 도구 등록 (docs/plan.txt 준수)
+    # -------------------------------------------------------------------------
+    # Pillar 1
+    @mcp_app.tool()
+    def siem_triage_incident(alert_data: Dict[str, Any]) -> str:
+        """Feature 01: 자율 다차원 인시던트 트리아지 에이전트 (CoT 거짓 양성 95% 분류)"""
+        return json.dumps(mcp_tools.triage_incident(alert_data), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_run_persona_swarm(incident_id: str, incident_context: Dict[str, Any]) -> str:
+        """Feature 02: 동적 가상 분석관 스웜 (IR, Malware, Network 전문가 3자 합의)"""
+        return json.dumps(mcp_tools.run_persona_swarm(incident_id, incident_context), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_synthesize_attack_graph(incident_id: str, seed_event: Dict[str, Any]) -> str:
+        """Feature 03: 인과 추론 기반 근본 원인(Patient Zero) DAG 공격 그래프 합성"""
+        return json.dumps(mcp_tools.synthesize_attack_graph(incident_id, seed_event), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_eliminate_noise(recurring_alerts: List[Dict[str, Any]]) -> str:
+        """Feature 04: 비정상 이상치 자율 학습 및 노이즈 소멸기 (70% 절감)"""
+        return json.dumps(mcp_tools.eliminate_noise_and_tune(recurring_alerts), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_storyboard_entity(entity_id: str, lookback_days: int = 30) -> str:
+        """Feature 05: 실시간 위협 엔티티 프로파일링 & 이상 행동 서사화"""
+        return json.dumps(mcp_tools.storyboard_entity(entity_id, lookback_days), ensure_ascii=False, indent=2)
+
+    # Pillar 2
+    @mcp_app.tool()
+    def siem_synthesize_ppl_query(natural_query: str) -> str:
+        """Feature 06: 자연어 기반 제로샷 PPL/SPL Cross-Index Join 자동 합성"""
+        return json.dumps(mcp_tools.synthesize_ppl_query(natural_query), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_run_hunting_hypotheses() -> str:
+        """Feature 07: 가설 주도형 자율 위협 헌팅 에이전트 (미탐 위협 능동 탐색)"""
+        return json.dumps(mcp_tools.run_threat_hunting_hypotheses(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_synthesize_detection_rule(cti_doc: str, register_in_saved_searches: bool = True) -> str:
+        """Feature 08: 글로벌 CTI 기반 자동 탐지 룰 생성 및 savedsearches 등록"""
+        return json.dumps(mcp_tools.synthesize_cti_detection_rule(cti_doc, register_in_saved_searches), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_probe_blind_spots() -> str:
+        """Feature 09: 미탐 위협 사각지대(Blind Spot) 능동 탐사기 (MITRE 매트릭스)"""
+        return json.dumps(mcp_tools.probe_telemetry_blind_spots(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_emulate_adversary(threat_actor: str = "APT29") -> str:
+        """Feature 10: 공격자 관점(Red Team Persona) 헌팅 시뮬레이터"""
+        return json.dumps(mcp_tools.emulate_adversary_hunting(threat_actor), ensure_ascii=False, indent=2)
+
+    # Pillar 3
+    @mcp_app.tool()
+    def siem_build_mitre_storyboard(incident_id: str) -> str:
+        """Feature 11: MITRE ATT&CK 킬체인 실시간 스토리보드 생성기"""
+        return json.dumps(mcp_tools.build_mitre_storyboard(incident_id), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_stitch_timeline() -> str:
+        """Feature 12: 다중 데이터소스 교차 타임라인 정합성 합성기"""
+        return json.dumps(mcp_tools.stitch_cross_telemetry_timeline(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_reconstruct_lateral_movement(host: str = "bastion-gateway") -> str:
+        """Feature 13: 계정-네트워크 횡적 이동 경로 재구성기"""
+        return json.dumps(mcp_tools.reconstruct_lateral_movement(host), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_narrate_exfiltration() -> str:
+        """Feature 14: 데이터 유출 잠행 채널 탐지 및 서사화 (DNS 터널링)"""
+        return json.dumps(mcp_tools.narrate_data_exfiltration(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_storyboard_config_tampering() -> str:
+        """Feature 15: 비인가 클라우드/K8s RBAC 변조 이력 내러티브"""
+        return json.dumps(mcp_tools.storyboard_config_tampering(), ensure_ascii=False, indent=2)
+
+    # Pillar 4
+    @mcp_app.tool()
+    def siem_synthesize_playbook(incident_id: str, context: Optional[Dict[str, Any]] = None) -> str:
+        """Feature 16: 인시던트 맞춤형 동적 플레이북 자동 합성기"""
+        return json.dumps(mcp_tools.synthesize_adaptive_playbook(incident_id, context), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_simulate_impact(action_type: str, target: str) -> str:
+        """Feature 17: 무중단 격리 및 차단 액션 안전성 시뮬레이터"""
+        return json.dumps(mcp_tools.simulate_remediation_impact(action_type, target), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_execute_active_response(action_type: str, target: str, simulate_only: bool = False) -> str:
+        """Feature 18: 멀티 벤더 실시간 능동 대응 오케스트레이터 (UFW/IAM/EDR)"""
+        return json.dumps(mcp_tools.execute_active_response(action_type, target, simulate_only), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_sweep_persistence(target_host: str = "bastion-gateway") -> str:
+        """Feature 19: 공격자 거점 자율 소탕 및 무력화기 (Cron/SSH키)"""
+        return json.dumps(mcp_tools.sweep_persistence_mechanisms(target_host), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_generate_post_mortem(incident_id: str, audience: str = "executive") -> str:
+        """Feature 20: 인시던트 사후 보고서 및 KISA 규제 감사 자동 생성기"""
+        return json.dumps(mcp_tools.generate_post_mortem_report(incident_id, audience), ensure_ascii=False, indent=2)
+
+    # Pillar 5
+    @mcp_app.tool()
+    def siem_query_cti_rag(indicator_or_text: str) -> str:
+        """Feature 21: 비정형 사이버 위협 인텔리전스 RAG 합성기"""
+        return json.dumps(mcp_tools.query_cti_rag(indicator_or_text), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_deploy_canary(target_env: str = "prod-bastion") -> str:
+        """Feature 22: 동적 허니팟 및 카나리 토큰 자동 합성기"""
+        return json.dumps(mcp_tools.deploy_canary_token(target_env), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_assess_blast_radius(package_or_cve: str = "log4j-core-2.14.1") -> str:
+        """Feature 23: 공급망 및 오픈소스 취약점 영향도 분석기"""
+        return json.dumps(mcp_tools.assess_supply_chain_blast_radius(package_or_cve), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_attribute_apt(incident_id: str) -> str:
+        """Feature 24: 공격자 프로파일링 및 배후 조직(APT Attribution) 추론기"""
+        return json.dumps(mcp_tools.attribute_threat_actor(incident_id), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_correlate_darkweb(user_or_ip: str = "sst96@company.internal") -> str:
+        """Feature 25: 다크웹 유출 계정 및 크리덴셜 실시간 상관 탐지기"""
+        return json.dumps(mcp_tools.correlate_darkweb_leaks(user_or_ip), ensure_ascii=False, indent=2)
+
+    # Pillar 6
+    @mcp_app.tool()
+    def siem_copilot_chat(user_prompt: str, session_id: str = "soc-copilot-01") -> str:
+        """Feature 26: 보안관제 대화형 실시간 코파일럿 (MCP Tool Execution)"""
+        return json.dumps(mcp_tools.soc_copilot_chat(user_prompt, session_id), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_generate_shift_handover(hours: int = 12) -> str:
+        """Feature 27: 교대 근무 인수인계 및 음성 브리핑 생성기 (5줄 요약+TTS)"""
+        return json.dumps(mcp_tools.generate_shift_handover(hours), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_autotune_detection_rules() -> str:
+        """Feature 28: SIEM 탐지 규칙(Detection-as-Code) 자율 튜닝 및 최적화기"""
+        return json.dumps(mcp_tools.autotune_detection_rules(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_audit_compliance(standard: str = "ISMS-P") -> str:
+        """Feature 29: 규제 준수(ISMS-P, ISO 27001) 상시 감사기"""
+        return json.dumps(mcp_tools.audit_compliance_continuous(standard), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_evaluate_war_game_action(scenario_id: str, user_action: str) -> str:
+        """Feature 30: 보안 분석관 역량 강화 가상 코칭 에이전트 평가"""
+        return json.dumps(mcp_tools.evaluate_war_game_action(scenario_id, user_action), ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------
