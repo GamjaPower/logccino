@@ -66,3 +66,79 @@ async def natural_language_search(req: NaturalQueryRequest):
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+from pydantic import BaseModel, Field
+from typing import List, Optional, Any, Union
+
+class PPLSearchRequest(BaseModel):
+    query: str
+    limit: Optional[int] = 100
+
+class JoinSearchRequest(BaseModel):
+    query: Optional[str] = None
+    left_query: Optional[str] = None
+    right_query: Optional[str] = None
+    on: Union[str, List[str]] = "host"
+    how: str = "inner"
+
+@router.post("/ppl")
+async def search_ppl(req: PPLSearchRequest):
+    """
+    Splunk 스타일 PPL 및 Cross-Index Join 검색 실행기
+    '| join [ ... ]' 구문 사용 시 백엔드 인메모리 해시 조인이 자동 수행됩니다.
+    """
+    try:
+        raw_res = executor.execute_ppl(req.query)
+        formatted_hits = executor.format_ppl_response(raw_res)
+        return {
+            "status": "success",
+            "query": req.query,
+            "total": len(formatted_hits),
+            "schema": raw_res.get("schema", []),
+            "hits": formatted_hits,
+            "mode": raw_res.get("mode", "ppl")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"PPL execution error: {str(e)}")
+
+@router.post("/join")
+async def search_join(req: JoinSearchRequest):
+    """
+    Splunk 스타일 Cross-Index Join 전용 엔드포인트
+    단일 쿼리 문자열(| join [ ... ]) 또는 left/right 쿼리 분할 실행 지원
+    """
+    from core.query.join_engine import SplunkJoinEngine
+    try:
+        if req.query and req.query.strip():
+            raw_res = executor.execute_ppl(req.query)
+            formatted_hits = executor.format_ppl_response(raw_res)
+            return {
+                "status": "success",
+                "query": req.query,
+                "total": len(formatted_hits),
+                "hits": formatted_hits,
+                "schema": raw_res.get("schema", [])
+            }
+
+        if not req.left_query or not req.right_query:
+            raise HTTPException(status_code=400, detail="Either 'query' or both 'left_query' and 'right_query' must be provided.")
+
+        keys = [req.on] if isinstance(req.on, str) else req.on
+        left_res = executor.execute_ppl(req.left_query)
+        left_recs = executor.format_ppl_response(left_res)
+
+        right_res = executor.execute_ppl(req.right_query)
+        right_recs = executor.format_ppl_response(right_res)
+
+        joined = SplunkJoinEngine.hash_join(left_recs, right_recs, keys=keys, how=req.how)
+        return {
+            "status": "success",
+            "left_query": req.left_query,
+            "right_query": req.right_query,
+            "keys": keys,
+            "how": req.how,
+            "total": len(joined),
+            "hits": joined
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

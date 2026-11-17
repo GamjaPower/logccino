@@ -1,0 +1,90 @@
+{
+  "search": {
+    "id": "search",
+    "name": "Search & Reporting",
+    "description": "Splunk 표준 검색 인터페이스, 크로스 인덱스 Join, 통계 분석 및 시계열 타임라인",
+    "version": "10.0.0",
+    "author": "Logccino Core",
+    "icon": "search",
+    "category": "core",
+    "enabled": true,
+    "is_system": true,
+    "default_route": "search",
+    "nav_items": [
+      {
+        "title": "Search",
+        "action": "open_search",
+        "icon": "search"
+      },
+      {
+        "title": "Analytics",
+        "action": "open_analytics",
+        "icon": "bar-chart-2"
+      },
+      {
+        "title": "Datasets",
+        "action": "open_datasets",
+        "icon": "database"
+      }
+    ],
+    "created_at": "2026-11-17T10:52:59.299944+00:00",
+    "updated_at": "2026-11-17T10:52:59.299958+00:00"
+  },
+  "siem": {
+    "id": "siem",
+    "name": "Enterprise Security (SIEM)",
+    "description": "독립 보안 관제 앱: Rust 고성능 Syslog 수집기, 실시간 공격 시뮬레이터, MITRE ATT&CK 상관분석 및 자율 SOC",
+    "version": "4.2.0",
+    "author": "Logccino Security Team",
+    "icon": "shield-alert",
+    "category": "security",
+    "enabled": true,
+    "is_system": false,
+    "default_route": "siem",
+    "nav_items": [
+      {
+        "title": "Security Posture",
+        "action": "open_siem_posture",
+        "icon": "shield"
+      },
+      {
+        "title": "Incident Review",
+        "action": "open_incident_review",
+        "icon": "alert-triangle"
+      },
+      {
+        "title": "Syslog Engine",
+        "action": "open_syslog_engine",
+        "icon": "server"
+      }
+    ],
+    "created_at": "2026-11-17T10:52:59.299972+00:00",
+    "updated_at": "2026-11-17T10:54:37.518492+00:00"
+  },
+  "sre": {
+    "id": "sre",
+    "name": "Autonomous SRE Observability",
+    "description": "자율형 AI 장애 원인 분석(RCA), SLO 에러 버짓 모니터링 및 대화형 지능형 진단 에이전트",
+    "version": "2.1.0",
+    "author": "Logccino Observability Team",
+    "icon": "bot",
+    "category": "observability",
+    "enabled": true,
+    "is_system": false,
+    "default_route": "sre",
+    "nav_items": [
+      {
+        "title": "RCA Console",
+        "action": "open_sre_console",
+        "icon": "terminal"
+      },
+      {
+        "title": "SLO / MTTR",
+        "action": "open_slo_metrics",
+        "icon": "activity"
+      }
+    ],
+    "created_at": "2026-11-17T10:52:59.299984+00:00",
+    "updated_at": "2026-11-17T10:52:59.299986+00:00"
+  }
+}

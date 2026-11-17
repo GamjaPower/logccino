@@ -310,6 +310,38 @@ if HAS_MCP and mcp_app:
         res = mcp_tools.toggle_siem_module(enabled=enabled)
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    @mcp_app.tool()
+    def list_installed_apps() -> str:
+        """
+        List all installed apps in Logccino (Search & Reporting, Enterprise Security, Autonomous SRE, etc.).
+        """
+        res = mcp_tools.list_installed_apps()
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def toggle_app(app_id: str, enabled: Optional[bool] = None) -> str:
+        """
+        Enable or disable a specific Logccino app (e.g. 'siem', 'sre').
+        """
+        res = mcp_tools.toggle_app(app_id, enabled=enabled)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def execute_joined_query(
+        query: Optional[str] = None,
+        left_query: Optional[str] = None,
+        right_query: Optional[str] = None,
+        on: str = "host",
+        how: str = "inner"
+    ) -> str:
+        """
+        Execute a Splunk-style cross-index join query across OpenSearch indices.
+        Example Splunk syntax:
+        source = main | stats count() as sec_cnt by host | join type=left host [ source = logccino-logs-* | stats count() as app_cnt by host ]
+        """
+        res = mcp_tools.execute_joined_query(query=query, left_query=left_query, right_query=right_query, on=on, how=how)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------

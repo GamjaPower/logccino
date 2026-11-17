@@ -70,6 +70,10 @@ class ModuleManager:
         return self._modules.get(module_id)
 
     def is_enabled(self, module_id: str) -> bool:
+        from core.apps.manager import app_manager
+        app = app_manager.get_app(module_id)
+        if app:
+            return app.enabled
         mod = self._modules.get(module_id)
         return mod.enabled if mod else False
 
@@ -89,6 +93,15 @@ class ModuleManager:
 
         mod.updated_at = datetime.now(timezone.utc).isoformat()
         self.save_storage()
+
+        # Synchronize with app_manager if matching app exists
+        try:
+            from core.apps.manager import app_manager
+            if app_manager.get_app(module_id):
+                app_manager.toggle_app(module_id, mod.enabled)
+        except Exception:
+            pass
+
         logger.info(f"Module '{module_id}' state updated: enabled={mod.enabled}")
         return mod
 

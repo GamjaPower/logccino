@@ -53,7 +53,58 @@ class QueryExecutor:
         }
 
     def execute_ppl(self, ppl_query: str) -> Dict[str, Any]:
-        """OpenSearch PPL (Piped Processing Language) 엔드포인트 호출"""
+        """
+        OpenSearch PPL (Piped Processing Language) 실행기
+        - 쿼리에 Splunk 스타일 '| join [ ... ]' 이 포함된 경우 백엔드 SplunkJoinEngine이 분산 인덱스 해시 조인을 수행
+        - 일반 PPL 쿼리는 OpenSearch _plugins/_ppl 로 직접 전달
+        """
+        from core.query.join_engine import SplunkJoinEngine
+
+        # Splunk Join 문법 감지 시 백엔드 조인 엔진으로 처리
+        if SplunkJoinEngine.is_join_query(ppl_query):
+            spec = SplunkJoinEngine.parse_join_query(ppl_query)
+            if spec:
+                logger.info(f"Executing Splunk-style join: left='{spec.left_query}', right='{spec.right_query}', keys={spec.keys}, type={spec.join_type}")
+                # Left 쿼리 실행
+                left_res = self.execute_ppl(spec.left_query)
+                left_records = self.format_ppl_response(left_res)
+
+                # Right 쿼리 실행
+                right_res = self.execute_ppl(spec.right_query)
+                right_records = self.format_ppl_response(right_res)
+
+                # 백엔드 인메모리 해시 조인
+                joined = SplunkJoinEngine.hash_join(
+                    left_records=left_records,
+                    right_records=right_records,
+                    keys=spec.keys,
+                    how=spec.join_type
+                )
+
+                # 후속 파이프 적용 (| head N, | fields ...)
+                final_records = SplunkJoinEngine.apply_post_pipe(joined, spec.post_pipe)
+
+                # PPL 스키마/데이터로우 표준 규격으로 반환
+                all_keys = []
+                key_set = set()
+                for r in final_records:
+                    for k in r.keys():
+                        if k not in key_set:
+                            key_set.add(k)
+                            all_keys.append(k)
+                schema = [{"name": k, "type": "string"} for k in all_keys]
+                datarows = [[r.get(k) for k in all_keys] for r in final_records]
+
+                return {
+                    "schema": schema,
+                    "datarows": datarows,
+                    "total": len(final_records),
+                    "size": len(final_records),
+                    "mode": "splunk_join",
+                    "join_spec": spec.model_dump(),
+                    "joined_records": final_records
+                }
+
         try:
             res = self.client.transport.perform_request(
                 method="POST",

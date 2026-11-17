@@ -734,4 +734,68 @@ class LogccinoMCPTools:
         mod = module_manager.toggle("siem", enabled)
         return mod.model_dump()
 
+    def list_installed_apps(self, include_disabled: bool = True) -> List[Dict[str, Any]]:
+        """
+        Logccino 및 Splunk 호환 설치된 앱 목록을 조회합니다. (Search & Reporting, Enterprise Security, Autonomous SRE 등)
+        """
+        from core.apps.manager import app_manager
+        return [a.model_dump() for a in app_manager.list_apps(include_disabled=include_disabled)]
+
+    def toggle_app(self, app_id: str, enabled: Optional[bool] = None) -> Dict[str, Any]:
+        """
+        앱을 활성화(ON)하거나 비활성화(OFF)합니다.
+        (예: Enterprise Security SIEM 앱을 끄거나 켜기)
+        """
+        from core.apps.manager import app_manager
+        app = app_manager.toggle_app(app_id, enabled)
+        return app.model_dump()
+
+    def execute_joined_query(
+        self,
+        query: Optional[str] = None,
+        left_query: Optional[str] = None,
+        right_query: Optional[str] = None,
+        on: str = "host",
+        how: str = "inner"
+    ) -> Dict[str, Any]:
+        """
+        OpenSearch에서 네이티브로 지원하지 않는 Splunk 스타일 Cross-Index Join 쿼리를 실행합니다.
+        - Splunk 문법 지원: 'source = main | stats count() as sec_cnt by host | join type=left host [ source = logccino-logs-* | stats count() as app_cnt by host ]'
+        - 또는 left_query, right_query, on, how를 지정하여 프로그래밍 방식으로 조인 실행
+        """
+        from core.query.join_engine import SplunkJoinEngine
+        try:
+            if query and query.strip():
+                raw = self.executor.execute_ppl(query)
+                hits = self.executor.format_ppl_response(raw)
+                return {
+                    "status": "success",
+                    "mode": "splunk_join",
+                    "total": len(hits),
+                    "hits": hits,
+                    "schema": raw.get("schema", [])
+                }
+
+            if not left_query or not right_query:
+                return {"error": "Either 'query' or both 'left_query' and 'right_query' must be provided."}
+
+            l_res = self.executor.execute_ppl(left_query)
+            l_hits = self.executor.format_ppl_response(l_res)
+
+            r_res = self.executor.execute_ppl(right_query)
+            r_hits = self.executor.format_ppl_response(r_res)
+
+            joined = SplunkJoinEngine.hash_join(l_hits, r_hits, keys=[on], how=how)
+            return {
+                "status": "success",
+                "left_query": left_query,
+                "right_query": right_query,
+                "on": on,
+                "how": how,
+                "total": len(joined),
+                "hits": joined
+            }
+        except Exception as e:
+            return {"error": f"Join query execution failed: {str(e)}"}
+
 mcp_tools = LogccinoMCPTools()
