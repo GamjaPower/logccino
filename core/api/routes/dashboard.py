@@ -285,12 +285,6 @@ async def get_enterprise_dashboard():
   <!-- =================================================================================== -->
   <div class="flex flex-1 overflow-hidden relative">
 
-    <!-- SHOW APPS SIDEBAR BUTTON (숨겨진 상태에서 나타나는 열기/보이기 버튼) -->
-    <button onclick="toggleAppsSidebar()" id="btn-show-apps-sidebar" class="hidden absolute left-0 top-3 z-40 bg-[#0b1120] hover:bg-slate-800 border-y border-r border-bordercolor text-slate-200 hover:text-emerald-400 px-3 py-2 rounded-r-lg shadow-2xl flex items-center gap-1.5 transition text-xs font-semibold cursor-pointer group" title="앱 리스트 화면 보이기">
-      <i data-lucide="panel-left-open" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i>
-      <span>앱 리스트 보이기</span>
-    </button>
-
     <!-- LEFT SPLUNK APPS BAR (좌측 앱 리스트) -->
     <aside id="splunk-apps-sidebar" class="w-60 bg-[#0b1120] border-r border-bordercolor flex flex-col shrink-0 select-none transition-all duration-200">
       <div class="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-bordercolor flex items-center justify-between">
@@ -372,26 +366,28 @@ async def get_enterprise_dashboard():
       <!-- =================================================================================== -->
       <div id="view-app-search" class="app-view flex-1 flex flex-col">
         
-        <!-- Splunk Sub-Navigation Bar (Search, Analytics, Datasets, Reports, Alerts, Dashboards) -->
-        <div class="bg-subpanel/90 border-b border-bordercolor px-6 flex items-center justify-between text-xs font-semibold">
+        <!-- Splunk Sub-Navigation Bar (Search, Analytics, Datasets) -->
+        <div class="bg-subpanel/90 border-b border-bordercolor px-6 flex items-center justify-between text-xs font-semibold shrink-0">
           <div class="flex">
-            <button class="px-4 py-2.5 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 transition">
+            <button onclick="switchSearchSubView('search')" id="search-subnav-search" class="px-4 py-2.5 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 transition font-bold">
               <i data-lucide="search" class="w-3.5 h-3.5"></i> Search
             </button>
-            <button onclick="switchSearchTab('charts')" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+            <button onclick="switchSearchSubView('analytics')" id="search-subnav-analytics" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> Analytics
             </button>
-            <button onclick="setSearchPreset('source = main,logccino-logs-* | head 50')" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+            <button onclick="switchSearchSubView('datasets')" id="search-subnav-datasets" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="database" class="w-3.5 h-3.5"></i> Datasets
-            </button>
-            <button onclick="openSavedSearchesModal()" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-              <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-400"></i> Alerts & Saved Searches
             </button>
           </div>
           <div class="text-[11px] font-mono text-slate-400">
             앱: <span class="text-white font-bold">Search &amp; Reporting (v10.0.0)</span>
           </div>
         </div>
+
+        <!-- ===================================================================== -->
+        <!-- SUB-VIEW 1: Search (검색창, 필드 인스펙터, 이벤트 & 통계 결과)         -->
+        <!-- ===================================================================== -->
+        <div id="search-subview-search" class="flex-1 flex flex-col overflow-hidden">
 
         <!-- Splunk Real Search Input & Execution Header -->
         <div class="bg-panelbg border-b border-bordercolor p-5 space-y-3">
@@ -599,6 +595,286 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
+          </div>
+        </div>
+
+        </div> <!-- End search-subview-search -->
+
+        <!-- ===================================================================== -->
+        <!-- SUB-VIEW 2: Analytics (심층 메트릭, 시계열 분석 & 원클릭 PPL 생성기) -->
+        <!-- ===================================================================== -->
+        <div id="search-subview-analytics" class="flex-1 flex flex-col overflow-y-auto p-6 space-y-6 hidden bg-slatebg">
+          <!-- Analytics Header -->
+          <div class="flex items-center justify-between bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md">
+            <div>
+              <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i>
+                <span>Splunk Real-Time Analytics &amp; Metrics Explorer</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live Ingest Telemetry</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">클러스터 인덱스별 이벤트 유입량, 에러 발생 추이, 엔드포인트 지연시간 및 보안 이벤트 종합 분석</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="loadAnalyticsData()" class="px-3 py-1.5 rounded-lg bg-subpanel hover:bg-slate-800 text-slate-200 border border-bordercolor text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>새로고침</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Stats Bar -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-sm">
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">총 인제스트 볼륨 (24h)</div>
+              <div class="text-2xl font-black font-mono text-white flex items-baseline gap-2">
+                <span id="analytics-total-events">128,450</span>
+                <span class="text-xs text-emerald-400 font-semibold">+8.4%</span>
+              </div>
+              <div class="text-[10px] text-slate-500 mt-1">main: 14.2K | logccino-logs: 114.2K</div>
+            </div>
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-sm">
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">평균 검색 지연 (Latency)</div>
+              <div class="text-2xl font-black font-mono text-emerald-400 flex items-baseline gap-2">
+                <span>14.2 ms</span>
+                <span class="text-xs text-slate-400 font-normal">p95: 28.6ms</span>
+              </div>
+              <div class="text-[10px] text-slate-500 mt-1">OpenSearch PPL 직접 실행 엔진</div>
+            </div>
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-sm">
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">시스템 에러율 (Error Rate)</div>
+              <div class="text-2xl font-black font-mono text-amber-400 flex items-baseline gap-2">
+                <span>0.38 %</span>
+                <span class="text-xs text-emerald-400 font-semibold">정상 (Good)</span>
+              </div>
+              <div class="text-[10px] text-slate-500 mt-1">488건의 ERROR/CRITICAL 예외 감지</div>
+            </div>
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-sm">
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">활성 호스트 / 마이크로서비스</div>
+              <div class="text-2xl font-black font-mono text-indigo-400 flex items-baseline gap-2">
+                <span>14 Hosts</span>
+                <span class="text-xs text-slate-400 font-normal">28 Services</span>
+              </div>
+              <div class="text-[10px] text-slate-500 mt-1">Syslog 1514 &amp; REST Ingest 수집 중</div>
+            </div>
+          </div>
+
+          <!-- 2x2 Analytics Chart Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Panel 1: Time Series Trend -->
+            <div class="bg-panelbg p-5 rounded-xl border border-bordercolor shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+                  <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+                  <span>인덱스별 이벤트 수집 추이 (Event Ingestion Trend)</span>
+                </h3>
+                <span class="text-[10px] font-mono text-slate-400">최근 24시간 추이</span>
+              </div>
+              <div class="h-44 w-full flex items-end gap-1.5 pt-4 pb-2 px-2 bg-slatebg/70 rounded-lg border border-bordercolor/50" id="analytics-trend-bars">
+                <!-- Dynamically generated bars via JS -->
+              </div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 px-1">
+                <span>24시간 전</span>
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span> logccino-logs-*</span>
+                  <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-indigo-500"></span> main (Syslog)</span>
+                </div>
+                <span>현재 (Now)</span>
+              </div>
+            </div>
+
+            <!-- Panel 2: Severity Distribution -->
+            <div class="bg-panelbg p-5 rounded-xl border border-bordercolor shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+                  <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-400"></i>
+                  <span>로그 레벨 심각도 분포 (Log Severity Breakdown)</span>
+                </h3>
+                <span class="text-[10px] font-mono text-slate-400">전체 128,450건 기준</span>
+              </div>
+              <div class="p-4 bg-slatebg/70 rounded-lg border border-bordercolor/50 space-y-3">
+                <div>
+                  <div class="flex justify-between text-[11px] mb-1 font-mono">
+                    <span class="text-slate-300 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> INFO / DEBUG</span>
+                    <span class="text-slate-300">121,980건 (95.0%)</span>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div class="bg-emerald-500 h-2 rounded-full" style="width: 95%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] mb-1 font-mono">
+                    <span class="text-amber-400 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> WARN / NOTICE</span>
+                    <span class="text-amber-300">5,982건 (4.6%)</span>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div class="bg-amber-500 h-2 rounded-full" style="width: 4.6%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] mb-1 font-mono">
+                    <span class="text-rose-400 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-400"></span> ERROR / CRITICAL</span>
+                    <span class="text-rose-300">488건 (0.4%)</span>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div class="bg-rose-500 h-2 rounded-full" style="width: 1.5%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 3: Top Talkers -->
+            <div class="bg-panelbg p-5 rounded-xl border border-bordercolor shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+                  <i data-lucide="server" class="w-4 h-4 text-cyan-400"></i>
+                  <span>상위 로그 발신 호스트 (Top Talkers by Host)</span>
+                </h3>
+                <span class="text-[10px] font-mono text-slate-400">Top 4 엔드포인트</span>
+              </div>
+              <div class="space-y-2 text-xs">
+                <div class="p-2.5 rounded bg-slatebg/70 border border-bordercolor/50 flex items-center justify-between font-mono">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[10px]">1</span>
+                    <span class="text-white font-semibold">bastion-gw</span>
+                    <span class="text-[10px] text-slate-400">(리눅스 보안 게이트웨이)</span>
+                  </div>
+                  <span class="font-bold text-emerald-400">48,200건 (37.5%)</span>
+                </div>
+                <div class="p-2.5 rounded bg-slatebg/70 border border-bordercolor/50 flex items-center justify-between font-mono">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-[10px]">2</span>
+                    <span class="text-white font-semibold">mbp15</span>
+                    <span class="text-[10px] text-slate-400">(엔드포인트 에이전트)</span>
+                  </div>
+                  <span class="font-bold text-indigo-400">36,400건 (28.3%)</span>
+                </div>
+                <div class="p-2.5 rounded bg-slatebg/70 border border-bordercolor/50 flex items-center justify-between font-mono">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-slate-800 text-slate-400 font-bold flex items-center justify-center text-[10px]">3</span>
+                    <span class="text-white font-semibold">auth-service-01</span>
+                    <span class="text-[10px] text-slate-400">(인증 마이크로서비스)</span>
+                  </div>
+                  <span class="font-bold text-slate-300">22,100건 (17.2%)</span>
+                </div>
+                <div class="p-2.5 rounded bg-slatebg/70 border border-bordercolor/50 flex items-center justify-between font-mono">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-slate-800 text-slate-400 font-bold flex items-center justify-center text-[10px]">4</span>
+                    <span class="text-white font-semibold">payment-gateway</span>
+                    <span class="text-[10px] text-slate-400">(결제 트랜잭션 서비스)</span>
+                  </div>
+                  <span class="font-bold text-slate-300">14,250건 (11.1%)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 4: Security Events Breakdown -->
+            <div class="bg-panelbg p-5 rounded-xl border border-bordercolor shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i>
+                  <span>보안 감사 이벤트 액션 분석 (Security Action Breakdown)</span>
+                </h3>
+                <span class="text-[10px] font-mono text-slate-400">Syslog main 인덱스</span>
+              </div>
+              <div class="space-y-2 text-xs">
+                <div class="p-2.5 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-rose-300">SSH 로그인 실패 (ssh_login_failure)</div>
+                    <div class="text-[10px] text-slate-400">비인가 패스워드 무차별 대입 시도</div>
+                  </div>
+                  <span class="font-mono font-bold text-rose-400">14건 탐지</span>
+                </div>
+                <div class="p-2.5 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-amber-300">비인가 Sudo 권한 상승 (sudo_escalation)</div>
+                    <div class="text-[10px] text-slate-400">root 권한 셸 명령 실행 감사</div>
+                  </div>
+                  <span class="font-mono font-bold text-amber-400">6건 탐지</span>
+                </div>
+                <div class="p-2.5 rounded bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-indigo-300">방화벽 차단 드롭 (firewall_drop)</div>
+                    <div class="text-[10px] text-slate-400">UFW 경계 비인가 포트 접근 차단</div>
+                  </div>
+                  <span class="font-mono font-bold text-indigo-400">42건 탐지</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metric Query Generator Card -->
+          <div class="bg-panelbg p-5 rounded-xl border border-bordercolor shadow-sm space-y-3">
+            <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+              <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
+              <span>원클릭 PPL 통계 쿼리 생성기 (Metric Explorer to Search)</span>
+            </h3>
+            <p class="text-xs text-slate-400">아래 파라미터를 선택하면 Splunk PPL 집계 쿼리를 즉시 생성하여 Search 탭에서 실행합니다.</p>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
+              <div>
+                <label class="block text-slate-400 text-[11px] font-semibold mb-1">인덱스 데이터셋</label>
+                <select id="analytics-gen-index" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
+                  <option value="logccino-logs-*">logccino-logs-* (마이크로서비스)</option>
+                  <option value="main">main (보안 Syslog)</option>
+                  <option value="main,logccino-logs-*">Cross-Index (전체)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[11px] font-semibold mb-1">집계 함수 (Metric)</label>
+                <select id="analytics-gen-metric" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
+                  <option value="count()">count() (이벤트 건수)</option>
+                  <option value="avg(duration_ms)">avg(duration_ms) (평균 소요시간)</option>
+                  <option value="max(duration_ms)">max(duration_ms) (최대 지연)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[11px] font-semibold mb-1">기준 필드 (Group By)</label>
+                <select id="analytics-gen-group" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
+                  <option value="service, level">service, level (서비스 및 레벨)</option>
+                  <option value="host">host (호스트별)</option>
+                  <option value="service">service (서비스별)</option>
+                  <option value="level">level (로그 레벨별)</option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <button onclick="executeGeneratedAnalyticsQuery()" class="w-full px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                  <span>Search 탭에서 실행</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- SUB-VIEW 3: Datasets (데이터 모델, 인덱스 카탈로그 & 스키마 딕셔너리)   -->
+        <!-- ===================================================================== -->
+        <div id="search-subview-datasets" class="flex-1 flex flex-col overflow-y-auto p-6 space-y-6 hidden bg-slatebg">
+          <!-- Datasets Header -->
+          <div class="flex items-center justify-between bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md">
+            <div>
+              <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
+                <span>Splunk Data Models &amp; Datasets Catalog</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Schema &amp; Field Dictionary</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">클러스터 내의 이벤트 인덱스, 가속화 데이터 모델, 룩업(Lookup) 테이블 메타데이터 및 스키마 사전 탐색</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono text-slate-400">총 5개 데이터셋 등록됨</span>
+            </div>
+          </div>
+
+          <!-- Two-column Layout: Left Dataset Cards, Right Dataset Detail & Schema -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left: Dataset List (5 cols) -->
+            <div class="lg:col-span-5 space-y-3" id="datasets-list-container">
+              <!-- Cards rendered dynamically via JS -->
+            </div>
+
+            <!-- Right: Selected Dataset Detail & Schema Inspector (7 cols) -->
+            <div class="lg:col-span-7 bg-panelbg p-5 rounded-xl border border-bordercolor shadow-md flex flex-col space-y-4" id="dataset-detail-inspector">
+              <!-- Content rendered via JS -->
+            </div>
           </div>
         </div>
 
@@ -1475,18 +1751,15 @@ async def get_enterprise_dashboard():
 
     function toggleAppsSidebar() {
       const sidebar = document.getElementById('splunk-apps-sidebar');
-      const showBtn = document.getElementById('btn-show-apps-sidebar');
       const toggleText = document.getElementById('apps-sidebar-toggle-text');
       if (!sidebar) return;
 
       isAppsSidebarHidden = !isAppsSidebarHidden;
       if (isAppsSidebarHidden) {
         sidebar.classList.add('hidden');
-        if (showBtn) showBtn.classList.remove('hidden');
         if (toggleText) toggleText.textContent = "앱 리스트 열기";
       } else {
         sidebar.classList.remove('hidden');
-        if (showBtn) showBtn.classList.add('hidden');
         if (toggleText) toggleText.textContent = "앱 리스트 숨기기";
       }
       lucide.createIcons();
@@ -2158,6 +2431,340 @@ async def get_enterprise_dashboard():
         setTimeout(initOverviewCharts, 50);
       }
       lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // Search Sub-Navigation: Search vs Analytics vs Datasets
+    // -------------------------------------------------------------
+    let currentSearchSubView = 'search';
+
+    function switchSearchSubView(subview) {
+      currentSearchSubView = subview;
+      const subviews = ['search', 'analytics', 'datasets'];
+      subviews.forEach(s => {
+        const el = document.getElementById(`search-subview-${s}`);
+        const btn = document.getElementById(`search-subnav-${s}`);
+        if (el) el.classList.add('hidden');
+        if (btn) btn.className = 'px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
+      });
+
+      const activeEl = document.getElementById(`search-subview-${subview}`);
+      const activeBtn = document.getElementById(`search-subnav-${subview}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+      if (activeBtn) activeBtn.className = 'px-4 py-2.5 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 transition font-bold';
+
+      if (subview === 'analytics') {
+        loadAnalyticsData();
+      } else if (subview === 'datasets') {
+        renderDatasetsView();
+      }
+      lucide.createIcons();
+    }
+
+    function loadAnalyticsData() {
+      const barsContainer = document.getElementById('analytics-trend-bars');
+      if (!barsContainer) return;
+
+      const hourlyVolumes = [
+        { app: 35, sys: 12 }, { app: 42, sys: 15 }, { app: 28, sys: 8 }, { app: 22, sys: 6 },
+        { app: 18, sys: 5 },  { app: 25, sys: 7 },  { app: 50, sys: 14 }, { app: 72, sys: 22 },
+        { app: 88, sys: 29 }, { app: 95, sys: 32 }, { app: 80, sys: 26 }, { app: 85, sys: 28 },
+        { app: 78, sys: 24 }, { app: 82, sys: 25 }, { app: 90, sys: 30 }, { app: 94, sys: 35 },
+        { app: 86, sys: 28 }, { app: 89, sys: 31 }, { app: 92, sys: 33 }, { app: 96, sys: 36 },
+        { app: 84, sys: 27 }, { app: 76, sys: 23 }, { app: 68, sys: 20 }, { app: 75, sys: 24 }
+      ];
+
+      barsContainer.innerHTML = hourlyVolumes.map((h, i) => {
+        const appPct = Math.round((h.app / 130) * 100);
+        const sysPct = Math.round((h.sys / 130) * 100);
+        return `
+          <div class="flex-1 flex flex-col justify-end h-full group relative cursor-pointer" title="${24 - i}시간 전: 마이크로서비스 ${h.app*100}건, Syslog ${h.sys*100}건">
+            <div class="w-full bg-emerald-500 rounded-t-sm group-hover:brightness-125 transition" style="height: ${appPct}%;"></div>
+            <div class="w-full bg-indigo-500 rounded-b-sm group-hover:brightness-125 transition" style="height: ${sysPct}%;"></div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function executeGeneratedAnalyticsQuery() {
+      const idx = document.getElementById('analytics-gen-index').value;
+      const metric = document.getElementById('analytics-gen-metric').value;
+      const group = document.getElementById('analytics-gen-group').value;
+
+      const generatedQuery = `source = ${idx} | stats ${metric} as value by ${group} | sort -value | head 20`;
+      document.getElementById('search-query-input').value = generatedQuery;
+      switchSearchSubView('search');
+      executeSplunkSearch();
+    }
+
+    const datasetsCatalog = [
+      {
+        id: "main",
+        name: "main",
+        type: "Event Index (Syslog RFC 5424/3164)",
+        category: "event_index",
+        badge: "Event Index",
+        badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+        description: "리눅스 OS 보안 감사, 인증(Auth), SSH 접속 실패, Sudo 권한 상승 및 방화벽 차단 이벤트 원천 저장소",
+        docCount: "14,200",
+        size: "48.2 MB",
+        retention: "90일",
+        lastEvent: "1분 전",
+        schema: [
+          { name: "@timestamp", type: "date", sample: "2026-11-17T21:00:00Z", desc: "로그 수집/발생 표준 UTC 시각" },
+          { name: "host", type: "string", sample: "bastion-gw", desc: "이벤트 발신 호스트네임" },
+          { name: "facility", type: "string", sample: "authpriv", desc: "Syslog Facility 분류 코드" },
+          { name: "severity", type: "string", sample: "CRITICAL", desc: "Syslog 심각도 레벨" },
+          { name: "program", type: "string", sample: "sshd", desc: "로그 생성 데몬/프로그램 식별자" },
+          { name: "pid", type: "number", sample: "1104", desc: "프로세스 ID" },
+          { name: "security.action", type: "string", sample: "ssh_login_failure", desc: "보안 이벤트 분류 액션 태그" },
+          { name: "security.src_ip", type: "ip", sample: "192.168.1.105", desc: "접속 시도 출발지 IP" },
+          { name: "message", type: "string", sample: "Failed password for invalid user root", desc: "원천 Syslog 페이로드 메시지" }
+        ],
+        sample: [
+          { "@timestamp": "2026-11-17T21:05:12Z", "host": "bastion-gw", "program": "sshd", "security.action": "ssh_login_failure", "security.src_ip": "203.0.113.45", "message": "Failed password for invalid user admin" },
+          { "@timestamp": "2026-11-17T21:04:40Z", "host": "mbp15", "program": "sudo", "security.action": "sudo_escalation", "user": "sst96", "message": "sst96 : TTY=pts/0 ; COMMAND=/bin/bash" },
+          { "@timestamp": "2026-11-17T21:03:15Z", "host": "bastion-gw", "program": "ufw", "security.action": "firewall_drop", "security.src_ip": "198.51.100.22", "message": "[UFW BLOCK] IN=eth0 OUT= SRC=198.51.100.22 PROTO=TCP DPT=22" }
+        ]
+      },
+      {
+        id: "logccino-logs-*",
+        name: "logccino-logs-*",
+        type: "Microservice JSON Index",
+        category: "event_index",
+        badge: "Microservice Index",
+        badgeColor: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+        description: "전사 분산 마이크로서비스 및 REST API 트랜잭션, 분산 추적(Distributed Tracing) JSON 로그",
+        docCount: "114,250",
+        size: "218.4 MB",
+        retention: "30일",
+        lastEvent: "실시간 스트리밍 중",
+        schema: [
+          { name: "@timestamp", type: "date", sample: "2026-11-17T21:05:00Z", desc: "이벤트 수집 시각" },
+          { name: "service", type: "string", sample: "payment-service", desc: "마이크로서비스 애플리케이션 명칭" },
+          { name: "level", type: "string", sample: "ERROR", desc: "로그 레벨 (INFO, WARN, ERROR)" },
+          { name: "trace_id", type: "string", sample: "tr-7f8e9a1b", desc: "분산 트랜잭션 Trace ID" },
+          { name: "span_id", type: "string", sample: "sp-0a1b2c", desc: "구간별 Span ID" },
+          { name: "http.method", type: "string", sample: "POST", desc: "HTTP 메서드" },
+          { name: "http.status", type: "number", sample: "500", desc: "HTTP 상태 응답 코드" },
+          { name: "duration_ms", type: "number", sample: "142.5", desc: "요청 처리 소요 시간 (ms)" },
+          { name: "message", type: "string", sample: "PG connection timeout after 3000ms", desc: "애플리케이션 로그 메시지" }
+        ],
+        sample: [
+          { "@timestamp": "2026-11-17T21:05:10Z", "service": "payment-service", "level": "ERROR", "http.status": 504, "duration_ms": 3005, "message": "Gateway timeout communicating with PG provider" },
+          { "@timestamp": "2026-11-17T21:05:05Z", "service": "auth-service", "level": "INFO", "http.status": 200, "duration_ms": 28, "message": "JWT token issued successfully for user logccino" },
+          { "@timestamp": "2026-11-17T21:04:58Z", "service": "order-api", "level": "WARN", "http.status": 429, "duration_ms": 12, "message": "Rate limit exceeded for client 10.0.4.12" }
+        ]
+      },
+      {
+        id: "notable",
+        name: "notable",
+        type: "Accelerated Data Model (SIEM Incident)",
+        category: "data_model",
+        badge: "Data Model",
+        badgeColor: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+        description: "Splunk Enterprise Security 호환 보안 인시던트 데이터 모델 및 AI 상관 분석 위협 지표",
+        docCount: "1,840",
+        size: "12.1 MB",
+        retention: "365일",
+        lastEvent: "4분 전",
+        schema: [
+          { name: "incident_id", type: "string", sample: "inc-019a2b", desc: "보안 인시던트 고유 번호" },
+          { name: "rule_name", type: "string", sample: "Brute-force SSH Attack", desc: "상관 분석 탐지 룰 명칭" },
+          { name: "urgency", type: "string", sample: "critical", desc: "인시던트 심각도 긴급성" },
+          { name: "status", type: "string", sample: "investigating", desc: "대응 처리 상태 (new, investigating, resolved)" },
+          { name: "mitre_technique", type: "string", sample: "T1110.001", desc: "MITRE ATT&CK 기법 분류 ID" },
+          { name: "risk_score", type: "number", sample: "85", desc: "위협 위험도 평가 점수 (0-100)" }
+        ],
+        sample: [
+          { "incident_id": "inc-019a2b", "rule_name": "SSH Brute Force from Unknown Subnet", "urgency": "critical", "status": "new", "risk_score": 92, "mitre_technique": "T1110.001" },
+          { "incident_id": "inc-018f7c", "rule_name": "Suspicious Privilege Escalation via Sudo", "urgency": "high", "status": "investigating", "risk_score": 78, "mitre_technique": "T1548.003" }
+        ]
+      },
+      {
+        id: "logccino-alerts-*",
+        name: "logccino-alerts-*",
+        type: "Alert Audit Index",
+        category: "event_index",
+        badge: "Alert Audit",
+        badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+        description: "Splunk Saved Search & PPL Alert Engine에 의해 자동 실행/트리거된 알람 발송 이력",
+        docCount: "3,210",
+        size: "8.5 MB",
+        retention: "180일",
+        lastEvent: "3분 전",
+        schema: [
+          { name: "@timestamp", type: "date", sample: "2026-11-17T21:00:00Z", desc: "알람 발생 시각" },
+          { name: "saved_search_id", type: "string", sample: "alert-ssh-bruteforce", desc: "트리거된 스케줄러 룰 ID" },
+          { name: "severity", type: "string", sample: "CRITICAL", desc: "알람 심각도" },
+          { name: "matched_events", type: "number", sample: "14", desc: "PPL 쿼리에 매칭된 이상 건수" },
+          { name: "triggered", type: "boolean", sample: "true", desc: "임계치 초과 트리거 여부" },
+          { name: "suppressed", type: "boolean", sample: "false", desc: "Throttling 억제 여부" }
+        ],
+        sample: [
+          { "@timestamp": "2026-11-17T21:02:00Z", "saved_search_id": "alert-ssh-bruteforce", "severity": "CRITICAL", "matched_events": 6, "triggered": true, "suppressed": false },
+          { "@timestamp": "2026-11-17T21:01:00Z", "saved_search_id": "alert-service-5xx-burst", "severity": "HIGH", "matched_events": 50, "triggered": true, "suppressed": true }
+        ]
+      },
+      {
+        id: "threat_intel_feed",
+        name: "threat_intel_feed",
+        type: "Threat Intelligence Lookup",
+        category: "lookup",
+        badge: "Threat Lookup",
+        badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+        description: "공격자 C2 서버, 악성 IP 대역 및 글로벌 침해 지표(IoC) 실시간 참조 룩업 테이블",
+        docCount: "5,400",
+        size: "2.4 MB",
+        retention: "영구 보관",
+        lastEvent: "금일 18:00 갱신",
+        schema: [
+          { name: "ip", type: "ip", sample: "203.0.113.45", desc: "악성 C2 / 스캔 출발지 IP" },
+          { name: "threat_type", type: "string", sample: "scanner_ssh", desc: "위협 행위 분류 태그" },
+          { name: "confidence", type: "number", sample: "95", desc: "신뢰도 지수 (%)" },
+          { name: "source_feed", type: "string", sample: "AlienVault OTX", desc: "인텔리전스 제공 출처" },
+          { name: "last_seen", type: "date", sample: "2026-11-17", desc: "마지막 악성 행위 관측 일자" }
+        ],
+        sample: [
+          { "ip": "203.0.113.45", "threat_type": "brute_force_botnet", "confidence": 98, "source_feed": "AlienVault OTX", "last_seen": "2026-11-17" },
+          { "ip": "198.51.100.22", "threat_type": "port_scanner", "confidence": 85, "source_feed": "AbuseIPDB", "last_seen": "2026-11-16" }
+        ]
+      }
+    ];
+
+    let selectedDatasetId = "main";
+
+    function renderDatasetsView() {
+      const listContainer = document.getElementById('datasets-list-container');
+      if (!listContainer) return;
+
+      listContainer.innerHTML = datasetsCatalog.map(d => {
+        const isSelected = d.id === selectedDatasetId;
+        return `
+          <div onclick="selectDataset('${d.id}')" class="p-4 rounded-xl border transition cursor-pointer ${isSelected ? 'bg-subpanel border-emerald-500/60 shadow-md' : 'bg-panelbg border-bordercolor hover:border-slate-600'}">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-sm text-white font-mono flex items-center gap-2">
+                <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
+                ${d.name}
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${d.badgeColor}">${d.badge}</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-snug line-clamp-2 mb-2.5">${d.description}</p>
+            <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-bordercolor/60">
+              <span>보관: ${d.retention}</span>
+              <span>${d.docCount} docs (${d.size})</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      renderDatasetInspector(selectedDatasetId);
+      lucide.createIcons();
+    }
+
+    function selectDataset(id) {
+      selectedDatasetId = id;
+      renderDatasetsView();
+    }
+
+    function renderDatasetInspector(id) {
+      const inspector = document.getElementById('dataset-detail-inspector');
+      if (!inspector) return;
+
+      const d = datasetsCatalog.find(x => x.id === id) || datasetsCatalog[0];
+
+      const schemaRows = d.schema.map(f => `
+        <tr class="hover:bg-slate-800/40 border-b border-bordercolor/50">
+          <td class="p-2.5 font-mono font-bold text-white">${f.name}</td>
+          <td class="p-2.5 font-mono text-[11px] text-indigo-400">${f.type}</td>
+          <td class="p-2.5 font-mono text-[11px] text-slate-300 truncate max-w-[150px]">${f.sample}</td>
+          <td class="p-2.5 text-slate-400">${f.desc}</td>
+        </tr>
+      `).join('');
+
+      const sampleRows = d.sample.map(s => `
+        <pre class="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-emerald-300 overflow-x-auto">${JSON.stringify(s, null, 2)}</pre>
+      `).join('');
+
+      inspector.innerHTML = `
+        <div class="flex items-start justify-between border-b border-bordercolor pb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold text-white font-mono">${d.name}</h3>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${d.badgeColor}">${d.type}</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">${d.description}</p>
+          </div>
+          <button onclick="exploreDatasetInSearch('${d.id}')" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            <span>Search에서 탐색</span>
+          </button>
+        </div>
+
+        <!-- Metadata Grid -->
+        <div class="grid grid-cols-4 gap-2 text-center text-xs font-mono">
+          <div class="p-2 rounded bg-slatebg border border-bordercolor/60">
+            <div class="text-[10px] text-slate-400">문서 건수</div>
+            <div class="font-bold text-white text-sm mt-0.5">${d.docCount}</div>
+          </div>
+          <div class="p-2 rounded bg-slatebg border border-bordercolor/60">
+            <div class="text-[10px] text-slate-400">저장 용량</div>
+            <div class="font-bold text-white text-sm mt-0.5">${d.size}</div>
+          </div>
+          <div class="p-2 rounded bg-slatebg border border-bordercolor/60">
+            <div class="text-[10px] text-slate-400">보존 주기</div>
+            <div class="font-bold text-emerald-400 text-sm mt-0.5">${d.retention}</div>
+          </div>
+          <div class="p-2 rounded bg-slatebg border border-bordercolor/60">
+            <div class="text-[10px] text-slate-400">최근 이벤트</div>
+            <div class="font-bold text-indigo-400 text-xs mt-0.5">${d.lastEvent}</div>
+          </div>
+        </div>
+
+        <!-- Schema Field Dictionary -->
+        <div>
+          <h4 class="font-bold text-xs text-slate-200 mb-2 flex items-center gap-1.5">
+            <i data-lucide="book-open" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>스키마 사전 (Field Dictionary)</span>
+            <span class="text-[10px] font-mono text-slate-500">(${d.schema.length} fields)</span>
+          </h4>
+          <div class="border border-bordercolor rounded-lg overflow-hidden bg-subpanel/30 max-h-56 overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-subpanel text-slate-300 font-mono text-[11px] border-b border-bordercolor">
+                <tr>
+                  <th class="p-2.5">필드명 (Field)</th>
+                  <th class="p-2.5">타입 (Type)</th>
+                  <th class="p-2.5">샘플값 (Sample)</th>
+                  <th class="p-2.5">설명 (Description)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-bordercolor/60">
+                ${schemaRows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sample Live Data Records -->
+        <div>
+          <h4 class="font-bold text-xs text-slate-200 mb-2 flex items-center gap-1.5">
+            <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>최근 원천 레코드 미리보기 (Sample Live Events)</span>
+          </h4>
+          <div class="space-y-2 max-h-48 overflow-y-auto">
+            ${sampleRows}
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function exploreDatasetInSearch(datasetId) {
+      const q = `source = ${datasetId} | head 50`;
+      document.getElementById('search-query-input').value = q;
+      switchSearchSubView('search');
+      executeSplunkSearch();
     }
 
     function exportCurrentSearch(format) {

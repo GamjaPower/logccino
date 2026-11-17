@@ -91,5 +91,5 @@ def test_dashboard_real_splunk_search_elements():
     assert "triggerQueryAutoFormat" in html
     assert "format-feedback-badge" in html
     assert "btn-hide-apps-sidebar" in html
-    assert "btn-show-apps-sidebar" in html
+    assert "btn-toggle-apps-sidebar" in html
     assert "toggleAppsSidebar" in html
