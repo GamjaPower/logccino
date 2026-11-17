@@ -131,6 +131,12 @@ async def get_enterprise_dashboard():
 
       <div class="h-4 w-px bg-bordercolor"></div>
 
+      <!-- App Sidebar Toggle Button (좌측 앱 리스트 화면 토글) -->
+      <button onclick="toggleAppsSidebar()" id="btn-toggle-apps-sidebar" class="px-2 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 border border-bordercolor transition flex items-center gap-1.5 text-[11px] font-medium" title="좌측 앱 리스트 화면 숨기기/보이기">
+        <i data-lucide="panel-left" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span id="apps-sidebar-toggle-text">앱 리스트 숨기기</span>
+      </button>
+
       <!-- Current App Breadcrumb -->
       <div class="flex items-center gap-2">
         <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
@@ -277,15 +283,26 @@ async def get_enterprise_dashboard():
   <!-- =================================================================================== -->
   <!-- 2. Splunk Workspace: Left Apps Bar + Right App View Area                            -->
   <!-- =================================================================================== -->
-  <div class="flex flex-1 overflow-hidden">
+  <div class="flex flex-1 overflow-hidden relative">
+
+    <!-- SHOW APPS SIDEBAR BUTTON (숨겨진 상태에서 나타나는 열기/보이기 버튼) -->
+    <button onclick="toggleAppsSidebar()" id="btn-show-apps-sidebar" class="hidden absolute left-0 top-3 z-40 bg-[#0b1120] hover:bg-slate-800 border-y border-r border-bordercolor text-slate-200 hover:text-emerald-400 px-3 py-2 rounded-r-lg shadow-2xl flex items-center gap-1.5 transition text-xs font-semibold cursor-pointer group" title="앱 리스트 화면 보이기">
+      <i data-lucide="panel-left-open" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i>
+      <span>앱 리스트 보이기</span>
+    </button>
 
     <!-- LEFT SPLUNK APPS BAR (좌측 앱 리스트) -->
-    <aside class="w-60 bg-[#0b1120] border-r border-bordercolor flex flex-col shrink-0 select-none">
+    <aside id="splunk-apps-sidebar" class="w-60 bg-[#0b1120] border-r border-bordercolor flex flex-col shrink-0 select-none transition-all duration-200">
       <div class="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-bordercolor flex items-center justify-between">
         <span class="flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5 text-emerald-400"></i> APPS</span>
-        <button onclick="selectApp('manage_apps')" class="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold" title="앱 관리">
-          <i data-lucide="sliders" class="w-3 h-3"></i> 관리
-        </button>
+        <div class="flex items-center gap-1">
+          <button onclick="selectApp('manage_apps')" class="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded hover:bg-slate-800/60" title="앱 관리">
+            <i data-lucide="sliders" class="w-3 h-3"></i> 관리
+          </button>
+          <button onclick="toggleAppsSidebar()" id="btn-hide-apps-sidebar" class="text-xs text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 flex items-center gap-1 transition" title="앱 리스트 화면 숨기기">
+            <i data-lucide="panel-left-close" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
       </div>
 
       <!-- App Navigation Buttons -->
@@ -403,13 +420,6 @@ async def get_enterprise_dashboard():
                 </div>
               </div>
             </div>
-
-            <!-- Command + \ Auto-Format Button -->
-            <button onclick="triggerQueryAutoFormat()" id="btn-cmd-backslash" class="px-3 py-3 rounded-lg bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[11px] font-mono flex items-center gap-1.5 transition shrink-0 shadow-sm" title="Splunk 쿼리 자동 파싱 및 정렬 (단축키: Cmd + \ 또는 Ctrl + \)">
-              <i data-lucide="code" class="w-3.5 h-3.5 text-emerald-400"></i>
-              <kbd class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 font-sans text-[10px] text-slate-300">⌘\\</kbd>
-              <span>자동 파싱</span>
-            </button>
 
             <!-- Big Green Splunk Search Button -->
             <button onclick="executeSplunkSearch()" id="btn-search-run" class="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-600/25 shrink-0">
@@ -1169,6 +1179,27 @@ async def get_enterprise_dashboard():
     // -------------------------------------------------------------
     // App Ecosystem & App Switching
     // -------------------------------------------------------------
+    let isAppsSidebarHidden = false;
+
+    function toggleAppsSidebar() {
+      const sidebar = document.getElementById('splunk-apps-sidebar');
+      const showBtn = document.getElementById('btn-show-apps-sidebar');
+      const toggleText = document.getElementById('apps-sidebar-toggle-text');
+      if (!sidebar) return;
+
+      isAppsSidebarHidden = !isAppsSidebarHidden;
+      if (isAppsSidebarHidden) {
+        sidebar.classList.add('hidden');
+        if (showBtn) showBtn.classList.remove('hidden');
+        if (toggleText) toggleText.textContent = "앱 리스트 열기";
+      } else {
+        sidebar.classList.remove('hidden');
+        if (showBtn) showBtn.classList.add('hidden');
+        if (toggleText) toggleText.textContent = "앱 리스트 숨기기";
+      }
+      lucide.createIcons();
+    }
+
     async function fetchApps() {
       try {
         const res = await fetch('/api/v1/apps');

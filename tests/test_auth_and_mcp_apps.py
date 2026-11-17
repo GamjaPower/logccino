@@ -90,4 +90,6 @@ def test_dashboard_real_splunk_search_elements():
     assert "isFormatShortcut" in html
     assert "triggerQueryAutoFormat" in html
     assert "format-feedback-badge" in html
-    assert "btn-cmd-backslash" in html
+    assert "btn-hide-apps-sidebar" in html
+    assert "btn-show-apps-sidebar" in html
+    assert "toggleAppsSidebar" in html

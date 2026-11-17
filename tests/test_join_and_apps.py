@@ -137,7 +137,8 @@ def test_dashboard_splunk_layout():
     assert "Enterprise Security" in html
     assert "Autonomous SRE" in html
     assert "앱 관리 및 설치" in html
-    assert "btn-cmd-backslash" in html
+    assert "btn-hide-apps-sidebar" in html
+    assert "btn-show-apps-sidebar" in html
 
     # 풀다운 메뉴 확인 (설정, 활동, 도움말)
     assert "settings-dropdown" in html
