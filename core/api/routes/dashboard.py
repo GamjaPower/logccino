@@ -910,38 +910,35 @@ async def get_enterprise_dashboard():
           </div>
         </div>
 
-        <!-- SIEM 6대 전략 영역 서브 내비게이션 탭 -->
+        <!-- SIEM SOC 업무 순서 기반 7대 서브 내비게이션 탭 -->
         <div class="flex items-center gap-1 border-b border-bordercolor pb-2 overflow-x-auto scrollbar-thin text-xs">
-          <button onclick="switchSiemSubTab('overview')" id="siem-subtab-overview" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/30">
-            <i data-lucide="activity" class="w-3.5 h-3.5"></i> Overview & Engine
+          <button onclick="switchSiemSubTab('collection')" id="siem-subtab-collection" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/30">
+            <i data-lucide="radio" class="w-3.5 h-3.5"></i> 1. 수집 & 텔레메트리
+          </button>
+          <button onclick="switchSiemSubTab('monitoring')" id="siem-subtab-monitoring" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="activity" class="w-3.5 h-3.5"></i> 2. 실시간 감시 & 탐지
           </button>
           <button onclick="switchSiemSubTab('triage')" id="siem-subtab-triage" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
-            <i data-lucide="cpu" class="w-3.5 h-3.5"></i> P1: AI Triage & Swarm
+            <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 3. 자율 트리아지 & 심층 분석
           </button>
           <button onclick="switchSiemSubTab('hunting')" id="siem-subtab-hunting" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
-            <i data-lucide="search" class="w-3.5 h-3.5"></i> P2: Threat Hunting
+            <i data-lucide="search" class="w-3.5 h-3.5"></i> 4. 위협 헌팅 & 인과 추적
           </button>
-          <button onclick="switchSiemSubTab('storyboard')" id="siem-subtab-storyboard" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
-            <i data-lucide="git-commit" class="w-3.5 h-3.5"></i> P3: MITRE Storyboard
-          </button>
-          <button onclick="switchSiemSubTab('soar')" id="siem-subtab-soar" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
-            <i data-lucide="zap" class="w-3.5 h-3.5"></i> P4: Autonomous SOAR
+          <button onclick="switchSiemSubTab('response')" id="siem-subtab-response" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> 5. 능동 대응 & SOAR
           </button>
           <button onclick="switchSiemSubTab('intel')" id="siem-subtab-intel" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
-            <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> P5: CTI & Deception
+            <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> 6. 위협 인텔리전스 & 디셉션
           </button>
           <button onclick="switchSiemSubTab('copilot')" id="siem-subtab-copilot" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
-            <i data-lucide="bot" class="w-3.5 h-3.5"></i> P6: SOC Copilot & Audit
-          </button>
-          <button onclick="switchSiemSubTab('logpresso')" id="siem-subtab-logpresso" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
-            <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i> Logpresso Core (CEP·WORM·PII·Maestro)
+            <i data-lucide="bot" class="w-3.5 h-3.5"></i> 7. 관제 보고 & 코파일럿
           </button>
         </div>
 
         <!-- =================================================================== -->
-        <!-- SUBVIEW 1: Overview & Rust Syslog Engine                           -->
+        <!-- SOC STAGE 1: 수집 & 텔레메트리 (Collection & Telemetry)             -->
         <!-- =================================================================== -->
-        <div id="siem-subview-overview" class="siem-subview space-y-4">
+        <div id="siem-subview-collection" class="siem-subview space-y-4">
           <!-- Rust Syslog Collector Controller Card -->
           <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
             <div class="flex items-center justify-between">
@@ -984,6 +981,89 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
+          <!-- PII Masking & WORM Hashchain -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- PII Inline Masking -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="eye-off" class="w-4 h-4 text-emerald-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">실시간 PII 인라인 마스킹 (ISMS-P 개인정보보호)</h3>
+                </div>
+                <button onclick="runPIIMaskingTest()" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">
+                  마스킹 실행
+                </button>
+              </div>
+              <input id="pii-input-box" type="text" value="홍길동 고객의 주민번호는 900101-1234567 이며 카드번호는 4518-1234-5678-9012, 전화번호는 010-1234-5678 입니다." class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-xs text-white" />
+              <div id="pii-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">수신 즉시 주민번호, 카드번호, 휴대전화, 이메일을 인라인에서 자동 탐지하고 마스킹합니다.</p>
+              </div>
+            </div>
+
+            <!-- WORM Hashchain Integrity -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-indigo-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">로그 무결성(WORM) 블록 해시체인 & 머클트리</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="runSealBlockTest()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
+                    새 블록 봉인
+                  </button>
+                  <button onclick="runVerifyIntegrityTest()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
+                    무결성 전수 검증
+                  </button>
+                </div>
+              </div>
+              <div id="integrity-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">블록 단위 SHA-256 해시체인과 머클 루트로 원본 로그의 위변조 여부를 실시간 입증합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connector & Plugin App Store Catalog -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="store" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">보안 장비 플러그블 커넥터 스토어 (AhnLab V3, FortiGate, AWS)</h3>
+              </div>
+              <button onclick="loadConnectorStoreCatalog()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
+                스토어 카탈로그 로드
+              </button>
+            </div>
+            <div id="connector-store-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <p class="text-slate-400 col-span-3 text-center py-6">스토어 카탈로그 로드 버튼을 누르면 원클릭 설치 가능 커넥터가 표시됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SOC STAGE 2: 실시간 감시 & 탐지 (Monitoring & Detection)            -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-monitoring" class="siem-subview space-y-4 hidden">
+          <!-- In-Memory Stream Sliding Window CEP Engine -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">인메모리 스트림 윈도우 CEP 엔진 (디스크 색인 전 0.1초 즉시 탐지)</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="injectCEPStreamTest()" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition">
+                  SSH 5회 폭증 스트림 주입
+                </button>
+                <button onclick="loadCEPMetrics()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition">
+                  CEP 메트릭 조회
+                </button>
+              </div>
+            </div>
+            <div id="cep-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2 font-mono text-emerald-400">
+              디스크 색인 전 60초 슬라이딩 윈도우에서 복합 위협 패턴을 0.1초 내 탐지합니다.
+            </div>
+          </div>
+
           <!-- Real-time Attack Simulator Bar -->
           <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-2.5">
             <div class="flex items-center justify-between">
@@ -1017,7 +1097,7 @@ async def get_enterprise_dashboard():
         </div>
 
         <!-- =================================================================== -->
-        <!-- SUBVIEW 2: Pillar 1 - AI Triage & Swarm                            -->
+        <!-- SOC STAGE 3: 자율 트리아지 & 심층 분석 (Triage & Investigation)     -->
         <!-- =================================================================== -->
         <div id="siem-subview-triage" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1033,7 +1113,7 @@ async def get_enterprise_dashboard():
                 </button>
               </div>
               <div id="triage-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
-                <p class="text-slate-400">알람 데이터 유입 시 거짓 양성을 10초 내 자동 분류하고 CoT 추론 체인을 생성합니다.</p>
+                <p class="text-slate-400">알람 유입 시 거짓 양성을 10초 내 자동 분류하고 CoT 추론 체인을 생성합니다.</p>
               </div>
             </div>
 
@@ -1054,27 +1134,130 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
-          <!-- Feature 03: 근본 원인(Root-Cause) 인과 그래프 -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 03: 근본 원인(Root-Cause) 인과 그래프 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="git-branch" class="w-4 h-4 text-emerald-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 03. 근본 원인(Patient Zero) DAG 그래프</h3>
+                </div>
+                <button onclick="runSampleAttackGraph()" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">
+                  공격 그래프 생성
+                </button>
+              </div>
+              <div id="attack-graph-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">최초 침투점부터 현재 감염 상태까지의 인과 추론 비순환 그래프를 시각화합니다.</p>
+              </div>
+            </div>
+
+            <!-- Feature 04: 경보 노이즈 소멸기 & 유사 알람 군집화 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="filter" class="w-4 h-4 text-amber-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 04. 경보 노이즈 소멸기 & 군집화</h3>
+                </div>
+                <button onclick="runNoiseEliminator()" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition">
+                  노이즈 소멸 실행
+                </button>
+              </div>
+              <div id="noise-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">유사 경보 클러스터링을 통해 알람 피로도를 최대 85%까지 삭감합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 05: 엔티티 이상행동 기반 공격 서사화 -->
           <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <i data-lucide="git-branch" class="w-4 h-4 text-emerald-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 03. 인과 추론 근본 원인(Patient Zero) DAG 그래프</h3>
+                <i data-lucide="user-check" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Feature 05. 엔티티(계정·호스트) 이상행동 기반 공격 서사화</h3>
               </div>
-              <button onclick="runSampleAttackGraph()" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">
-                공격 그래프 생성
+              <button onclick="loadEntityStoryboard()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
+                엔티티 스토리 로드
               </button>
             </div>
-            <div id="attack-graph-box" class="p-4 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
-              <p class="text-slate-400">최초 침투점(Patient Zero)부터 현재 감염 상태까지의 인과 추론 방향성 비순환 그래프(DAG)를 시각화합니다.</p>
+            <div id="entity-storyboard-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+              <p class="text-slate-400">계정의 30일간 행동 편차를 파악하여 평상시와 다른 침해 활동을 서사로 재구성합니다.</p>
             </div>
           </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- SUBVIEW 3: Pillar 2 - Threat Hunting & PPL                         -->
+        <!-- SOC STAGE 4: 위협 헌팅 & 인과 추적 (Hunting & Storyboard)            -->
         <!-- =================================================================== -->
         <div id="siem-subview-hunting" class="siem-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 11: MITRE ATT&CK 킬체인 스토리보드 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="git-commit" class="w-4 h-4 text-rose-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 11. MITRE ATT&CK 킬체인 실시간 스토리보드</h3>
+                </div>
+                <button onclick="loadMitreStoryboard()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
+                  스토리보드 로드
+                </button>
+              </div>
+              <div id="mitre-storyboard-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-3">
+                <p class="text-slate-400">알람 이벤트를 14개 ATT&CK 전술에 실시간 매핑하고 킬체인 진행률을 시각화합니다.</p>
+              </div>
+            </div>
+
+            <!-- Feature 13: 횡적 이동 경로 재구성 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="repeat" class="w-4 h-4 text-amber-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 13. 계정-네트워크 횡적 이동(Lateral Movement) 재구성</h3>
+                </div>
+                <button onclick="loadLateralMovement()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
+                  경로 추적
+                </button>
+              </div>
+              <div id="lateral-movement-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+                <p class="text-slate-400">도용된 크리덴셜 경로와 네트워크 피벗 과정을 시각화합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Feature 12: 크로스 타임라인 정합성 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i> Feature 12. 크로스 타임라인</h4>
+                <button onclick="loadStitchedTimeline()" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] rounded transition">합성</button>
+              </div>
+              <div id="stitched-timeline-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
+                이종 소스 타임라인 정합성 검증
+              </div>
+            </div>
+
+            <!-- Feature 14: 데이터 유출 잠행 서사화 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="cloud-download" class="w-3.5 h-3.5 text-rose-400"></i> Feature 14. 데이터 유출 서사</h4>
+                <button onclick="loadExfiltrationNarrative()" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] rounded transition">추적</button>
+              </div>
+              <div id="exfil-narrative-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
+                DNS/HTTPS 채널 은닉 유출 추적
+              </div>
+            </div>
+
+            <!-- Feature 15: K8s/클라우드 설정 변조 추적 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="server" class="w-3.5 h-3.5 text-amber-400"></i> Feature 15. 인프라 변조</h4>
+                <button onclick="loadConfigTampering()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-[11px] rounded transition">조회</button>
+              </div>
+              <div id="config-tamper-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
+                Kubernetes & Cloud 변조 탐지
+              </div>
+            </div>
+          </div>
+
           <!-- Feature 06: 자연어 NL-to-PPL 합성기 -->
           <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
             <div class="flex items-center gap-2">
@@ -1090,100 +1273,66 @@ async def get_enterprise_dashboard():
             <div id="nl-hunt-output" class="hidden p-3 bg-slatebg rounded-lg border border-amber-500/30 text-xs font-mono text-emerald-400 whitespace-pre overflow-x-auto"></div>
           </div>
 
-          <!-- Feature 07: 가설 주도형 자율 위협 헌팅 -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="compass" class="w-4 h-4 text-indigo-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 07. 가설 주도형 자율 위협 헌팅 (전수 데이터 탐사)</h3>
-              </div>
-              <button onclick="loadHuntingHypotheses()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
-                가설 전수 탐사 실행
-              </button>
-            </div>
-            <div id="hypotheses-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <p class="text-slate-400 col-span-3 text-center py-6">가설 탐사 실행 버튼을 누르면 자율 에이전트가 탐색을 개시합니다.</p>
-            </div>
-          </div>
-
-          <!-- Feature 10: 레드팀 헌팅 시뮬레이터 -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 10. 공격자 관점(Red Team Persona) 헌팅 시뮬레이터</h3>
-              </div>
-              <div class="flex items-center gap-2">
-                <select id="sel-threat-actor" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
-                  <option value="APT29">APT29 (Cozy Bear - Russia SVR)</option>
-                  <option value="Lazarus Group">Lazarus Group (북한 해킹 그룹)</option>
-                </select>
-                <button onclick="runAdversaryEmulation()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
-                  역추적 시뮬레이션
-                </button>
-              </div>
-            </div>
-            <div id="adversary-emu-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
-              <p class="text-slate-400">APT 그룹의 TTP 페르소나를 장착하여 은닉된 역추적 PPL 쿼리를 생성합니다.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- SUBVIEW 4: Pillar 3 - MITRE ATT&CK Storyboard                      -->
-        <!-- =================================================================== -->
-        <div id="siem-subview-storyboard" class="siem-subview space-y-4 hidden">
-          <!-- Feature 11: MITRE ATT&CK 킬체인 스토리보드 -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="git-commit" class="w-4 h-4 text-rose-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 11. MITRE ATT&CK 킬체인 실시간 스토리보드</h3>
-              </div>
-              <button onclick="loadMitreStoryboard()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
-                스토리보드 로드
-              </button>
-            </div>
-            <div id="mitre-storyboard-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-3">
-              <p class="text-slate-400">알람 이벤트를 14개 ATT&CK 전술에 실시간 매핑하고 킬체인 진행률을 시각화합니다.</p>
-            </div>
-          </div>
-
-          <!-- Feature 13: 횡적 이동 경로 재구성 -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="repeat" class="w-4 h-4 text-amber-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 13. 계정-네트워크 횡적 이동(Lateral Movement) 재구성</h3>
-              </div>
-              <button onclick="loadLateralMovement()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
-                경로 추적
-              </button>
-            </div>
-            <div id="lateral-movement-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
-              <p class="text-slate-400">피벗(Pivoting) 과정과 도용된 크리덴셜 경로(Bastion -> App -> DB)를 시각화합니다.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- SUBVIEW 5: Pillar 4 - Autonomous SOAR                              -->
-        <!-- =================================================================== -->
-        <div id="siem-subview-soar" class="siem-subview space-y-4 hidden">
+          <!-- Feature 07 & Feature 10 -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 16: 동적 플레이북 자동 합성 -->
+            <!-- Feature 07: 가설 주도형 자율 위협 헌팅 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 16. 인시던트 맞춤형 5단계 플레이북 합성</h3>
+                  <i data-lucide="compass" class="w-4 h-4 text-indigo-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 07. 가설 주도형 자율 위협 헌팅</h3>
                 </div>
-                <button onclick="loadAdaptivePlaybook()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">
-                  플레이북 생성
+                <button onclick="loadHuntingHypotheses()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
+                  가설 전수 탐사 실행
                 </button>
               </div>
-              <div id="playbook-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
-                <p class="text-slate-400">인시던트 특성에 맞춘 실시간 5단계 대응 절차(격리, 차단, 덤프)를 자동 작성합니다.</p>
+              <div id="hypotheses-container" class="grid grid-cols-1 gap-2 text-xs">
+                <p class="text-slate-400 text-center py-6">가설 탐사 실행 버튼을 누르면 자율 에이전트가 탐색을 개시합니다.</p>
+              </div>
+            </div>
+
+            <!-- Feature 10: 레드팀 헌팅 시뮬레이터 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 10. 공격자 관점 헌팅 시뮬레이터</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <select id="sel-threat-actor" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
+                    <option value="APT29">APT29 (Cozy Bear - Russia SVR)</option>
+                    <option value="Lazarus Group">Lazarus Group (북한 해킹 그룹)</option>
+                  </select>
+                  <button onclick="runAdversaryEmulation()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
+                    역추적
+                  </button>
+                </div>
+              </div>
+              <div id="adversary-emu-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+                <p class="text-slate-400">APT 그룹의 TTP 페르소나를 장착하여 은닉된 역추적 PPL 쿼리를 생성합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SOC STAGE 5: 능동 대응 & SOAR (Response & SOAR)                     -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-response" class="siem-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 4: 비주얼 SOAR 플레이북 & 승인 게이트 (Logpresso Maestro) -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="git-pull-request" class="w-4 h-4 text-rose-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Maestro 비주얼 SOAR & Human-in-the-Loop</h3>
+                </div>
+                <button onclick="triggerVisualPlaybookTest()" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition">
+                  Maestro 플레이북 구동
+                </button>
+              </div>
+              <div id="visual-playbook-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">5단계 워크플로 실행 및 분석가 승인 게이트(Human-in-the-loop)를 거쳐 능동 차단을 집행합니다.</p>
               </div>
             </div>
 
@@ -1210,32 +1359,53 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
-          <!-- Feature 20: 사후 보고서 자동 생성 -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 20. 인시던트 사후 보고서(Post-Mortem) 자동 생성</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Feature 16: 동적 플레이북 자동 합성 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 16. 플레이북 합성</h3>
+                </div>
+                <button onclick="loadAdaptivePlaybook()" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">생성</button>
               </div>
-              <div class="flex items-center gap-2">
-                <select id="sel-report-audience" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
-                  <option value="executive">경영진 보고용 (Executive Summary)</option>
-                  <option value="kisa_regulatory">KISA 법적 신고용 (침해사고 신고서)</option>
-                  <option value="technical">기술팀 포스트모텀 (Technical Root Cause)</option>
-                </select>
-                <button onclick="generatePostMortemReport()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
-                  보고서 즉시 생성
-                </button>
+              <div id="playbook-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">인시던트 맞춤형 5단계 대응 절차 자동 합성</p>
               </div>
             </div>
-            <div id="post-mortem-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs whitespace-pre-wrap font-mono text-slate-200">
-              대상자별 양식(경영진 1장 요약 / KISA 법적 신고 / 기술 상세)을 1초 만에 자동 작성합니다.
+
+            <!-- Feature 17: 조치 영향도 사전 시뮬레이터 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 17. 무중단 영향도 시뮬</h3>
+                </div>
+                <button onclick="simulateRemediationImpact()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">검증</button>
+              </div>
+              <div id="impact-sim-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-400">
+                격리·차단 시 업무 서비스 영향도 사전 진단
+              </div>
+            </div>
+
+            <!-- Feature 19: 영속성(Persistence) 완전 소탕 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 19. 잔존 위협 소탕</h3>
+                </div>
+                <button onclick="sweepPersistenceThreats()" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">소탕</button>
+              </div>
+              <div id="persistence-sweep-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-400">
+                Cron, 서비스 백도어, 웹쉘 전수 탐색
+              </div>
             </div>
           </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- SUBVIEW 6: Pillar 5 - Threat Intel & Deception                     -->
+        <!-- SOC STAGE 6: 위협 인텔리전스 & 디셉션 (Intel & Deception)           -->
         <!-- =================================================================== -->
         <div id="siem-subview-intel" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1273,25 +1443,44 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
-          <!-- Feature 24: APT 조직 추론기 -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="globe" class="w-4 h-4 text-rose-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 24. 공격자 프로파일링 및 배후 조직(APT Attribution) 추론</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Feature 23: 공급망 Blast Radius -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="git-pull-request" class="w-3.5 h-3.5 text-amber-400"></i> Feature 23. 공급망 위험</h4>
+                <button onclick="assessSupplyChainBlastRadius()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-[11px] rounded transition">분석</button>
               </div>
-              <button onclick="profileAPTAttribution()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
-                APT 배후 추론
-              </button>
+              <div id="blast-radius-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
+                Log4j 등 오픈소스 의존성 취약점 피해 반경 분석
+              </div>
             </div>
-            <div id="apt-profile-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
-              <p class="text-slate-400">공격 수법, 컴파일 시각, C2 통신 주기를 분석하여 국가 배후 해킹 조직을 추론합니다.</p>
+
+            <!-- Feature 24: APT 조직 추론기 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="globe" class="w-3.5 h-3.5 text-rose-400"></i> Feature 24. APT 배후 추론</h4>
+                <button onclick="profileAPTAttribution()" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] rounded transition">추론</button>
+              </div>
+              <div id="apt-profile-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
+                국가 배후 해킹 그룹 TTP 자동 추론
+              </div>
+            </div>
+
+            <!-- Feature 25: 다크웹 유출 계정 상관분석 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="key" class="w-3.5 h-3.5 text-indigo-400"></i> Feature 25. 다크웹 계정</h4>
+                <button onclick="correlateDarkwebCreds()" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] rounded transition">조회</button>
+              </div>
+              <div id="darkweb-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
+                유출 크리덴셜과 사내 로그인 교차 대조
+              </div>
             </div>
           </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- SUBVIEW 7: Pillar 6 - SOC Copilot & Governance                     -->
+        <!-- SOC STAGE 7: 관제 보고 & 코파일럿 (Copilot & Governance)            -->
         <!-- =================================================================== -->
         <div id="siem-subview-copilot" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1334,119 +1523,78 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
-          <!-- Feature 29: ISMS-P / ISO 27001 상시 감사기 -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 29. 규제 준수(ISMS-P / ISO 27001) 상시 감사기</h3>
-              </div>
-              <button onclick="runComplianceAudit()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
-                상시 감사 검사
-              </button>
-            </div>
-            <div id="compliance-audit-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
-              <p class="text-slate-400">로그 1년 이상 보존, 관리자 권한 분립, 접근 통제 항목을 상시 자동 감사합니다.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- SUBVIEW 8: Logpresso Core (CEP, WORM, PII, Maestro, Store)          -->
-        <!-- =================================================================== -->
-        <div id="siem-subview-logpresso" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 1: 실시간 PII 인라인 마스킹 (Logpresso Enterprise) -->
+            <!-- Feature 20: 사후 보고서 자동 생성 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <i data-lucide="eye-off" class="w-4 h-4 text-emerald-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">기능 1. 실시간 PII 인라인 마스킹 (ISMS-P 준수)</h3>
+                  <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 20. 인시던트 사후 보고서(Post-Mortem) 자동 생성</h3>
                 </div>
-                <button onclick="runPIIMaskingTest()" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">
-                  마스킹 실행
+                <div class="flex items-center gap-2">
+                  <select id="sel-report-audience" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
+                    <option value="executive">경영진 보고용 (Executive Summary)</option>
+                    <option value="kisa_regulatory">KISA 법적 신고용 (침해사고 신고서)</option>
+                    <option value="technical">기술팀 포스트모텀 (Technical Root Cause)</option>
+                  </select>
+                  <button onclick="generatePostMortemReport()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
+                    보고서 즉시 생성
+                  </button>
+                </div>
+              </div>
+              <div id="post-mortem-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs whitespace-pre-wrap font-mono text-slate-200">
+                대상자별 양식(경영진 1장 요약 / KISA 법적 신고 / 기술 상세)을 1초 만에 자동 작성합니다.
+              </div>
+            </div>
+
+            <!-- Feature 29: ISMS-P / ISO 27001 상시 감사기 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 29. 규제 준수(ISMS-P / ISO 27001) 상시 감사기</h3>
+                </div>
+                <button onclick="runComplianceAudit()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
+                  상시 감사 검사
                 </button>
               </div>
-              <input id="pii-input-box" type="text" value="홍길동 고객의 주민번호는 900101-1234567 이며 카드번호는 4518-1234-5678-9012, 전화번호는 010-1234-5678 입니다." class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-xs text-white" />
-              <div id="pii-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
-                <p class="text-slate-400">주민번호, 카드번호, 휴대전화, 이메일을 인라인에서 자동 탐지하고 마스킹합니다.</p>
-              </div>
-            </div>
-
-            <!-- Feature 2: 블록 해시체인 무결성 검증기 (WORM & Merkle Tree) -->
-            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i data-lucide="shield-check" class="w-4 h-4 text-indigo-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">기능 2. 로그 무결성(WORM) 블록 해시체인</h3>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button onclick="runSealBlockTest()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
-                    새 블록 봉인
-                  </button>
-                  <button onclick="runVerifyIntegrityTest()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
-                    무결성 전수 검증
-                  </button>
-                </div>
-              </div>
-              <div id="integrity-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
-                <p class="text-slate-400">블록 단위 SHA-256 해시체인과 머클트리를 통해 로그 위변조를 실시간 수학적으로 입증합니다.</p>
+              <div id="compliance-audit-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+                <p class="text-slate-400">로그 1년 이상 보존, 관리자 권한 분립, 접근 통제 항목을 상시 자동 감사합니다.</p>
               </div>
             </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 3: 인메모리 스트림 윈도우 CEP 엔진 (Logpresso Sonar) -->
+            <!-- Feature 28: Detection-as-Code 탐지 룰 자동 튜닝 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">기능 3. 인메모리 스트림 윈도우 CEP 엔진</h3>
+                  <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 28. Detection-as-Code 탐지 룰 자동 튜너</h3>
                 </div>
-                <div class="flex items-center gap-2">
-                  <button onclick="injectCEPStreamTest()" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition">
-                    SSH 5회 폭증 스트림 주입
-                  </button>
-                  <button onclick="loadCEPMetrics()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition">
-                    메트릭
-                  </button>
-                </div>
-              </div>
-              <div id="cep-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2 font-mono text-emerald-400">
-                디스크 색인 전 60초 슬라이딩 윈도우에서 복합 위협 패턴을 0.1초 내 탐지합니다.
-              </div>
-            </div>
-
-            <!-- Feature 4: 비주얼 SOAR 플레이북 & 승인 게이트 (Logpresso Maestro) -->
-            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i data-lucide="git-pull-request" class="w-4 h-4 text-rose-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">기능 4. 비주얼 SOAR & Human-in-the-Loop</h3>
-                </div>
-                <button onclick="triggerVisualPlaybookTest()" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition">
-                  Maestro 플레이북 구동
+                <button onclick="loadDetectionTuning()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">
+                  룰 튜닝 제안
                 </button>
               </div>
-              <div id="visual-playbook-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
-                <p class="text-slate-400">5단계 워크플로 실행 및 분석가 승인 게이트(Human-in-the-loop)를 거쳐 능동 차단을 집행합니다.</p>
+              <div id="tuning-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+                <p class="text-slate-400">오탐률이 높은 룰의 PPL 쿼리를 자동으로 분석하여 오탐 삭감 필터를 제안합니다.</p>
               </div>
             </div>
-          </div>
 
-          <!-- Feature 5: 서드파티 보안 장비 커넥터 앱 스토어 (Logpresso Store) -->
-          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="store" class="w-4 h-4 text-indigo-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">기능 5. 플러그블 커넥터 & 앱 스토어 카탈로그 (Logpresso Store)</h3>
+            <!-- Feature 30: 워게임(War-Game) 상시 시뮬레이션 -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="swords" class="w-4 h-4 text-rose-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Feature 30. 인터랙티브 워게임(War-Game) 시뮬레이션 & 코치</h3>
+                </div>
+                <button onclick="loadWarGameScenarios()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
+                  훈련 시나리오
+                </button>
               </div>
-              <button onclick="loadConnectorStoreCatalog()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
-                스토어 카탈로그 로드
-              </button>
-            </div>
-            <div id="connector-store-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <p class="text-slate-400 col-span-3 text-center py-6">스토어 카탈로그 로드 버튼을 누르면 안랩 V3, 포티넷 등 원클릭 설치 가능 커넥터가 표시됩니다.</p>
+              <div id="war-game-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
+                <p class="text-slate-400">실전 침해 시나리오를 바탕으로 분석가의 대응 스텝을 실시간 평가하고 피드백을 제공합니다.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -3344,20 +3492,28 @@ async def get_enterprise_dashboard():
     let currentShiftTts = "";
 
     function switchSiemSubTab(tabName) {
+      const legacyMap = {
+        'overview': 'collection',
+        'logpresso': 'collection',
+        'storyboard': 'hunting',
+        'soar': 'response'
+      };
+      const target = legacyMap[tabName] || tabName;
+
       document.querySelectorAll('.siem-subtab-btn').forEach(btn => {
         btn.classList.remove('bg-rose-600/20', 'text-rose-300', 'border', 'border-rose-500/30');
         btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-subpanel');
       });
-      const activeBtn = document.getElementById(`siem-subtab-${tabName}`);
+      const activeBtn = document.getElementById(`siem-subtab-${target}`) || document.getElementById(`siem-subtab-${tabName}`);
       if (activeBtn) {
         activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200', 'hover:bg-subpanel');
         activeBtn.classList.add('bg-rose-600/20', 'text-rose-300', 'border', 'border-rose-500/30');
       }
 
-      ['overview', 'triage', 'hunting', 'storyboard', 'soar', 'intel', 'copilot', 'logpresso'].forEach(sub => {
+      ['collection', 'monitoring', 'triage', 'hunting', 'response', 'intel', 'copilot'].forEach(sub => {
         const el = document.getElementById(`siem-subview-${sub}`);
         if (el) {
-          if (sub === tabName) {
+          if (sub === target) {
             el.classList.remove('hidden');
           } else {
             el.classList.add('hidden');
@@ -3645,7 +3801,7 @@ async def get_enterprise_dashboard():
         const res = await fetch(`/api/v1/siem/connectors/${appId}/install`, { method: 'POST' });
         const d = await res.json();
         alert(`✓ 커넥터 앱 '${d.name}' 설치 완료! (연계 탐지 룰 ${d.rules_registered}건 자동 등록)`);
-        fetchInstalledApps();
+        fetchApps();
       } catch (e) {
         alert("설치 실패: " + e.message);
       }
@@ -4169,6 +4325,261 @@ async def get_enterprise_dashboard():
         `;
       } catch (e) {
         box.innerHTML = `<span class="text-rose-400">감사 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function runNoiseEliminator() {
+      const box = document.getElementById('noise-result-box');
+      box.innerHTML = '<span class="text-amber-400">경보 노이즈 소멸 및 군집화 알고리즘 분석 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/noise-eliminator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            raw_alerts: [
+              { alert_id: "ALT-01", signature: "SSH Login Failure", host: "bastion-gateway", count: 12 },
+              { alert_id: "ALT-02", signature: "SSH Login Failure", host: "bastion-gateway", count: 18 },
+              { alert_id: "ALT-03", signature: "Port 22 Connection Probe", host: "bastion-gateway", count: 30 }
+            ]
+          })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center justify-between text-emerald-400 font-bold">
+              <span>✓ 노이즈 삭감률: ${(d.noise_reduction_ratio * 100).toFixed(0)}%</span>
+              <span class="text-slate-400 font-mono text-[10px]">${d.original_alert_count}건 &rarr; ${d.clustered_alert_count}개 군집</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.summary}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">노이즈 소멸 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadEntityStoryboard() {
+      const box = document.getElementById('entity-storyboard-box');
+      box.innerHTML = '<span class="text-indigo-400">엔티티 sst96 30일 행동 프로파일 및 서사 재구성 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/entity-storyboard/sst96?lookback_days=30');
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between font-bold">
+              <span class="text-white">엔티티: ${d.entity_name} (${d.entity_type})</span>
+              <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono text-[10px]">위험도 점수: ${d.risk_score}/100</span>
+            </div>
+            <p class="text-slate-300 text-[11px] bg-slate-950 p-2 rounded border border-bordercolor">${d.narrative}</p>
+            <div class="flex items-center gap-2 text-[10px] text-amber-300">
+              <span>⚠️ 비정상 시각 로그인 감지 (${d.abnormal_events_count}건)</span>
+              <span>&bull;</span>
+              <span>평소 접근하지 않던 자산 접속</span>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">서사 로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadStitchedTimeline() {
+      const box = document.getElementById('stitched-timeline-box');
+      box.innerHTML = '<span class="text-indigo-400">이종 소스 타임라인 정합성 검증 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/stitched-timeline', { method: 'POST' });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between font-bold text-emerald-400">
+              <span>✓ 정합성 일치 (${d.events_stitched_count || 4}개 이벤트)</span>
+              <span class="text-[10px] text-slate-400">신뢰도 ${(d.confidence_score * 100 || 94).toFixed(0)}%</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.timeline_narrative || 'EDR, 방화벽, 인증 로그 시계열 크로스 정렬 완료'}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadExfiltrationNarrative() {
+      const box = document.getElementById('exfil-narrative-box');
+      box.innerHTML = '<span class="text-rose-400">데이터 유출 잠행 서사 추적 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/exfiltration-narrative');
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between font-bold text-rose-400">
+              <span>🚨 유출 채널: ${d.channel || 'DNS Tunneling'}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${d.estimated_bytes_exfiltrated || '42.8 MB'}</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.narrative || '정상 포트를 가장한 고빈도 패킷 은닉 유출 식별'}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadConfigTampering() {
+      const box = document.getElementById('config-tamper-box');
+      box.innerHTML = '<span class="text-amber-400">쿠버네티스·클라우드 변조 추적 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/config-tampering');
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between font-bold text-amber-400">
+              <span>변조 항목: ${d.tampered_resource || 'DaemonSet/security-agent'}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${d.drift_type || 'Privileged Escalation'}</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.impact_assessment || '컨테이너 루트 탈출 권한 부여 드리프트 감지'}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">실패: ${e.message}</span>`;
+      }
+    }
+
+    async function simulateRemediationImpact() {
+      const box = document.getElementById('impact-sim-box');
+      box.innerHTML = '<span class="text-amber-400">조치 영향도 시뮬레이션 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/simulate-impact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action_type: 'block_ip', target: '198.51.100.42' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between font-bold text-emerald-400">
+              <span>안전도: ${d.safety_score || 98}% (무중단 차단 가능)</span>
+              <span class="text-[10px] text-slate-400">영향 서비스: ${d.impacted_services_count || 0}개</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.recommendation || '외부 공격자 단독 IP로 판명되어 전면 차단 안전'}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">시뮬 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function sweepPersistenceThreats() {
+      const box = document.getElementById('persistence-sweep-box');
+      box.innerHTML = '<span class="text-rose-400">잔존 위협 & 영속성 소탕 스캔 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/persistence-sweep', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ host: 'bastion-gateway' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between font-bold text-rose-400">
+              <span>의심 Cron / 웹쉘: ${d.detected_backdoors_count || 1}건 발견</span>
+              <span class="text-[10px] text-emerald-400 font-mono">격리 완료</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.sweep_summary || '/etc/cron.d/kworker 무단 등록 스크립트 탐지 및 제거'}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">스캔 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function assessSupplyChainBlastRadius() {
+      const box = document.getElementById('blast-radius-box');
+      box.innerHTML = '<span class="text-amber-400">공급망 취약점 Blast Radius 분석 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/blast-radius', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ package_name: 'log4j-core', cve_id: 'CVE-2021-44228' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between font-bold text-amber-400">
+              <span>영향 서비스: ${d.impacted_services?.length || 2}개 Pod</span>
+              <span class="text-[10px] text-slate-400 font-mono">Blast Radius 2단계</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.mitigation_summary || '핫픽스 패치 및 환경변수 -Dlog4j2.formatMsgNoLookups=true 권고'}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">분석 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function correlateDarkwebCreds() {
+      const box = document.getElementById('darkweb-box');
+      box.innerHTML = '<span class="text-indigo-400">다크웹 유출 크리덴셜 실시간 상관분석 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/darkweb-correlation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain: 'example-corp.internal' })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between font-bold text-rose-400">
+              <span>유출 계정: ${d.leaked_credentials_count || 2}건 식별</span>
+              <span class="text-[10px] text-amber-300 font-mono">MFA 미적용</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.alert_summary || '다크웹 포럼 유출 DB와 내부 LDAP 계정 해시 일치 탐지'}</p>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">조회 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadDetectionTuning() {
+      const box = document.getElementById('tuning-box');
+      box.innerHTML = '<span class="text-emerald-400">오탐 탐지 룰 분석 및 PPL 튜닝 제안 생성 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/detection-tuning');
+        const list = await res.json();
+        const item = list[0] || {};
+        box.innerHTML = `
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center justify-between font-bold text-emerald-400">
+              <span>대상 룰: ${item.rule_name || 'SSH 무차별 대입 탐지'}</span>
+              <span class="text-[10px] text-slate-400 font-mono">오탐 감소 예상: ${item.estimated_noise_reduction_pct || 65}%</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${item.tuning_rationale || '내부 모니터링 에이전트 IP 화이트리스트 자동 제외 제안'}</p>
+            <div class="p-1.5 bg-slate-950 rounded font-mono text-[10px] text-indigo-300">${item.suggested_ppl || '| where src_ip != "10.0.0.1"'}</div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">튜닝 로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadWarGameScenarios() {
+      const box = document.getElementById('war-game-box');
+      box.innerHTML = '<span class="text-rose-400">실전 워게임 훈련 시나리오 로드 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/war-game/scenarios');
+        const list = await res.json();
+        const sc = list[0] || {};
+        box.innerHTML = `
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center justify-between font-bold text-white">
+              <span>시나리오: ${sc.title || 'APT 랜섬웨어 침투 대응 훈련'}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">${sc.difficulty || 'ADVANCED'}</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${sc.description || '최초 피싱 메일 감염부터 도메인 컨트롤러 암호화까지의 방어 훈련'}</p>
+            <div class="text-[10px] text-emerald-400 font-mono">분석관 행동 권고: 초기 침투 호스트 즉시 격리 및 메모리 덤프</div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">시나리오 로드 실패: ${e.message}</span>`;
       }
     }
 

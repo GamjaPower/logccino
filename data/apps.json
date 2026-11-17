@@ -43,43 +43,43 @@
     "default_route": "siem",
     "nav_items": [
       {
-        "title": "Overview & Engine",
-        "action": "open_siem_overview",
-        "icon": "shield"
+        "title": "1. 수집 & 텔레메트리",
+        "action": "open_siem_collection",
+        "icon": "radio"
       },
       {
-        "title": "AI Triage & Swarm",
+        "title": "2. 실시간 감시 & 탐지",
+        "action": "open_siem_monitoring",
+        "icon": "activity"
+      },
+      {
+        "title": "3. 자율 트리아지 & 심층 분석",
         "action": "open_siem_triage",
         "icon": "cpu"
       },
       {
-        "title": "Threat Hunting",
+        "title": "4. 위협 헌팅 & 인과 추적",
         "action": "open_siem_hunting",
         "icon": "search"
       },
       {
-        "title": "MITRE Storyboard",
-        "action": "open_siem_storyboard",
-        "icon": "git-commit"
-      },
-      {
-        "title": "Autonomous SOAR",
-        "action": "open_siem_soar",
+        "title": "5. 능동 대응 & SOAR",
+        "action": "open_siem_response",
         "icon": "zap"
       },
       {
-        "title": "CTI & Deception",
+        "title": "6. 위협 인텔리전스 & 디셉션",
         "action": "open_siem_intel",
         "icon": "crosshair"
       },
       {
-        "title": "SOC Copilot & Audit",
+        "title": "7. 관제 보고 & 코파일럿",
         "action": "open_siem_copilot",
         "icon": "bot"
       }
     ],
     "created_at": "2026-11-17T10:52:59.299972+00:00",
-    "updated_at": "2026-11-17T12:55:59.843130+00:00"
+    "updated_at": "2026-11-17T21:24:16.132704+00:00"
   },
   "sre": {
     "id": "sre",
@@ -105,6 +105,6 @@
       }
     ],
     "created_at": "2026-11-17T10:52:59.299984+00:00",
-    "updated_at": "2026-11-17T12:55:59.739152+00:00"
+    "updated_at": "2026-11-17T21:24:16.043182+00:00"
   }
 }

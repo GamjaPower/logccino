@@ -44,13 +44,13 @@ DEFAULT_APPS = {
         "is_system": False,
         "default_route": "siem",
         "nav_items": [
-            {"title": "Overview & Engine", "action": "open_siem_overview", "icon": "shield"},
-            {"title": "AI Triage & Swarm", "action": "open_siem_triage", "icon": "cpu"},
-            {"title": "Threat Hunting", "action": "open_siem_hunting", "icon": "search"},
-            {"title": "MITRE Storyboard", "action": "open_siem_storyboard", "icon": "git-commit"},
-            {"title": "Autonomous SOAR", "action": "open_siem_soar", "icon": "zap"},
-            {"title": "CTI & Deception", "action": "open_siem_intel", "icon": "crosshair"},
-            {"title": "SOC Copilot & Audit", "action": "open_siem_copilot", "icon": "bot"}
+            {"title": "1. 수집 & 텔레메트리", "action": "open_siem_collection", "icon": "radio"},
+            {"title": "2. 실시간 감시 & 탐지", "action": "open_siem_monitoring", "icon": "activity"},
+            {"title": "3. 자율 트리아지 & 심층 분석", "action": "open_siem_triage", "icon": "cpu"},
+            {"title": "4. 위협 헌팅 & 인과 추적", "action": "open_siem_hunting", "icon": "search"},
+            {"title": "5. 능동 대응 & SOAR", "action": "open_siem_response", "icon": "zap"},
+            {"title": "6. 위협 인텔리전스 & 디셉션", "action": "open_siem_intel", "icon": "crosshair"},
+            {"title": "7. 관제 보고 & 코파일럿", "action": "open_siem_copilot", "icon": "bot"}
         ]
     },
     "sre": {
