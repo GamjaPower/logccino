@@ -34,9 +34,15 @@ class AIAssistant:
     """Logccino 자연어 로그 분석 및 직결 AI 엔진"""
 
     def __init__(self):
-        self.provider = settings.llm_provider
-        self.model = settings.llm_model
         self.executor = QueryExecutor()
+
+    @property
+    def provider(self) -> str:
+        return settings.llm_provider
+
+    @property
+    def model(self) -> str:
+        return settings.llm_model or settings.default_model or "gpt-6-luna"
 
     def _resolve_relative_time(self, window_str: Optional[str]) -> Optional[str]:
         if not window_str:
@@ -78,21 +84,59 @@ class AIAssistant:
                 raise e
 
         # 2. OpenAI
-        if self.provider == "openai" and settings.openai_api_key:
+        if (self.provider == "openai" or settings.openai_api_key) and settings.openai_api_key:
             try:
                 import openai
-                client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
-                response = await client.chat.completions.create(
-                    model=self.model or "gpt-4o-mini",
-                    messages=[
+                client_kwargs = {"api_key": settings.openai_api_key}
+                if settings.openai_base_url:
+                    client_kwargs["base_url"] = settings.openai_base_url
+                client = openai.AsyncOpenAI(**client_kwargs)
+                target_model = self.model or "gpt-6-luna"
+
+                create_kwargs = {
+                    "model": target_model,
+                    "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=temperature
-                )
+                    ]
+                }
+                # gpt-6, o1, o3 등은 temperature 1만 지원하거나 커스텀 temperature 미지원
+                if any(k in target_model.lower() for k in ["gpt-6", "o1", "o3", "reasoning"]):
+                    create_kwargs["temperature"] = 1
+                else:
+                    create_kwargs["temperature"] = temperature
+
+                response = await client.chat.completions.create(**create_kwargs)
                 return response.choices[0].message.content.strip()
             except Exception as e:
-                logger.error(f"OpenAI API error: {e}")
+                logger.warning(f"OpenAI API error ({target_model}): {e}")
+                try:
+                    if "temperature" in str(e).lower():
+                        logger.info(f"Retrying {target_model} with default temperature...")
+                        retry_kwargs = {
+                            "model": target_model,
+                            "messages": [
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": user_prompt}
+                            ],
+                            "temperature": 1
+                        }
+                        response = await client.chat.completions.create(**retry_kwargs)
+                        return response.choices[0].message.content.strip()
+
+                    if target_model != "gpt-4o-mini":
+                        logger.info("Retrying with fallback model: gpt-4o-mini")
+                        response = await client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": user_prompt}
+                            ],
+                            temperature=temperature
+                        )
+                        return response.choices[0].message.content.strip()
+                except Exception as fallback_err:
+                    logger.error(f"OpenAI fallback error: {fallback_err}")
                 raise e
 
         # Fallback 메시지
