@@ -502,3 +502,107 @@ def get_mitre_coverage():
     }
 
 
+# -----------------------------------------------------------------------------
+# Autonomous AI Incident Triage & SOAR Remediation Plan Endpoints
+# -----------------------------------------------------------------------------
+
+@router.get("/autonomous-incidents")
+def list_autonomous_incidents():
+    """자율 AI SIEM이 분석한 전체 사고 및 SOAR 해결 계획 목록 조회"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    return [inc.model_dump() for inc in autonomous_pipeline.list_incidents()]
+
+
+@router.get("/autonomous-incidents/{incident_id}")
+def get_autonomous_incident(incident_id: str):
+    """특정 사고의 분석 결과 및 SOAR 단계별 계획 상세 조회"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    from fastapi import HTTPException
+    inc = autonomous_pipeline.get_incident(incident_id)
+    if not inc:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return inc.model_dump()
+
+
+class ExecuteStepRequest(BaseModel):
+    approved_by: str = "analyst"
+
+
+@router.post("/autonomous-incidents/{incident_id}/steps/{step_number}/execute")
+def execute_soar_step(incident_id: str, step_number: int, req: Optional[ExecuteStepRequest] = None):
+    """SOAR 계획 특정 단계의 사람 수동 승인 및 즉시 실행 (Human-in-the-Loop)"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    from fastapi import HTTPException
+    approver = req.approved_by if req else "analyst"
+    step = autonomous_pipeline.execute_step(incident_id, step_number, approver)
+    if not step:
+        raise HTTPException(status_code=404, detail="Step or incident not found")
+    return step.model_dump()
+
+
+@router.post("/autonomous-incidents/{incident_id}/execute-all")
+def execute_all_soar_steps(incident_id: str, req: Optional[ExecuteStepRequest] = None):
+    """SOAR 계획 전체 단계 일괄 승인 및 즉시 실행"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    from fastapi import HTTPException
+    approver = req.approved_by if req else "analyst"
+    inc = autonomous_pipeline.execute_all_steps(incident_id, approver)
+    if not inc:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return inc.model_dump()
+
+
+@router.get("/auto-remediation-policies")
+def get_auto_remediation_policies():
+    """시나리오별 유사 건 자동 처리 정책(Auto-Remediate) 설정 현황 조회"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    return autonomous_pipeline.get_policies()
+
+
+class TogglePolicyRequest(BaseModel):
+    scenario_id: str
+    enabled: Optional[bool] = None
+
+
+@router.post("/auto-remediation-policies/toggle")
+def toggle_auto_remediation_policy(req: TogglePolicyRequest):
+    """특정 시나리오에 대해 유사 건 자동 해결(Auto-Remediate) 정책 ON/OFF 토글"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    val = autonomous_pipeline.toggle_policy(req.scenario_id, req.enabled)
+    return {"scenario_id": req.scenario_id, "enabled": val}
+
+
+@router.get("/incidents/pending-claude")
+def get_incidents_pending_claude():
+    """LLM API 보안 차단/호출 오류로 인해 클로드의 분석 대기열에 남겨진 인시던트 목록"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    return [inc.model_dump() for inc in autonomous_pipeline.get_pending_claude_incidents()]
+
+
+class ClaudeReviewRequest(BaseModel):
+    is_false_positive: bool = False
+    confidence_score: float = 0.95
+    root_cause: str
+    adjusted_severity: str = "HIGH"
+    remediation_steps: Optional[List[Dict[str, Any]]] = None
+
+
+@router.post("/incidents/{incident_id}/claude-review")
+def submit_claude_review(incident_id: str, req: ClaudeReviewRequest):
+    """클로드가 Fallback 인시던트에 대해 직접 트리아지 및 맞춤형 SOAR 계획 제출"""
+    from core.siem.autonomous_pipeline import autonomous_pipeline
+    from fastapi import HTTPException
+    inc = autonomous_pipeline.resolve_incident_by_claude(
+        incident_id=incident_id,
+        is_false_positive=req.is_false_positive,
+        confidence_score=req.confidence_score,
+        root_cause=req.root_cause,
+        adjusted_severity=req.adjusted_severity,
+        remediation_steps=req.remediation_steps
+    )
+    if not inc:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return inc.model_dump()
+
+
+

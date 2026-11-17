@@ -552,6 +552,13 @@ class SavedSearchScheduler:
             if s.action_index_enabled:
                 await self.index_alert_to_opensearch(s, alert_record)
 
+            # 5. 자율 AI SIEM 분석 및 SOAR 조치 계획 파이프라인 가동 (.env LLM API / Claude Fallback)
+            try:
+                from core.siem.autonomous_pipeline import autonomous_pipeline
+                asyncio.create_task(autonomous_pipeline.process_triggered_alert(s, hits, result_count))
+            except Exception as e:
+                logger.error(f"Failed to trigger autonomous AI pipeline for alert {s.name}: {e}")
+
         # 히스토리에 기록 (Splunk Track in Triggered Alerts)
         if s.alert_track:
             self._alert_history.insert(0, alert_record)

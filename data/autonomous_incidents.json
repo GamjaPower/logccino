@@ -1,0 +1,136 @@
+[
+  {
+    "incident_id": "inc-ssh-7721",
+    "saved_search_id": "alert-ssh-bruteforce",
+    "saved_search_name": "[SEC-01] SSH 무차별 대입(Brute-Force) 및 로그인 실패 급증",
+    "timestamp": "2026-11-18T06:55:00.000000+00:00",
+    "severity": "CRITICAL",
+    "mitre_tactic": "Credential Access",
+    "mitre_technique": "T1110.001 Password Guessing",
+    "matched_events_count": 6,
+    "raw_sample_logs": [
+      {
+        "host": "bastion-gateway",
+        "service": "sshd",
+        "message": "Failed password for invalid user root from 203.0.113.88 port 59281 ssh2",
+        "security": {
+          "source_ip": "203.0.113.88",
+          "user_name": "root",
+          "action": "ssh_login_failure"
+        }
+      }
+    ],
+    "analysis_status": "COMPLETED",
+    "analyzed_by": ".env LLM API (gpt-6-luna)",
+    "is_false_positive": false,
+    "confidence_score": 0.98,
+    "adjusted_severity": "CRITICAL",
+    "root_cause_summary": "외부 공격자 IP 203.0.113.88로부터 root 계정에 대한 6회 연속 무차별 대입 공격 확인",
+    "attack_narrative": "인터넷에 노출된 22번 포트로 다중 크리덴셜 살포(Password Spraying)를 시도하였으며 침투 전 단계에서 차단되었습니다.",
+    "llm_error": null,
+    "needs_claude_review": false,
+    "fallback_reason": null,
+    "remediation_status": "PENDING_APPROVAL",
+    "remediation_plan": [
+      {
+        "step_number": 1,
+        "action_type": "block_ip",
+        "action_name": "[네트워크 방화벽] 공격자 발원지 IP(203.0.113.88) 즉시 DROP 차단",
+        "target": "203.0.113.88",
+        "command": "ufw insert 1 deny from 203.0.113.88 to any # Auto-Quarantine",
+        "estimated_impact": "none",
+        "status": "pending",
+        "executed_by": null,
+        "executed_at": null,
+        "output_log": null
+      },
+      {
+        "step_number": 2,
+        "action_type": "isolate_host",
+        "action_name": "[엔드포인트 EDR] 공격 대상 호스트(bastion-gateway) 세션 격리",
+        "target": "bastion-gateway",
+        "command": "iptables -A INPUT -s 203.0.113.88 -j DROP",
+        "estimated_impact": "low",
+        "status": "pending",
+        "executed_by": null,
+        "executed_at": null,
+        "output_log": null
+      },
+      {
+        "step_number": 3,
+        "action_type": "revoke_session",
+        "action_name": "[계정 IAM] 침해 시도 계정(root) 활성 SSH 세션 강제 종료",
+        "target": "root",
+        "command": "pkill -u root",
+        "estimated_impact": "low",
+        "status": "pending",
+        "executed_by": null,
+        "executed_at": null,
+        "output_log": null
+      },
+      {
+        "step_number": 4,
+        "action_type": "post_mortem",
+        "action_name": "[사후 조치] 침해사고 Post-Mortem 보고서 자동 생성 및 CISO 알림",
+        "target": "secops-alerts@company.internal",
+        "command": "logccino-reporter --generate --incident inc-ssh-7721",
+        "estimated_impact": "none",
+        "status": "pending",
+        "executed_by": null,
+        "executed_at": null,
+        "output_log": null
+      }
+    ],
+    "auto_remediation_enabled": false,
+    "completed_steps_count": 0,
+    "total_steps_count": 4
+  },
+  {
+    "incident_id": "inc-dns-9912",
+    "saved_search_id": "alert-dns-tunneling",
+    "saved_search_name": "[SEC-05] DNS 터널링 및 비정상 TXT 레코드 대용량 은닉 유출",
+    "timestamp": "2026-11-18T06:50:00.000000+00:00",
+    "severity": "HIGH",
+    "mitre_tactic": "Exfiltration",
+    "mitre_technique": "T1071.004 Application Layer Protocol - DNS",
+    "matched_events_count": 2,
+    "raw_sample_logs": [
+      {
+        "host": "corp-finance-pc",
+        "message": "DNS query: aW50ZXJuYWwtc2VjcmV0cy1kYXRh.c2.attacker.com (Length: 142)",
+        "security": {
+          "source_ip": "10.0.4.15",
+          "action": "dns_tunneling"
+        }
+      }
+    ],
+    "analysis_status": "PENDING_CLAUDE_ANALYSIS",
+    "analyzed_by": "PENDING_CLAUDE_REVIEW",
+    "is_false_positive": false,
+    "confidence_score": 0.5,
+    "adjusted_severity": "HIGH",
+    "root_cause_summary": "LLM 자동 분석 차단: 안전 필터/API 오류로 인해 클로드 수석 분석관 수동 심층 분석 대기 중",
+    "attack_narrative": "LLM API 가드레일 제약으로 인해 클로드(Claude) 수석 분석관에게 심층 조사가 위임되었습니다.",
+    "llm_error": "SafetyGuardrailException: 400 Payload contains obfuscated Base64 strings flagged by automated filter",
+    "needs_claude_review": true,
+    "fallback_reason": "LLM API 보안 필터링 또는 호출 오류로 인해 클로드 수석 분석관에게 트리아지가 위임되었습니다.",
+    "remediation_status": "PENDING_APPROVAL",
+    "remediation_plan": [
+      {
+        "step_number": 1,
+        "action_type": "sinkhole_dns",
+        "action_name": "[DNS 방화벽] 공격자 C2 도메인(*.attacker.com) 싱크홀 차단",
+        "target": "*.attacker.com",
+        "command": "sinkhole-dns block *.attacker.com",
+        "estimated_impact": "none",
+        "status": "pending",
+        "executed_by": null,
+        "executed_at": null,
+        "output_log": null
+      }
+    ],
+    "auto_remediation_enabled": false,
+    "completed_steps_count": 0,
+    "total_steps_count": 1
+  }
+]

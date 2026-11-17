@@ -694,6 +694,54 @@ if HAS_MCP and mcp_app:
         """현재 등록된 관제 시나리오의 MITRE ATT&CK 전술 및 기법 커버리지 분석"""
         return json.dumps(mcp_tools.get_mitre_attack_coverage(), ensure_ascii=False, indent=2)
 
+    # -------------------------------------------------------------------------
+    # Autonomous AI Pipeline & Claude Review / SOAR Execution Tools
+    # -------------------------------------------------------------------------
+    @mcp_app.tool()
+    def get_autonomous_incidents() -> str:
+        """자율 AI SIEM이 분석한 전체 사고 및 SOAR 해결 계획 목록 조회"""
+        return json.dumps(mcp_tools.get_autonomous_incidents(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def execute_soar_remediation_step(incident_id: str, step_number: int, approved_by: str = "claude") -> str:
+        """SOAR 해결 계획의 특정 단계를 수동 승인 및 즉시 실행"""
+        return json.dumps(mcp_tools.execute_soar_remediation_step(incident_id, step_number, approved_by), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def execute_all_soar_remediation_steps(incident_id: str, approved_by: str = "claude") -> str:
+        """SOAR 해결 계획의 모든 단계를 일괄 승인 및 즉시 실행"""
+        return json.dumps(mcp_tools.execute_all_soar_remediation_steps(incident_id, approved_by), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def manage_auto_remediation_policy(scenario_id: Optional[str] = None, enabled: Optional[bool] = None) -> str:
+        """유사 건 자동 처리 정책(Auto-Remediate on match) 조회 또는 활성화/비활성화 토글"""
+        return json.dumps(mcp_tools.manage_auto_remediation_policy(scenario_id, enabled), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def get_incidents_pending_claude_analysis() -> str:
+        """LLM API 보안 필터링/오류로 인해 클로드 수석 분석관에게 위임된 인시던트 대기열 조회"""
+        return json.dumps(mcp_tools.get_incidents_pending_claude_analysis(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def submit_claude_incident_analysis(
+        incident_id: str,
+        is_false_positive: bool,
+        confidence_score: float,
+        root_cause: str,
+        adjusted_severity: str = "HIGH",
+        remediation_steps: Optional[List[Dict[str, Any]]] = None
+    ) -> str:
+        """클로드가 LLM 대신 직접 트리아지 분석 결과 및 맞춤형 SOAR 조치 계획 제출"""
+        res = mcp_tools.submit_claude_incident_analysis(
+            incident_id=incident_id,
+            is_false_positive=is_false_positive,
+            confidence_score=confidence_score,
+            root_cause=root_cause,
+            adjusted_severity=adjusted_severity,
+            remediation_steps=remediation_steps
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------

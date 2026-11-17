@@ -197,6 +197,18 @@ async def get_enterprise_dashboard():
               </div>
             </a>
           </div>
+                    <div class="py-1.5 px-2">
+            <span class="text-[10px] uppercase font-bold text-purple-400 tracking-wider flex items-center gap-1">
+              <i data-lucide="bot" class="w-3 h-3 text-purple-400"></i> AI AGENT & CLAUDE (AI 연동)
+            </span>
+            <a href="javascript:void(0)" onclick="openClaudeGuideModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-purple-200 hover:text-white transition mt-1 bg-purple-500/10 border border-purple-500/20">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i>
+              <div>
+                <div class="font-bold text-xs text-purple-200">클로드(Claude) AI 연동 가이드</div>
+                <div class="text-[10px] text-purple-300/70">시나리오 제작, 스케줄러, 탐지 분석 &amp; SOAR 해결</div>
+              </div>
+            </a>
+          </div>
           <div class="py-1.5 px-2">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">USERS & AUTH (사용자 및 권한)</span>
             <a href="javascript:void(0)" onclick="openUsersModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-1">
@@ -1415,6 +1427,72 @@ async def get_enterprise_dashboard():
         <!-- SOC STAGE 5: 능동 대응 & SOAR (Response & SOAR)                     -->
         <!-- =================================================================== -->
         <div id="siem-subview-response" class="siem-subview space-y-4 hidden">
+          <!-- ================================================================= -->
+          <!-- AI END-TO-END AUTONOMOUS INCIDENT & SOAR REMEDIATION CENTER       -->
+          <!-- (시나리오 제작 -> 탐지 -> LLM/Claude 분석 -> SOAR 계획 & 승인)    -->
+          <!-- ================================================================= -->
+          <div class="bg-panelbg rounded-xl border border-indigo-500/30 shadow-xl p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-bordercolor/60 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  <i data-lucide="zap" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-white uppercase">AI 자율 사고 분석 및 SOAR 조치 센터</h3>
+                    <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">END-TO-END AUTONOMOUS</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-0.5">클로드 시나리오 제작 ➔ 스케줄러 PPL 탐지 ➔ .env LLM 자율 분석 (보안 오류 시 Claude Fallback) ➔ SOAR 해결 계획 &amp; 사람 수동 승인 / 유사 건 자동화</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="loadAutonomousIncidents()" class="px-2.5 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor flex items-center gap-1 text-xs transition">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i> 새로고침
+                </button>
+                <button onclick="openClaudeGuideModal()" class="px-3 py-1.5 rounded bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-medium text-xs flex items-center gap-1.5 transition">
+                  <i data-lucide="help-circle" class="w-3.5 h-3.5 text-purple-400"></i> AI 연동 가이드
+                </button>
+              </div>
+            </div>
+
+            <!-- 4-Stage Autonomous Pipeline Breadcrumb Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
+              <div class="p-2.5 rounded-lg bg-slatebg border border-bordercolor/60 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-[10px]">1</span>
+                <div>
+                  <span class="font-bold text-white block text-[11px]">시나리오 제작</span>
+                  <span class="text-[10px] text-slate-400">클로드 스킬 (MITRE ATT&amp;CK)</span>
+                </div>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slatebg border border-bordercolor/60 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-[10px]">2</span>
+                <div>
+                  <span class="font-bold text-white block text-[11px]">실시간 탐지</span>
+                  <span class="text-[10px] text-slate-400">스케줄러 PPL / DSL 주기 실행</span>
+                </div>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slatebg border border-bordercolor/60 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 font-bold flex items-center justify-center text-[10px]">3</span>
+                <div>
+                  <span class="font-bold text-white block text-[11px]">자율 인시던트 분석</span>
+                  <span class="text-[10px] text-slate-400">.env LLM API / Claude Fallback</span>
+                </div>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slatebg border border-bordercolor/60 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[10px]">4</span>
+                <div>
+                  <span class="font-bold text-white block text-[11px]">SOAR 해결 &amp; 승인</span>
+                  <span class="text-[10px] text-slate-400">단계별 수동 승인 + 유사 건 자동화</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Incidents Queue List Container -->
+            <div id="autonomous-incidents-container" class="space-y-4 pt-1">
+              <p class="text-center py-6 text-slate-500 text-xs">자율 분석된 보안 인시던트를 불러오는 중입니다...</p>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <!-- 비주얼 SOAR 플레이북 & 승인 게이트 (Logpresso Maestro) -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
@@ -2722,7 +2800,188 @@ async def get_enterprise_dashboard():
 
   <!-- =================================================================================== -->
   <!-- 4. JavaScript Logic: Login, Real Splunk Search, Timeline, Field Inspector, Modals   -->
-    <!-- Scenario Micro-Tuning Modal -->
+      <!-- Claude AI Integration User Guide Modal -->
+  <div id="modal-claude-guide" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-purple-500/40 rounded-xl w-full max-w-5xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-bordercolor flex items-center justify-between bg-subpanel/90 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+            <i data-lucide="bot" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>클로드(Claude) AI 에이전트 연동 가이드</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">Claude Skill &amp; MCP</span>
+            </h3>
+            <p class="text-xs text-slate-400">Logccino의 기본 검색, 스케줄러 등록, SIEM 시나리오 발굴·입력, 탐지 분석 및 SOAR 후속 조치 가이드</p>
+          </div>
+        </div>
+        <button onclick="closeClaudeGuideModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0 overflow-x-auto scrollbar-thin">
+        <button type="button" onclick="switchClaudeGuideTab('search')" id="tab-cguide-search" class="cguide-tab-btn px-4 py-3 border-b-2 border-purple-500 text-purple-300 font-bold flex items-center gap-1.5 transition">
+          <i data-lucide="search" class="w-3.5 h-3.5"></i> 1. 기본 검색 &amp; Join
+        </button>
+        <button type="button" onclick="switchClaudeGuideTab('scheduler')" id="tab-cguide-scheduler" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="clock" class="w-3.5 h-3.5"></i> 2. 스케줄러 &amp; 알람 등록
+        </button>
+        <button type="button" onclick="switchClaudeGuideTab('scenarios')" id="tab-cguide-scenarios" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> 3. SIEM 시나리오 발굴 &amp; 생성
+        </button>
+        <button type="button" onclick="switchClaudeGuideTab('analysis')" id="tab-cguide-analysis" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 4. 탐지 데이터 &amp; LLM 자율 분석
+        </button>
+        <button type="button" onclick="switchClaudeGuideTab('soar')" id="tab-cguide-soar" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i> 5. SOAR 해결 &amp; 자동화 정책
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-6 text-xs text-slate-300 space-y-6">
+
+        <!-- TAB 1: 기본 검색 & Join -->
+        <div id="cguide-view-search" class="cguide-view space-y-4">
+          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+            <h4 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> PPL 및 Cross-Index Join 검색 방법
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              클로드는 MCP 도구 <code>search_ppl</code>, <code>execute_joined_query</code>, <code>search_natural</code>을 통해 OpenSearch 클러스터에 적재된 모든 원천 로그를 Splunk 파이프라인 문법으로 직접 조회합니다.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h5 class="font-bold text-slate-200">주요 쿼리 예시 및 클로드 프롬프트</h5>
+            <div class="bg-black/50 p-3 rounded-lg border border-slate-800 font-mono text-emerald-400 space-y-1">
+              <div># 1. 원천 보안 로그 필터링 및 집계</div>
+              <div class="text-slate-200">source = main | where security.action = 'ssh_login_failure' | stats count() as failures by host, src_ip | sort - failures | head 20</div>
+              <div class="pt-2"># 2. 이종 인덱스 간 분산 크로스 해시 조인 (Cross-Index Join)</div>
+              <div class="text-slate-200">source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]</div>
+            </div>
+            <div class="p-3 bg-purple-950/30 rounded-lg border border-purple-500/20 text-purple-300 text-[11px]">
+              <strong>💡 클로드 활용 팁:</strong> "클로드에게 '지난 1시간 동안 SSH 로그인 실패 상위 10개 IP와 해당 IP의 방화벽 차단 이력을 조인해서 분석해줘'라고 자연어로 지시하면 자동으로 PPL 파이프라인을 합성하여 결과를 요약합니다."
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: 스케줄러 & 알람 등록 -->
+        <div id="cguide-view-scheduler" class="cguide-view space-y-4 hidden">
+          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+            <h4 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i> Splunk savedsearches.conf 완전 호환 스케줄러 등록
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              클로드는 <code>create_saved_search</code>, <code>update_saved_search</code>, <code>run_saved_search</code> MCP 도구를 사용하여 백그라운드 실시간 감시 스케줄러를 등록하고 즉시 검증할 수 있습니다.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
+            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
+              <span class="font-bold text-amber-400 block font-sans">핵심 파라미터 규격</span>
+              <div>• dispatch_earliest_time: "-15m" (검색 윈도우)</div>
+              <div>• interval_seconds: 60 (실행 주기 초)</div>
+              <div>• alert_type: "number_of_results"</div>
+              <div>• condition_operator: "gt" | "gte"</div>
+              <div>• condition_threshold: 0.0</div>
+            </div>
+            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
+              <span class="font-bold text-indigo-400 block font-sans">경보 피로(Alert Fatigue) 방지 억제</span>
+              <div>• alert_suppress: true (중복 억제 활성화)</div>
+              <div>• alert_suppress_period: "5m" | "15m" | "1h"</div>
+              <div>• alert_suppress_fields: "host,src_ip"</div>
+              <div>• action_webhook_enabled: true (Slack/Teams)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: SIEM 시나리오 발굴 & 생성 -->
+        <div id="cguide-view-scenarios" class="cguide-view space-y-4 hidden">
+          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+            <h4 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i> 사람이 수동 입력하지 않는 AI 자율 관제 시나리오 엔지니어링
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              사람은 복잡한 쿼리를 직접 작성하지 않습니다. <strong>클로드 스킬(<code>logccino-soc-scenarios</code>)</strong>이 MITRE ATT&amp;CK 14대 엔터프라이즈 전술 매트릭스와 위협 인텔리전스를 분석하여 관제 시나리오를 자율 합성·등록합니다.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h5 class="font-bold text-slate-200">클로드에게 시나리오 생성 요청하기 (자연어 프롬프트 예시)</h5>
+            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor/80 space-y-2 font-mono text-slate-300 text-[11px]">
+              <div class="text-purple-400">"클로드야, MITRE ATT&amp;CK T1059(명령 프롬프트) 기반으로 공격자가 파워쉘로 악성 스크립트를 다운로드하는 행위를 탐지하는 신규 관제 시나리오를 만들고 등록해줘."</div>
+              <div class="text-emerald-400">➔ 클로드가 <code>register_soc_detection_scenario</code> 도구를 호출하여 쿼리 검증, 임계치(0건 초과), 중복 억제(10분)를 설정하고 SIEM 엔진에 즉시 배포합니다.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: 탐지 데이터 & LLM 자율 분석 -->
+        <div id="cguide-view-analysis" class="cguide-view space-y-4 hidden">
+          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+            <h4 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i> .env LLM API 1차 자율 트리아지 및 Claude Fallback 체계
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              스케줄러에서 위협이 감지되면 즉시 <code>.env</code>에 설정된 LLM API(OpenAI/Gemini/vLLM)가 1차 자율 트리아지(오탐 여부, 공격 단계, 위험도, 원인 요약)를 수행합니다.
+            </p>
+          </div>
+
+          <div class="p-4 bg-rose-950/30 rounded-xl border border-rose-500/30 space-y-2">
+            <h5 class="font-bold text-rose-300 flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> LLM 보안 제약 또는 API 오류 시 클로드(Claude) 자동 위임
+            </h5>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              만약 LLM API에서 가드레일 거부(Content Safety Policy)나 키 오류, 네트워크 장애가 발생하면, 시스템은 결코 에러를 방치하지 않고 <strong class="text-rose-400">PENDING_CLAUDE_ANALYSIS</strong> 상태로 안전하게 보관합니다.
+              클로드는 <code>get_incidents_pending_claude_analysis()</code>로 이를 확인하고 직접 심층 트리아지를 완료할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- TAB 5: SOAR 해결 & 자동화 정책 -->
+        <div id="cguide-view-soar" class="cguide-view space-y-4 hidden">
+          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+            <h4 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> SOAR 해결 계획 가시화, 사람 수동 승인 및 유사 건 자동화
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              AI는 해결 시 독단적으로 위험한 조치를 강제하지 않고, <strong>전체 계획을 SOAR 플레이북 단계(IP 차단 ➔ 호스트 격리 ➔ 세션 만료 ➔ 보고서)로 시각화</strong>하여 제시합니다.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+              <span class="font-bold text-white block">1. 사람에 의한 수동 승인 (Human-in-the-Loop)</span>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                분석가는 각 단계의 예상 영향도(Impact: None/Low/Medium)와 실제 실행될 리눅스/네트워크 명령을 확인하고 <code>[승인 및 실행]</code> 버튼을 눌러 안전하게 조치합니다.
+              </p>
+            </div>
+
+            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+              <span class="font-bold text-emerald-400 block">2. 유사 건 자동 처리 정책 (Auto-Remediation Policy)</span>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                검증된 공격 시나리오(예: SSH Brute-Force 등)에 대해 <code>[유사 건 자동 처리]</code> 토글을 켜두면, 다음 알람 발생 시 사람의 개입 없이 AI가 즉시 자동 해결 완료 처리합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-bordercolor bg-subpanel/80 flex items-center justify-between shrink-0">
+        <span class="text-[11px] text-slate-400">Logccino Autonomous AI SOC Architecture</span>
+        <button onclick="closeClaudeGuideModal()" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition">
+          확인 완료
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario Micro-Tuning Modal -->
   <div id="scenario-tuning-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
       <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
@@ -3113,7 +3372,7 @@ async def get_enterprise_dashboard():
       } else if (appId === 'siem') {
         loadSecurityEvents();
         fetchCollectorStatus();
-        loadDetectionScenarios();
+        loadDetectionScenarios();\n        loadAutonomousIncidents();
       } else if (appId === 'collectors') {
         fetchCollectorsAllStatus();
       } else if (appId === 'manage_apps') {
@@ -4483,7 +4742,7 @@ async def get_enterprise_dashboard():
         if (el) {
           if (sub === target) {
             el.classList.remove('hidden');
-            if (target === 'monitoring') loadDetectionScenarios();
+            if (target === 'monitoring') loadDetectionScenarios();\n        loadAutonomousIncidents();\n            if (target === 'response') loadAutonomousIncidents();
           } else {
             el.classList.add('hidden');
           }
@@ -5865,7 +6124,7 @@ async def get_enterprise_dashboard():
           body: JSON.stringify({ enabled: !currentEnabled })
         });
         if (res.ok) {
-          loadDetectionScenarios();
+          loadDetectionScenarios();\n        loadAutonomousIncidents();
         } else {
           alert("상태 변경 실패");
         }
@@ -5884,7 +6143,7 @@ async def get_enterprise_dashboard():
 - 트리거 여부: ${rec.triggered ? '🚨 TRIGGERED (위협 탐지)' : '✅ OK (정상)'}
 - 억제(Suppressed): ${rec.suppressed ? '예 (Throttling 적용)' : '아니오'}
 - 실행 소요: ${rec.execution_took_ms}ms`);
-          loadDetectionScenarios();
+          loadDetectionScenarios();\n        loadAutonomousIncidents();
         } else {
           alert("시나리오 즉시 실행에 실패했습니다.");
         }
@@ -5932,7 +6191,7 @@ async def get_enterprise_dashboard():
         });
         if (res.ok) {
           closeScenarioTuneModal();
-          loadDetectionScenarios();
+          loadDetectionScenarios();\n        loadAutonomousIncidents();
         } else {
           alert("시나리오 튜닝 저장에 실패했습니다.");
         }
@@ -6392,6 +6651,250 @@ async def get_enterprise_dashboard():
         alert("원격 MCP SSE URL이 클립보드에 복사되었습니다: " + text);
       });
     }
+
+    // -------------------------------------------------------------
+    // Claude Guide Modal Tab Navigation
+    // -------------------------------------------------------------
+    function openClaudeGuideModal() {
+      document.getElementById('modal-claude-guide').classList.remove('hidden');
+      switchClaudeGuideTab('search');
+      lucide.createIcons();
+    }
+
+    function closeClaudeGuideModal() {
+      document.getElementById('modal-claude-guide').classList.add('hidden');
+    }
+
+    function switchClaudeGuideTab(tab) {
+      document.querySelectorAll('.cguide-tab-btn').forEach(btn => {
+        btn.classList.remove('border-purple-500', 'text-purple-300', 'font-bold');
+        btn.classList.add('border-transparent', 'text-slate-400');
+      });
+      const activeBtn = document.getElementById(`tab-cguide-${tab}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        activeBtn.classList.add('border-purple-500', 'text-purple-300', 'font-bold');
+      }
+
+      ['search', 'scheduler', 'scenarios', 'analysis', 'soar'].forEach(v => {
+        const el = document.getElementById(`cguide-view-${v}`);
+        if (el) {
+          if (v === tab) el.classList.remove('hidden');
+          else el.classList.add('hidden');
+        }
+      });
+      lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // Autonomous Incidents & SOAR Remediation Pipeline Controller
+    // -------------------------------------------------------------
+    let currentAutonomousIncidents = [];
+    let currentAutoPolicies = {};
+
+    async function loadAutonomousIncidents() {
+      const container = document.getElementById('autonomous-incidents-container');
+      if (!container) return;
+
+      container.innerHTML = `<div class="p-6 text-center text-slate-400"><i data-lucide="loader" class="w-4 h-4 inline animate-spin mr-1"></i> 자율 분석 인시던트 및 SOAR 계획 로딩 중...</div>`;
+      lucide.createIcons();
+
+      try {
+        const [incRes, polRes] = await Promise.all([
+          fetch('/api/v1/siem/autonomous-incidents'),
+          fetch('/api/v1/siem/auto-remediation-policies')
+        ]);
+        currentAutonomousIncidents = await incRes.json();
+        currentAutoPolicies = await polRes.json();
+
+        if (currentAutonomousIncidents.length === 0) {
+          container.innerHTML = `
+            <div class="p-8 text-center text-slate-400 bg-slatebg/60 rounded-xl border border-bordercolor/60 space-y-2">
+              <i data-lucide="shield-check" class="w-8 h-8 mx-auto text-emerald-400 mb-2"></i>
+              <div class="font-bold text-white text-xs">현재 미해결된 침해 사고가 없습니다.</div>
+              <div class="text-[11px] text-slate-500">스케줄러가 위협을 탐지하면 AI가 자율 트리아지 및 단계별 SOAR 조치 계획을 수립합니다.</div>
+            </div>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = currentAutonomousIncidents.map(inc => {
+          const isPendingClaude = inc.needs_claude_review || inc.analysis_status === 'PENDING_CLAUDE_ANALYSIS';
+          const isResolved = inc.remediation_status === 'RESOLVED' || inc.remediation_status === 'AUTO_RESOLVED';
+          const isAutoResolved = inc.remediation_status === 'AUTO_RESOLVED';
+          const isAutoPolicyActive = Boolean(currentAutoPolicies[inc.saved_search_id]);
+
+          let statusBadge = '';
+          if (isPendingClaude) {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3 text-rose-400"></i> LLM 보안 차단 (클로드 분석 대기)</span>';
+          } else if (isAutoResolved) {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1"><i data-lucide="check-check" class="w-3 h-3 text-emerald-400"></i> 자동 해결 완료 (유사 건 정책 적용됨)</span>';
+          } else if (isResolved) {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1"><i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> 수동 조치 완료</span>';
+          } else {
+            statusBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-amber-400"></i> 분석 완료 (사람 수동 승인 대기)</span>';
+          }
+
+          const stepsHtml = (inc.remediation_plan || []).map(st => {
+            const isStepDone = st.status === 'completed';
+            const stepStatusBadge = isStepDone 
+              ? `<span class="text-emerald-400 font-mono text-[10px] font-bold">✓ 완료 (${st.executed_by || 'system'})</span>`
+              : `<span class="text-amber-400 font-mono text-[10px]">대기 중</span>`;
+
+            const runBtn = isStepDone 
+              ? `<button disabled class="px-2 py-1 rounded bg-slate-800 text-slate-500 text-[10px] font-medium cursor-not-allowed">승인됨</button>`
+              : `<button onclick="executeSoarStep('${inc.incident_id}', ${st.step_number})" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition flex items-center gap-1 shadow">
+                  <i data-lucide="play" class="w-2.5 h-2.5"></i> 승인 및 실행
+                 </button>`;
+
+            return `
+              <div class="p-2.5 rounded-lg bg-slatebg border border-bordercolor/60 flex items-center justify-between text-xs hover:border-bordercolor transition">
+                <div class="space-y-0.5 max-w-xl">
+                  <div class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-slate-800 text-slate-200 text-[10px] flex items-center justify-center font-bold">${st.step_number}</span>
+                    <span class="font-bold text-white text-[11px]">${st.action_name}</span>
+                    <span class="px-1.5 py-0.2 rounded bg-subpanel text-slate-400 text-[9px] font-mono">영향도: ${st.estimated_impact}</span>
+                  </div>
+                  <div class="text-[10px] font-mono text-emerald-400 pl-6">${st.command}</div>
+                  ${st.output_log ? `<div class="text-[10px] text-slate-400 pl-6">${st.output_log}</div>` : ''}
+                </div>
+                <div class="flex items-center gap-3">
+                  ${stepStatusBadge}
+                  ${runBtn}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div class="p-4 rounded-xl bg-slatebg/60 border border-bordercolor hover:border-indigo-500/40 transition shadow-sm space-y-3">
+              <!-- Incident Header Bar -->
+              <div class="flex items-center justify-between border-b border-bordercolor/60 pb-2.5">
+                <div class="flex items-center gap-2.5">
+                  <span class="font-bold text-white text-xs">${inc.saved_search_name}</span>
+                  <span class="font-mono text-[10px] text-slate-400">ID: ${inc.incident_id}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">${inc.severity}</span>
+                  ${inc.mitre_tactic ? `<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono border border-indigo-500/30">${inc.mitre_tactic}</span>` : ''}
+                </div>
+                <div class="flex items-center gap-2">
+                  ${statusBadge}
+                  ${!isResolved && !isPendingClaude ? `
+                    <button onclick="executeAllSoarSteps('${inc.incident_id}')" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1 shadow">
+                      <i data-lucide="check-check" class="w-3 h-3"></i> 전체 일괄 승인 &amp; 실행
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- AI Triage Analysis Details -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-subpanel/50 p-3 rounded-lg border border-bordercolor/40 text-xs">
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-indigo-400 block mb-0.5">분석 주체 및 신뢰도</span>
+                  <div class="text-white font-semibold">${inc.analyzed_by} (신뢰도: ${Math.round(inc.confidence_score * 100)}%)</div>
+                  <div class="text-[11px] text-slate-300 mt-1"><strong>근본 원인:</strong> ${inc.root_cause_summary}</div>
+                </div>
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">공격 서사 및 판정</span>
+                  <div class="text-[11px] text-slate-300">${inc.attack_narrative || '비정상 접속 폭증 및 임계치 초과'}</div>
+                  ${isPendingClaude ? `
+                    <div class="mt-2 flex items-center gap-2">
+                      <button onclick="requestClaudeReviewForIncident('${inc.incident_id}')" class="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded transition flex items-center gap-1 shadow">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i> 클로드에게 분석 위임 및 조치 요청
+                      </button>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- SOAR Remediation Plan Steps (4단계 해결 파이프라인) -->
+              <div class="space-y-2 pt-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                    <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-400"></i> AI 수립 SOAR 해결 계획 (수동 승인 및 단계별 실행)
+                  </span>
+
+                  <!-- Auto-Remediation Policy Toggle for this scenario -->
+                  <label class="flex items-center gap-2 cursor-pointer bg-slate-900/60 px-2.5 py-1 rounded border border-bordercolor/60 hover:border-emerald-500/50 transition">
+                    <input type="checkbox" onchange="toggleAutoRemediationPolicy('${inc.saved_search_id}', ${isAutoPolicyActive})" ${isAutoPolicyActive ? 'checked' : ''} class="w-3.5 h-3.5 rounded text-emerald-500 focus:ring-0">
+                    <span class="text-[10px] font-bold ${isAutoPolicyActive ? 'text-emerald-400' : 'text-slate-400'}">유사 건 자동 처리 활성화 (Auto-Remediate on match)</span>
+                  </label>
+                </div>
+
+                <div class="space-y-1.5">
+                  ${stepsHtml}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        lucide.createIcons();
+      } catch (e) {
+        container.innerHTML = `<div class="p-6 text-center text-rose-400">인시던트 로드 실패: ${e.message}</div>`;
+      }
+    }
+
+    async function executeSoarStep(incidentId, stepNumber) {
+      try {
+        const res = await fetch(`/api/v1/siem/autonomous-incidents/${incidentId}/steps/${stepNumber}/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approved_by: '분석관 수동 승인' })
+        });
+        if (res.ok) {
+          loadAutonomousIncidents();
+        } else {
+          alert("단계 실행에 실패했습니다.");
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    async function executeAllSoarSteps(incidentId) {
+      if (!confirm("전체 SOAR 조치 계획을 일괄 승인하고 즉시 실행하시겠습니까?")) return;
+      try {
+        const res = await fetch(`/api/v1/siem/autonomous-incidents/${incidentId}/execute-all`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approved_by: '분석관 일괄 승인' })
+        });
+        if (res.ok) {
+          loadAutonomousIncidents();
+        } else {
+          alert("일괄 실행에 실패했습니다.");
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    async function toggleAutoRemediationPolicy(scenarioId, currentVal) {
+      try {
+        const res = await fetch('/api/v1/siem/auto-remediation-policies/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario_id: scenarioId, enabled: !currentVal })
+        });
+        if (res.ok) {
+          loadAutonomousIncidents();
+        } else {
+          alert("자동 처리 정책 변경 실패");
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    function requestClaudeReviewForIncident(incidentId) {
+      switchSiemSubTab('copilot');
+      const input = document.getElementById('copilot-chat-input');
+      if (input) {
+        input.value = `인시던트 ID '${incidentId}'가 LLM API 가드레일 오류로 클로드에게 위임되었습니다. 원본 로그를 심층 분석하고 맞춤형 SOAR 조치 계획을 수립해줘.`;
+        input.focus();
+      }
+    }
+
   </script>
 </body>
 </html>

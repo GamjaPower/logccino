@@ -1,0 +1,7 @@
+{
+  "alert-ssh-bruteforce": false,
+  "alert-sudo-privilege": true,
+  "alert-firewall-drops": false,
+  "alert-ransomware-canary": false,
+  "alert-dns-tunneling": false
+}

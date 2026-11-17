@@ -1477,4 +1477,64 @@ class LogccinoMCPTools:
             "uncovered_tactics": [t for t, items in tactic_map.items() if len(items) == 0]
         }
 
+    # -------------------------------------------------------------------------
+    # Autonomous AI Pipeline & Claude Review / SOAR Tools
+    # -------------------------------------------------------------------------
+    def get_autonomous_incidents(self) -> List[Dict[str, Any]]:
+        """자율 AI SIEM이 분석한 전체 사고 및 SOAR 해결 계획 목록 조회"""
+        from core.siem.autonomous_pipeline import autonomous_pipeline
+        return [inc.model_dump() for inc in autonomous_pipeline.list_incidents()]
+
+    def execute_soar_remediation_step(self, incident_id: str, step_number: int, approved_by: str = "analyst") -> Dict[str, Any]:
+        """SOAR 계획 특정 단계 승인 및 실행"""
+        from core.siem.autonomous_pipeline import autonomous_pipeline
+        step = autonomous_pipeline.execute_step(incident_id, step_number, approved_by)
+        if not step:
+            return {"error": f"Step {step_number} in incident {incident_id} not found"}
+        return {"status": "executed", "step": step.model_dump()}
+
+    def execute_all_soar_remediation_steps(self, incident_id: str, approved_by: str = "analyst") -> Dict[str, Any]:
+        """SOAR 계획 전체 단계 일괄 승인 및 즉시 실행"""
+        from core.siem.autonomous_pipeline import autonomous_pipeline
+        inc = autonomous_pipeline.execute_all_steps(incident_id, approved_by)
+        if not inc:
+            return {"error": f"Incident {incident_id} not found"}
+        return {"status": "all_executed", "incident": inc.model_dump()}
+
+    def manage_auto_remediation_policy(self, scenario_id: Optional[str] = None, enabled: Optional[bool] = None) -> Dict[str, Any]:
+        """유사 건 자동 처리 정책(Auto-Remediate) 조회 또는 토글"""
+        from core.siem.autonomous_pipeline import autonomous_pipeline
+        if scenario_id:
+            val = autonomous_pipeline.toggle_policy(scenario_id, enabled)
+            return {"scenario_id": scenario_id, "auto_remediation_enabled": val}
+        return {"policies": autonomous_pipeline.get_policies()}
+
+    def get_incidents_pending_claude_analysis(self) -> List[Dict[str, Any]]:
+        """LLM API 보안 필터링/오류로 인해 클로드 수석 분석관에게 위임된 인시던트 대기열 조회"""
+        from core.siem.autonomous_pipeline import autonomous_pipeline
+        return [inc.model_dump() for inc in autonomous_pipeline.get_pending_claude_incidents()]
+
+    def submit_claude_incident_analysis(
+        self,
+        incident_id: str,
+        is_false_positive: bool,
+        confidence_score: float,
+        root_cause: str,
+        adjusted_severity: str = "HIGH",
+        remediation_steps: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
+        """클로드가 LLM 대신 직접 트리아지 및 맞춤형 SOAR 계획 제출"""
+        from core.siem.autonomous_pipeline import autonomous_pipeline
+        inc = autonomous_pipeline.resolve_incident_by_claude(
+            incident_id=incident_id,
+            is_false_positive=is_false_positive,
+            confidence_score=confidence_score,
+            root_cause=root_cause,
+            adjusted_severity=adjusted_severity,
+            remediation_steps=remediation_steps
+        )
+        if not inc:
+            return {"error": f"Incident {incident_id} not found"}
+        return {"status": "claude_review_completed", "incident": inc.model_dump()}
+
 mcp_tools = LogccinoMCPTools()
