@@ -868,7 +868,8 @@ class LogccinoMCPTools:
             if action == "diagnose":
                 return self.diagnose_service_errors(
                     service=params.get("service", "payment-service"),
-                    minutes=params.get("minutes", 60)
+                    time_window=params.get("time_window", "24h"),
+                    limit=params.get("limit", 40)
                 )
             elif action in ("metrics", "slo"):
                 return self.get_service_metrics(time_window=params.get("time_window", "24h"))

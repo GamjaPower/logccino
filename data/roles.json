@@ -70,5 +70,21 @@
       "main"
     ],
     "created_at": "2026-11-17T10:30:47.959258"
+  },
+  {
+    "name": "custom_security_auditor",
+    "description": "Audits compliance without mutation rights",
+    "capabilities": [
+      "search",
+      "view_security_logs"
+    ],
+    "srchIndexesAllowed": [
+      "main",
+      "security-syslog"
+    ],
+    "srchIndexesDefault": [
+      "main"
+    ],
+    "created_at": "2026-11-17T11:40:28.262869"
   }
 ]
