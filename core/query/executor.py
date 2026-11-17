@@ -34,7 +34,7 @@ class QueryExecutor:
 
     def execute_dsl(self, query_dsl: Dict[str, Any], index_pattern: Optional[str] = None) -> Dict[str, Any]:
         """OpenSearch 본래 기능인 Query DSL 검색 실행"""
-        index = index_pattern or f"{settings.opensearch_index_prefix}-*"
+        index = index_pattern or f"main,{settings.opensearch_index_prefix}-*"
         res = self.client.search(
             index=index,
             body=query_dsl

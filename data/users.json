@@ -1,0 +1,62 @@
+[
+  {
+    "username": "admin",
+    "full_name": "Enterprise System Administrator",
+    "email": "admin@logccino.internal",
+    "roles": [
+      "admin"
+    ],
+    "default_index": "main",
+    "allowed_indexes": [
+      "*"
+    ],
+    "is_active": true,
+    "created_at": "2026-11-17T10:30:47.959625"
+  },
+  {
+    "username": "analyst",
+    "full_name": "Senior SOC Security Analyst",
+    "email": "analyst@logccino.internal",
+    "roles": [
+      "security_analyst",
+      "power"
+    ],
+    "default_index": "main",
+    "allowed_indexes": [
+      "main",
+      "security-syslog",
+      "logccino-logs-*"
+    ],
+    "is_active": true,
+    "created_at": "2026-11-17T10:30:47.959637"
+  },
+  {
+    "username": "devops",
+    "full_name": "Platform SRE DevOps Engineer",
+    "email": "devops@logccino.internal",
+    "roles": [
+      "power"
+    ],
+    "default_index": "main",
+    "allowed_indexes": [
+      "main",
+      "logccino-logs-*"
+    ],
+    "is_active": true,
+    "created_at": "2026-11-17T10:30:47.959644"
+  },
+  {
+    "username": "guest",
+    "full_name": "Application Developer",
+    "email": "developer@logccino.internal",
+    "roles": [
+      "user"
+    ],
+    "default_index": "main",
+    "allowed_indexes": [
+      "main"
+    ],
+    "is_active": true,
+    "created_at": "2026-11-17T10:30:47.959649"
+  }
+]

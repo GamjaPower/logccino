@@ -116,6 +116,11 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         <button onclick="setTimeWindow('7d')" class="px-2 py-1 rounded hover:text-white transition" id="tw-7d">7d</button>
       </div>
 
+      <button onclick="openUsersModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-subpanel hover:bg-slate-800 text-slate-200 border border-bordercolor transition">
+        <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>사용자/롤 (RBAC)</span>
+      </button>
+
       <a href="/docs" target="_blank" class="flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
         <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
         <span>API Docs</span>
@@ -243,6 +248,9 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         </button>
         <button onclick="sendQuickPrompt('등록된 Splunk PPL 알람 목록 및 최근 트리거된 내역 요약해줘')" class="text-[11px] bg-subpanel hover:bg-amber-600/20 border border-bordercolor hover:border-amber-500/40 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
           <i data-lucide="bell-ring" class="w-3 h-3 text-amber-400"></i> [PPL ALERT] 활성 알람 & 트리거 현황
+        </button>
+        <button onclick="sendQuickPrompt('현재 등록된 Splunk 사용자 계정 및 롤 권한 목록 요약해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-indigo-300 hover:text-indigo-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
+          <i data-lucide="users" class="w-3 h-3 text-indigo-400"></i> [RBAC AUDIT] 사용자 & 롤 권한 점검
         </button>
         <button onclick="sendQuickPrompt('notification-service 429 쿼터 초과 및 발송 실패 원인 분석해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
           [ANOMALY] 알림 쿼터 초과 진단
@@ -665,6 +673,60 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Splunk Users & Roles (RBAC) Management Modal -->
+  <div id="users-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden text-xs">
+      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-indigo-400"></i> Splunk 스타일 사용자 및 롤 관리 (RBAC)
+        </h3>
+        <button onclick="closeUsersModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto scrollbar-thin space-y-5">
+        <!-- Users Section -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+              <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i> 등록된 사용자 계정
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">기본 인덱스: main</span>
+          </div>
+          <div id="users-table-container" class="border border-bordercolor rounded-lg overflow-hidden bg-slatebg">
+            <table class="w-full text-left">
+              <thead class="bg-subpanel text-[10px] text-slate-400 uppercase font-mono border-b border-bordercolor">
+                <tr>
+                  <th class="p-2.5">계정명 (Username)</th>
+                  <th class="p-2.5">이름 / 이메일</th>
+                  <th class="p-2.5">할당된 롤 (Roles)</th>
+                  <th class="p-2.5">기본 인덱스</th>
+                  <th class="p-2.5">상태</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody" class="text-slate-300 font-sans divide-y divide-bordercolor">
+                <tr><td colspan="5" class="p-4 text-center text-slate-500">사용자 로딩 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Roles & Capabilities Section -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+              <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400"></i> Splunk 표준 롤 및 Capability 권한
+            </span>
+          </div>
+          <div id="roles-cards-container" class="grid grid-cols-2 gap-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1337,6 +1399,68 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
       document.getElementById('chat-messages').innerHTML = '';
       document.getElementById('chips-container').classList.add('hidden');
       appendAssistantMessage("대화 세션이 초기화되었습니다. 새로운 장애 조사 및 로그 질의를 입력하세요.");
+    }
+
+    async function openUsersModal() {
+      document.getElementById('users-modal').classList.remove('hidden');
+      await loadUsersAndRoles();
+    }
+
+    function closeUsersModal() {
+      document.getElementById('users-modal').classList.add('hidden');
+    }
+
+    async function loadUsersAndRoles() {
+      try {
+        const [usersRes, rolesRes] = await Promise.all([
+          fetch('/api/v1/users'),
+          fetch('/api/v1/roles')
+        ]);
+        const users = await usersRes.json();
+        const roles = await rolesRes.json();
+
+        // Render Users
+        const tbody = document.getElementById('users-tbody');
+        tbody.innerHTML = users.map(u => `
+          <tr class="hover:bg-subpanel/50 transition">
+            <td class="p-2.5 font-mono font-bold text-white">${escapeHtml(u.username)}</td>
+            <td class="p-2.5">
+              <div class="font-medium text-slate-200">${escapeHtml(u.full_name)}</div>
+              <div class="text-[10px] text-slate-500">${escapeHtml(u.email || '-')}</div>
+            </td>
+            <td class="p-2.5">
+              <div class="flex flex-wrap gap-1">
+                ${(u.roles || []).map(r => `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${escapeHtml(r)}</span>`).join('')}
+              </div>
+            </td>
+            <td class="p-2.5 font-mono text-emerald-400">${escapeHtml(u.default_index || 'main')}</td>
+            <td class="p-2.5">
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-mono ${u.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-500'}">
+                ${u.is_active ? 'ACTIVE' : 'INACTIVE'}
+              </span>
+            </td>
+          </tr>
+        `).join('');
+
+        // Render Roles
+        const rContainer = document.getElementById('roles-cards-container');
+        rContainer.innerHTML = roles.map(r => `
+          <div class="p-3 bg-slatebg rounded-lg border border-bordercolor flex flex-col gap-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-bold text-indigo-300 text-xs">${escapeHtml(r.name)}</span>
+              <span class="text-[9px] font-mono text-slate-400">Index: ${escapeHtml((r.srchIndexesDefault || ['main']).join(','))}</span>
+            </div>
+            <p class="text-[10px] text-slate-400">${escapeHtml(r.description || '')}</p>
+            <div class="flex flex-wrap gap-1 pt-1">
+              ${(r.capabilities || []).map(c => `<span class="px-1 py-0.2 rounded text-[8px] font-mono bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(c)}</span>`).join('')}
+            </div>
+          </div>
+        `).join('');
+
+        lucide.createIcons();
+      } catch (e) {
+        console.error("Failed to load users & roles", e);
+      }
     }
 
     function copyToClipboard(text) {

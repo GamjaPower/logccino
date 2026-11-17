@@ -1,0 +1,74 @@
+[
+  {
+    "name": "admin",
+    "description": "Enterprise Super Administrator with full permissions across all objects and indexes",
+    "capabilities": [
+      "search",
+      "schedule_search",
+      "edit_saved_search",
+      "admin_all_objects",
+      "edit_user",
+      "manage_collectors",
+      "view_security_logs",
+      "delete_by_keyword"
+    ],
+    "srchIndexesAllowed": [
+      "*"
+    ],
+    "srchIndexesDefault": [
+      "main"
+    ],
+    "created_at": "2026-11-17T10:30:47.959228"
+  },
+  {
+    "name": "power",
+    "description": "Power User who can create and schedule shared searches, alerts, and view security streams",
+    "capabilities": [
+      "search",
+      "schedule_search",
+      "edit_saved_search",
+      "view_security_logs"
+    ],
+    "srchIndexesAllowed": [
+      "*"
+    ],
+    "srchIndexesDefault": [
+      "main"
+    ],
+    "created_at": "2026-11-17T10:30:47.959245"
+  },
+  {
+    "name": "security_analyst",
+    "description": "Dedicated SOC Tier-2/3 Security Analyst for SIEM triage and collector management",
+    "capabilities": [
+      "search",
+      "schedule_search",
+      "edit_saved_search",
+      "view_security_logs",
+      "manage_collectors"
+    ],
+    "srchIndexesAllowed": [
+      "main",
+      "security-syslog",
+      "logccino-logs-*"
+    ],
+    "srchIndexesDefault": [
+      "main"
+    ],
+    "created_at": "2026-11-17T10:30:47.959252"
+  },
+  {
+    "name": "user",
+    "description": "Standard user who can search and execute queries on default indexes",
+    "capabilities": [
+      "search"
+    ],
+    "srchIndexesAllowed": [
+      "main"
+    ],
+    "srchIndexesDefault": [
+      "main"
+    ],
+    "created_at": "2026-11-17T10:30:47.959258"
+  }
+]

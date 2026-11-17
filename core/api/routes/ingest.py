@@ -39,16 +39,22 @@ async def ingest_batch(req: IngestBatchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/syslog")
-async def ingest_syslog(req: SyslogBatchRequest):
+async def ingest_syslog(req: SyslogBatchRequest, target_index: Optional[str] = "main"):
     """
-    Rust Syslog Collector에서 파싱된 보안/시스템 로그를 배치로 수신하여 OpenSearch에 저장
+    Rust Syslog Collector에서 파싱된 보안/시스템 로그를 배치로 수신하여
+    Splunk 기본 규격인 'main' 인덱스에 저장
     """
     try:
         records = []
         for ev in req.events:
             rec = dict(ev)
+            # 보안 로그 기본 인덱스를 Splunk 표준 규격인 'main'으로 설정
+            rec["index"] = target_index or "main"
+
             if "attributes" not in rec or not isinstance(rec.get("attributes"), dict):
                 rec["attributes"] = {}
+
+            rec["attributes"]["index"] = rec["index"]
 
             # ECS 및 보안 메타데이터를 attributes에 동기화
             if "security" in rec and rec["security"]:
@@ -64,8 +70,13 @@ async def ingest_syslog(req: SyslogBatchRequest):
 
             records.append(rec)
 
-        result = pipeline.ingest_records(records)
-        return {"status": "ok", "ingested": result.get("success", 0), "failed": result.get("failed", 0)}
+        result = pipeline.ingest_records(records, target_index=target_index or "main")
+        return {
+            "status": "ok",
+            "ingested": result.get("success", 0),
+            "failed": result.get("failed", 0),
+            "target_index": target_index or "main"
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

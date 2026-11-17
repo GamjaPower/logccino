@@ -429,7 +429,7 @@ class LogccinoMCPTools:
         - 공격 발신 IP 및 대상 계정별 위협 요약 집계
         """
         client = opensearch_service.get_client()
-        index = f"{settings.opensearch_index_prefix}-*"
+        index = f"main,{settings.opensearch_index_prefix}-*"
         start_time = self._resolve_relative_time(time_window)
 
         query: Dict[str, Any] = {
@@ -618,5 +618,89 @@ class LogccinoMCPTools:
         from core.scheduler.engine import scheduler_engine
         history = scheduler_engine.get_alert_history(limit=limit, triggered_only=triggered_only)
         return [h.model_dump() for h in history]
+
+    def update_saved_search(
+        self,
+        search_id: str,
+        enabled: Optional[bool] = None,
+        ppl_query: Optional[str] = None,
+        interval_seconds: Optional[int] = None,
+        condition_threshold: Optional[float] = None,
+        severity: Optional[str] = None,
+        webhook_url: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        기존 Splunk Saved Search / Alert 규칙의 활성화 여부(ON/OFF), 쿼리, 주기, 임계치, 웹훅을 수정합니다.
+        """
+        from core.scheduler.engine import scheduler_engine
+        from core.scheduler.models import SavedSearchUpdate
+        try:
+            req = SavedSearchUpdate(
+                enabled=enabled,
+                ppl_query=ppl_query,
+                interval_seconds=interval_seconds,
+                condition_threshold=condition_threshold,
+                severity=severity, # type: ignore
+                webhook_url=webhook_url
+            )
+            updated = scheduler_engine.update(search_id, req)
+            if not updated:
+                return {"error": f"Saved search with ID '{search_id}' not found."}
+            return updated.model_dump()
+        except Exception as e:
+            return {"error": f"Failed to update saved search: {str(e)}"}
+
+    def delete_saved_search(self, search_id: str) -> Dict[str, Any]:
+        """
+        더 이상 필요 없는 Splunk Saved Search / Alert 규칙을 영구 삭제합니다.
+        """
+        from core.scheduler.engine import scheduler_engine
+        deleted = scheduler_engine.delete(search_id)
+        if not deleted:
+            return {"error": f"Saved search with ID '{search_id}' not found."}
+        return {"status": "deleted", "id": search_id}
+
+    def list_users(self) -> List[Dict[str, Any]]:
+        """
+        Splunk 스타일 사용자 계정, 소속 롤(Role), 기본 인덱스 및 허용 인덱스 목록을 조회합니다.
+        """
+        from core.auth.manager import auth_manager
+        return [u.model_dump() for u in auth_manager.list_users()]
+
+    def create_user(
+        self,
+        username: str,
+        full_name: str,
+        email: Optional[str] = None,
+        roles: Optional[List[str]] = None,
+        default_index: str = "main"
+    ) -> Dict[str, Any]:
+        """
+        새로운 사용자 계정을 생성하고 롤(admin, power, user, security_analyst) 및 기본 인덱스를 할당합니다.
+        """
+        from core.auth.manager import auth_manager
+        from core.auth.models import UserCreate
+        try:
+            if auth_manager.get_user(username):
+                return {"error": f"Username '{username}' already exists."}
+            req = UserCreate(
+                username=username,
+                full_name=full_name,
+                email=email,
+                roles=roles or ["user"],
+                default_index=default_index,
+                is_active=True
+            )
+            created = auth_manager.create_user(req)
+            return created.model_dump()
+        except Exception as e:
+            return {"error": f"Failed to create user: {str(e)}"}
+
+    def list_roles(self) -> List[Dict[str, Any]]:
+        """
+        시스템에 정의된 Splunk 표준 롤(admin, power, security_analyst, user)과 Capability 권한 목록을 조회합니다.
+        """
+        from core.auth.manager import auth_manager
+        return [r.model_dump() for r in auth_manager.list_roles()]
 
 mcp_tools = LogccinoMCPTools()

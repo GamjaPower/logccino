@@ -18,6 +18,17 @@ Anthropic Claude (Claude Desktop, Claude Code), Google Antigravity, Cursor IDE �
 | `search_ppl` | 엔터프라이즈 OpenSearch PPL 파이프라인 쿼리 직접 실행 | `ppl_query: str` |
 | `search_logs` | 필터(서비스, 레벨, 키워드, 타임스탬프) 기반 정밀 로그 탐색 | `query: Optional[str], service: Optional[str], level: Optional[str], start_time: Optional[str], end_time: Optional[str], size: int = 30` |
 | `get_cluster_health` | OpenSearch 클러스터 상태(Green/Yellow/Red), 노드 수, 샤드 및 총 인덱싱 볼륨 텔레메트리 | 없음 |
+| `analyze_security_incidents` | SSH 무차별 대입, 비인가 Sudo 권한 상승, UFW 방화벽 차단 등 보안 침해사고 분석 | `time_window: str = "24h", limit: int = 50` |
+| `get_syslog_collector_status` | Rust 고성능 Syslog 수집기 데몬 실행 상태, Throughput(EPS), 수집 카운터 조회 | 없음 |
+| `list_saved_searches` | Splunk 스타일 PPL Saved Search 및 실시간 스케줄러 알람 규칙 목록 조회 | 없음 |
+| `create_saved_search` | 새로운 PPL 조건부 알람 등록 (주기, 임계치, 심각도, Webhook URL) | `name, ppl_query, interval_seconds, condition_threshold, ...` |
+| `run_saved_search` | 특정 Saved Search / Alert 즉시 실행(Run Now) 및 매칭 결과 검증 | `search_id: str` |
+| `update_saved_search` | PPL 알람 스케줄러의 활성화 여부(ON/OFF), 실행 주기, 쿼리 수정 | `search_id: str, enabled, ppl_query, interval_seconds, ...` |
+| `delete_saved_search` | Saved Search 알람 규칙 삭제 | `search_id: str` |
+| `get_alert_history` | 스케줄러에 의해 트리거된 최근 알람 발송 타임라인 조회 | `limit: int = 20, triggered_only: bool = True` |
+| `list_users` | Splunk 스타일 사용자 계정, 소속 롤(Role), 기본 인덱스('main') 및 허용 인덱스 목록 조회 | 없음 |
+| `create_user` | 신규 사용자 생성 및 롤(admin, power, security_analyst, user) 할당 | `username, full_name, email, roles, default_index` |
+| `list_roles` | Splunk 표준 롤 목록 및 세부 Capability 권한 매핑 조회 | 없음 |
 
 ---
 
@@ -35,6 +46,10 @@ Claude Desktop의 프롬프트 메뉴(`/` 또는 📎)에서 원클릭으로 호
    - 이전 대화 컨텍스트를 유지하며 특정 설정값, 영향받은 사용자 ID 등 세부 사항을 추적하는 멀티턴 대화.
 5. **`realtime-stream-anomaly`** (`minutes`, `service`):
    - 실시간 고속 스트림의 초당 처리량(EPS) 급변 및 에러율 스파이크 감지.
+6. **`security-soc-analyst`** (`time_window`):
+   - SOC 침해사고 분석 (공격자 IP, SSH 무차별 대입, Sudo 권한 상승, 방화벽 차단 타임라인 종합 보고).
+7. **`alert-triage-analyst`** (`search_id`):
+   - PPL 스케줄러에 의해 트리거된 Splunk 스타일 실시간 알람 긴급 원인 규명 및 조치 가이드 도출.
 
 ---
 

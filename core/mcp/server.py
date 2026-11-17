@@ -224,6 +224,74 @@ if HAS_MCP and mcp_app:
         res = mcp_tools.get_alert_history(limit=limit, triggered_only=triggered_only)
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    @mcp_app.tool()
+    def update_saved_search(
+        search_id: str,
+        enabled: Optional[bool] = None,
+        ppl_query: Optional[str] = None,
+        interval_seconds: Optional[int] = None,
+        condition_threshold: Optional[float] = None,
+        severity: Optional[str] = None,
+        webhook_url: Optional[str] = None
+    ) -> str:
+        """
+        Update an existing Splunk Saved Search & PPL Alert scheduler (toggle ON/OFF, interval, query, threshold).
+        """
+        res = mcp_tools.update_saved_search(
+            search_id=search_id,
+            enabled=enabled,
+            ppl_query=ppl_query,
+            interval_seconds=interval_seconds,
+            condition_threshold=condition_threshold,
+            severity=severity,
+            webhook_url=webhook_url
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def delete_saved_search(search_id: str) -> str:
+        """
+        Permanently delete a Splunk-style saved search / alert rule.
+        """
+        res = mcp_tools.delete_saved_search(search_id=search_id)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def list_users() -> str:
+        """
+        List Splunk-style users, their assigned roles (admin, power, security_analyst, user), and allowed indexes.
+        """
+        res = mcp_tools.list_users()
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def create_user(
+        username: str,
+        full_name: str,
+        email: Optional[str] = None,
+        roles: Optional[List[str]] = None,
+        default_index: str = "main"
+    ) -> str:
+        """
+        Create a new user account with assigned Splunk-style roles and default search index ('main').
+        """
+        res = mcp_tools.create_user(
+            username=username,
+            full_name=full_name,
+            email=email,
+            roles=roles,
+            default_index=default_index
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def list_roles() -> str:
+        """
+        List available Splunk-style roles and their granular capabilities.
+        """
+        res = mcp_tools.list_roles()
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------

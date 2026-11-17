@@ -227,7 +227,7 @@ async def get_recent_security_events(limit: int = 50):
     OpenSearch에서 수집된 최신 보안 로그 및 ECS 이벤트 조회
     """
     client = opensearch_service.get_client()
-    index_pattern = f"{settings.opensearch_index_prefix}-*"
+    index_pattern = f"main,{settings.opensearch_index_prefix}-*"
 
     query = {
         "size": limit,
