@@ -292,6 +292,24 @@ if HAS_MCP and mcp_app:
         res = mcp_tools.list_roles()
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    @mcp_app.tool()
+    def get_siem_module_status() -> str:
+        """
+        Check whether the AI-Native SIEM module is enabled or disabled in Logccino.
+        """
+        res = mcp_tools.get_siem_module_status()
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def toggle_siem_module(enabled: Optional[bool] = None) -> str:
+        """
+        Enable or disable the Logccino AI-Native SIEM module.
+        Turning it OFF hides security tabs, stops the security collector, and runs pure SRE mode.
+        Turning it ON enables SOC threat hunting, Rust Syslog collector, and SIEM dashboards.
+        """
+        res = mcp_tools.toggle_siem_module(enabled=enabled)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------

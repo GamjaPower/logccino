@@ -1,0 +1,11 @@
+{
+  "siem": {
+    "id": "siem",
+    "name": "Logccino AI-Native SIEM & Autonomous SOC",
+    "description": "생성형 AI 기반 보안 침해사고 분석, Rust Syslog 수집기, MITRE ATT&CK 상관분석 및 보안 관제 콘솔",
+    "version": "1.0.0",
+    "enabled": true,
+    "category": "security",
+    "updated_at": "2026-11-17T10:43:33.088355+00:00"
+  }
+}

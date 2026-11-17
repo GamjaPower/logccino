@@ -121,6 +121,15 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         <span>사용자/롤 (RBAC)</span>
       </button>
 
+      <!-- SIEM Extension Module Toggle -->
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-subpanel border border-bordercolor">
+        <i data-lucide="shield" class="w-3.5 h-3.5 text-rose-400"></i>
+        <span class="text-slate-400">SIEM 모듈:</span>
+        <button onclick="toggleSiemModule()" id="siem-toggle-btn" class="font-mono text-[11px] px-2 py-0.5 rounded font-bold transition bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30" title="클릭하여 SIEM 모듈 토글">
+          ON
+        </button>
+      </div>
+
       <a href="/docs" target="_blank" class="flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
         <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
         <span>API Docs</span>
@@ -240,10 +249,10 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         <button onclick="sendQuickPrompt('전사 마이크로서비스 24시간 가용성 및 에러율 집계 요약해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
           [SLA AUDIT] 전사 에러율 매트릭스
         </button>
-        <button onclick="sendQuickPrompt('보안 syslog 수집기 침해사고 및 공격자 IP 분석해줘')" class="text-[11px] bg-subpanel hover:bg-rose-600/20 border border-bordercolor hover:border-rose-500/40 text-rose-300 hover:text-rose-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
+        <button onclick="sendQuickPrompt('보안 syslog 수집기 침해사고 및 공격자 IP 분석해줘')" class="siem-feature text-[11px] bg-subpanel hover:bg-rose-600/20 border border-bordercolor hover:border-rose-500/40 text-rose-300 hover:text-rose-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
           <i data-lucide="shield-alert" class="w-3 h-3 text-rose-400"></i> [SOC THREAT] 침해사고 & 공격 IP 분석
         </button>
-        <button onclick="sendQuickPrompt('최근 발생한 의심스러운 sudo 권한 상승 및 실패한 SSH 로그인 명령 추적해줘')" class="text-[11px] bg-subpanel hover:bg-amber-600/20 border border-bordercolor hover:border-amber-500/40 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
+        <button onclick="sendQuickPrompt('최근 발생한 의심스러운 sudo 권한 상승 및 실패한 SSH 로그인 명령 추적해줘')" class="siem-feature text-[11px] bg-subpanel hover:bg-amber-600/20 border border-bordercolor hover:border-amber-500/40 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
           <i data-lucide="key" class="w-3 h-3 text-amber-400"></i> [PRIVILEGE] 비인가 Sudo 권한 상승
         </button>
         <button onclick="sendQuickPrompt('등록된 Splunk PPL 알람 목록 및 최근 트리거된 내역 요약해줘')" class="text-[11px] bg-subpanel hover:bg-amber-600/20 border border-bordercolor hover:border-amber-500/40 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
@@ -318,7 +327,7 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
             <button onclick="switchTab('charts')" id="tab-charts" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> 시계열 텔레메트리
             </button>
-            <button onclick="switchTab('security')" id="tab-security" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+            <button onclick="switchTab('security')" id="tab-security" class="siem-feature px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="shield" class="w-3.5 h-3.5 text-rose-400"></i> 보안 수집기 (<span id="sec-alert-count">0</span>)
             </button>
             <button onclick="switchTab('alerts')" id="tab-alerts" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
@@ -389,7 +398,7 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         </div>
 
         <!-- Tab 4: Enterprise Security Syslog Collector & SIEM Console -->
-        <div id="content-security" class="flex-1 p-3.5 hidden overflow-y-auto max-h-[430px] scrollbar-thin text-xs space-y-3">
+        <div id="content-security" class="siem-feature flex-1 p-3.5 hidden overflow-y-auto max-h-[430px] scrollbar-thin text-xs space-y-3">
           <!-- Daemon Control Card -->
           <div class="p-3 bg-subpanel rounded-lg border border-bordercolor space-y-2.5">
             <div class="flex items-center justify-between">
@@ -737,9 +746,11 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
     let servicesChartInstance = null;
     let levelsChartInstance = null;
     let currentTimeWindow = "24h";
+    let siemModuleEnabled = true;
 
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
+      fetchSiemModuleStatus();
       refreshOverview();
       loadMCPConfigs();
       fetchCollectorStatus();
@@ -747,6 +758,61 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
       setInterval(fetchCollectorStatus, 4000);
       setInterval(loadSavedSearches, 6000);
     });
+
+    async function fetchSiemModuleStatus() {
+      try {
+        const res = await fetch('/api/v1/modules/siem');
+        if (res.ok) {
+          const data = await res.json();
+          applySiemModuleState(data.enabled);
+        }
+      } catch (e) {
+        console.error("Failed to fetch SIEM module status", e);
+      }
+    }
+
+    function applySiemModuleState(enabled) {
+      siemModuleEnabled = enabled;
+      const btn = document.getElementById('siem-toggle-btn');
+      if (btn) {
+        if (enabled) {
+          btn.textContent = 'ON';
+          btn.className = 'font-mono text-[11px] px-2 py-0.5 rounded font-bold transition bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30';
+          btn.title = '클릭하여 SIEM 모듈 비활성화 (OFF)';
+        } else {
+          btn.textContent = 'OFF';
+          btn.className = 'font-mono text-[11px] px-2 py-0.5 rounded font-bold transition bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-750';
+          btn.title = '클릭하여 SIEM 모듈 활성화 (ON)';
+        }
+      }
+
+      const elements = document.querySelectorAll('.siem-feature');
+      elements.forEach(el => {
+        if (enabled) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+
+      const secContent = document.getElementById('content-security');
+      if (!enabled && secContent && !secContent.classList.contains('hidden')) {
+        switchTab('evidence');
+      }
+    }
+
+    async function toggleSiemModule() {
+      try {
+        const targetState = !siemModuleEnabled;
+        const res = await fetch(`/api/v1/modules/siem/toggle?enabled=${targetState}`, { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          applySiemModuleState(data.enabled);
+        }
+      } catch (e) {
+        console.error("Failed to toggle SIEM module", e);
+      }
+    }
 
     function setTimeWindow(tw) {
       currentTimeWindow = tw;
@@ -1050,6 +1116,7 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
     }
 
     async function fetchCollectorStatus() {
+      if (!siemModuleEnabled) return;
       try {
         const res = await fetch('/api/v1/collector/status');
         const data = await res.json();

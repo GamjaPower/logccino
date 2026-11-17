@@ -423,11 +423,16 @@ class LogccinoMCPTools:
     def analyze_security_incidents(self, time_window: str = "24h", limit: int = 50) -> Dict[str, Any]:
         """
         보안 Syslog 수집기에서 파싱 및 인덱싱된 보안 위협 및 침해 시도 로그를 종합 분석합니다.
-        - SSH 무차별 대입(Brute-Force) 공격 및 비인가 로그인 실패 탐지
-        - 의심스러운 sudo 권한 상승(Privilege Escalation) 명령 추적
-        - UFW 방화벽 차단 및 비정상 인바운드 스캔 감지
-        - 공격 발신 IP 및 대상 계정별 위협 요약 집계
+        (SIEM 모듈 활성화 시에만 동작)
         """
+        from core.modules.manager import module_manager
+        if not module_manager.is_enabled("siem"):
+            return {
+                "status": "disabled",
+                "module": "siem",
+                "message": "Logccino AI-Native SIEM 모듈이 현재 비활성화(OFF) 상태입니다. 대시보드 관리 화면 또는 toggle_siem_module 도구로 활성화하세요."
+            }
+
         client = opensearch_service.get_client()
         index = f"main,{settings.opensearch_index_prefix}-*"
         start_time = self._resolve_relative_time(time_window)
@@ -521,6 +526,14 @@ class LogccinoMCPTools:
         """
         Rust 고성능 보안 Syslog 수집기 데몬의 동작 상태, 처리량(EPS), 가동 시간 및 수집 통계를 조회합니다.
         """
+        from core.modules.manager import module_manager
+        if not module_manager.is_enabled("siem"):
+            return {
+                "active": False,
+                "status": "disabled",
+                "message": "SIEM 모듈이 비활성화(OFF)되어 보안 Syslog 수집기 관리가 중단되었습니다."
+            }
+
         import httpx
         try:
             with httpx.Client(timeout=1.0) as client:
@@ -702,5 +715,23 @@ class LogccinoMCPTools:
         """
         from core.auth.manager import auth_manager
         return [r.model_dump() for r in auth_manager.list_roles()]
+
+    def get_siem_module_status(self) -> Dict[str, Any]:
+        """
+        AI-Native SIEM 모듈의 현재 활성화(ON/OFF) 여부 및 모듈 상세 메타데이터를 조회합니다.
+        """
+        from core.modules.manager import module_manager
+        mod = module_manager.get("siem")
+        return mod.model_dump() if mod else {"enabled": False}
+
+    def toggle_siem_module(self, enabled: Optional[bool] = None) -> Dict[str, Any]:
+        """
+        Logccino AI-Native SIEM 모듈을 켜거나(ON) 끕니다(OFF).
+        - 끄면 대시보드 화면에서 보안 수집기 및 SIEM 관제 탭이 사라지고, 순수 SRE 관제 모드로 전환됩니다.
+        - 켜면 보안 Syslog 수집기, 위협 탐지 및 SIEM 대시보드가 즉시 활성화됩니다.
+        """
+        from core.modules.manager import module_manager
+        mod = module_manager.toggle("siem", enabled)
+        return mod.model_dump()
 
 mcp_tools = LogccinoMCPTools()
