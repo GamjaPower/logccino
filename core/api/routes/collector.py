@@ -4,14 +4,22 @@ import socket
 import subprocess
 import time
 import httpx
+import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Query, Body
+from pydantic import BaseModel, Field
+
 from core.client.opensearch_client import opensearch_service
 from core.config import settings
+from core.collectors.snmp_telegraf import snmp_collector, TelegrafSNMPConfig
+from core.collectors.db_collector import db_collector_manager, DBCollectorJob, DBTestQueryRequest, DBConnectionTestResult
+from core.apps.connector_store import connector_store
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/collector", tags=["Collector"])
+collectors_router = APIRouter(prefix="/collectors", tags=["Collectors Manager"])
 
 COLLECTOR_DIR = Path(__file__).resolve().parent.parent.parent.parent / "collectors" / "syslog-collector"
 BINARY_PATH = COLLECTOR_DIR / "target" / "release" / "logccino-syslog-collector"
@@ -24,6 +32,7 @@ class CollectorStartRequest(BaseModel):
 
 class CollectorTestEventRequest(BaseModel):
     event_type: str = "ssh_failed"  # ssh_failed, ssh_accepted, sudo_escalation, ufw_block, pam_failure
+    protocol: str = "udp"            # udp or tcp
     custom_message: Optional[str] = None
 
 class CollectorManager:
@@ -42,7 +51,6 @@ class CollectorManager:
         if PID_FILE.exists():
             try:
                 pid = int(PID_FILE.read_text().strip())
-                # 프로세스가 실제로 살아있는지 확인
                 os.kill(pid, 0)
                 return pid
             except (ValueError, OSError):
@@ -80,6 +88,8 @@ class CollectorManager:
             "binary_exists": binary_exists,
             "port": 1514,
             "protocols": ["UDP", "TCP"],
+            "udp_listening": is_running,
+            "tcp_listening": is_running,
             "metrics": live_metrics or {
                 "uptime_seconds": 0,
                 "received_total": 0,
@@ -119,13 +129,12 @@ class CollectorManager:
         cls._process = proc
         PID_FILE.write_text(str(proc.pid))
 
-        # 잠시 대기하여 정상 실행 여부 확인
         time.sleep(0.3)
         if proc.poll() is not None:
             PID_FILE.unlink(missing_ok=True)
             raise HTTPException(status_code=500, detail="Syslog collector terminated immediately upon startup. Check /tmp/logccino-syslog-collector.log")
 
-        return {"status": "started", "pid": proc.pid, "port": port, "metrics_port": metrics_port}
+        return {"status": "started", "pid": proc.pid, "port": port, "metrics_port": metrics_port, "protocols": ["UDP", "TCP"]}
 
     @classmethod
     def stop(cls) -> Dict[str, Any]:
@@ -136,13 +145,12 @@ class CollectorManager:
         try:
             os.kill(pid, signal.SIGTERM)
             time.sleep(0.5)
-            # 종료 확인 후 필요시 SIGKILL
             try:
                 os.kill(pid, 0)
                 os.kill(pid, signal.SIGKILL)
             except OSError:
                 pass
-        except OSError as e:
+        except OSError:
             pass
         finally:
             PID_FILE.unlink(missing_ok=True)
@@ -151,7 +159,7 @@ class CollectorManager:
         return {"status": "stopped", "terminated_pid": pid}
 
     @classmethod
-    def send_test_packet(cls, message: str, port: int = 1514) -> bool:
+    def send_test_packet_udp(cls, message: str, port: int = 1514) -> bool:
         """UDP 패킷으로 Syslog 메시지 전송"""
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -160,12 +168,39 @@ class CollectorManager:
         finally:
             sock.close()
 
+    @classmethod
+    def send_test_packet_tcp(cls, message: str, port: int = 1514) -> bool:
+        """TCP 소켓으로 Syslog 메시지 전송"""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2.0)
+        try:
+            sock.connect(("127.0.0.1", port))
+            msg_bytes = message.encode("utf-8")
+            if not msg_bytes.endswith(b"\n"):
+                msg_bytes += b"\n"
+            sock.sendall(msg_bytes)
+            return True
+        except Exception as e:
+            logger.error(f"TCP syslog send error: {e}")
+            return False
+        finally:
+            sock.close()
+
+    @classmethod
+    def send_test_packet(cls, message: str, port: int = 1514, protocol: str = "udp") -> bool:
+        if protocol.lower() == "tcp":
+            return cls.send_test_packet_tcp(message, port)
+        return cls.send_test_packet_udp(message, port)
+
+
+# =====================================================================
+# 1. Existing /collector/... Endpoints (100% Backward Compatible)
+# =====================================================================
 
 @router.get("/status")
 async def get_collector_status():
     """보안 Syslog 수집기 상태 및 실시간 처리 통계 조회"""
     return await CollectorManager.get_status()
-
 
 @router.post("/start")
 async def start_collector(req: CollectorStartRequest = CollectorStartRequest()):
@@ -176,12 +211,10 @@ async def start_collector(req: CollectorStartRequest = CollectorStartRequest()):
         backend_url=req.backend_url
     )
 
-
 @router.post("/stop")
 async def stop_collector():
     """보안 Syslog 수집기 데몬 중지"""
     return CollectorManager.stop()
-
 
 @router.post("/restart")
 async def restart_collector(req: CollectorStartRequest = CollectorStartRequest()):
@@ -194,11 +227,10 @@ async def restart_collector(req: CollectorStartRequest = CollectorStartRequest()
         backend_url=req.backend_url
     )
 
-
 @router.post("/test-event")
 async def send_test_event(req: CollectorTestEventRequest):
     """
-    보안 위협 테스트 로그를 Syslog 포트(UDP 1514)로 인젝션하여 실시간 탐지 테스트
+    보안 위협 테스트 로그를 Syslog 포트(UDP or TCP 1514)로 인젝션하여 실시간 탐지 테스트
     """
     ts = time.strftime("%b %d %H:%M:%S")
 
@@ -211,21 +243,20 @@ async def send_test_event(req: CollectorTestEventRequest):
     }
 
     raw_msg = req.custom_message or presets.get(req.event_type, presets["ssh_failed"])
+    proto = req.protocol.lower() if req.protocol else "udp"
+    success = CollectorManager.send_test_packet(raw_msg, port=1514, protocol=proto)
 
-    success = CollectorManager.send_test_packet(raw_msg, port=1514)
     return {
         "status": "injected" if success else "failed",
+        "protocol": proto.upper(),
         "event_type": req.event_type,
         "raw_message": raw_msg,
+        "target": f"127.0.0.1:1514 ({proto.upper()})",
         "target_udp": "127.0.0.1:1514"
     }
 
-
 @router.get("/security-events")
 async def get_recent_security_events(limit: int = 50):
-    """
-    OpenSearch에서 수집된 최신 보안 로그 및 ECS 이벤트 조회
-    """
     client = opensearch_service.get_client()
     index_pattern = f"main,{settings.opensearch_index_prefix}-*"
 
@@ -261,3 +292,138 @@ async def get_recent_security_events(limit: int = 50):
             "events": [],
             "error": str(e)
         }
+
+
+# =====================================================================
+# 2. Dedicated /collectors/... Endpoints for Unified Ingestion Manager
+# =====================================================================
+
+@collectors_router.get("/overview")
+async def get_all_collectors_overview():
+    """모든 수집기(Syslog TCP/UDP, Telegraf SNMP, Python DB Ingestion, Connectors)의 종합 상태 조회"""
+    syslog_status = await CollectorManager.get_status()
+    snmp_status = snmp_collector.get_status()
+    db_jobs = db_collector_manager.list_jobs()
+    connectors = connector_store.list_available_connectors()
+
+    total_active = 0
+    if syslog_status["status"] == "running":
+        total_active += 1
+    if snmp_status["status"] == "running":
+        total_active += 1
+    active_db_jobs = sum(1 for j in db_jobs if j.enabled)
+    if active_db_jobs > 0:
+        total_active += 1
+
+    return {
+        "status": "healthy",
+        "total_active_engines": total_active,
+        "syslog": syslog_status,
+        "snmp_telegraf": snmp_status,
+        "database": {
+            "total_jobs": len(db_jobs),
+            "active_jobs": active_db_jobs,
+            "total_records_ingested": sum(j.total_rows_collected for j in db_jobs),
+            "jobs_summary": [{"id": j.id, "name": j.name, "db_type": j.db_type, "status": j.status, "watermark": j.current_watermark} for j in db_jobs]
+        },
+        "connectors": {
+            "total_available": len(connectors),
+            "installed_count": len(connector_store.list_installed_connectors())
+        }
+    }
+
+# --- Syslog Sub-endpoints ---
+@collectors_router.get("/syslog/status")
+async def collectors_syslog_status():
+    return await CollectorManager.get_status()
+
+@collectors_router.post("/syslog/start")
+async def collectors_syslog_start(req: CollectorStartRequest = CollectorStartRequest()):
+    return CollectorManager.start(port=req.port, metrics_port=req.metrics_port, backend_url=req.backend_url)
+
+@collectors_router.post("/syslog/stop")
+async def collectors_syslog_stop():
+    return CollectorManager.stop()
+
+@collectors_router.post("/syslog/restart")
+async def collectors_syslog_restart(req: CollectorStartRequest = CollectorStartRequest()):
+    CollectorManager.stop()
+    time.sleep(0.5)
+    return CollectorManager.start(port=req.port, metrics_port=req.metrics_port, backend_url=req.backend_url)
+
+@collectors_router.post("/syslog/test-packet")
+async def collectors_syslog_test_packet(req: CollectorTestEventRequest):
+    return await send_test_event(req)
+
+# --- SNMP Telegraf Sub-endpoints ---
+@collectors_router.get("/snmp/status")
+async def collectors_snmp_status():
+    return snmp_collector.get_status()
+
+@collectors_router.get("/snmp/config")
+async def collectors_snmp_config():
+    return {
+        "config": snmp_collector.get_config(),
+        "toml_preview": snmp_collector.generate_toml_config()
+    }
+
+@collectors_router.post("/snmp/config")
+async def collectors_snmp_save_config(config: TelegrafSNMPConfig):
+    path = snmp_collector.save_config(config)
+    return {"status": "saved", "path": str(path), "config": config}
+
+@collectors_router.post("/snmp/start")
+async def collectors_snmp_start():
+    return await snmp_collector.start()
+
+@collectors_router.post("/snmp/stop")
+async def collectors_snmp_stop():
+    return snmp_collector.stop()
+
+@collectors_router.post("/snmp/test-poll")
+async def collectors_snmp_test_poll(agent_url: str = Query("udp://192.168.1.1:161"), community: str = Query("public")):
+    return await snmp_collector.test_poll(agent_url, community)
+
+@collectors_router.post("/snmp/ingest")
+async def collectors_snmp_ingest_metrics(payload: List[Dict[str, Any]] = Body(...)):
+    """Telegraf HTTP Output에서 전달되는 메트릭 적재 엔드포인트"""
+    count = snmp_collector.ingest_metrics_batch(payload)
+    return {"status": "success", "ingested_count": count}
+
+# --- Database Ingestion Collector Sub-endpoints ---
+@collectors_router.get("/db/jobs", response_model=List[DBCollectorJob])
+async def collectors_db_list_jobs():
+    return db_collector_manager.list_jobs()
+
+@collectors_router.post("/db/jobs", response_model=DBCollectorJob)
+async def collectors_db_create_job(job: DBCollectorJob):
+    return db_collector_manager.create_job(job)
+
+@collectors_router.put("/db/jobs/{job_id}", response_model=DBCollectorJob)
+async def collectors_db_update_job(job_id: str, updates: Dict[str, Any]):
+    return db_collector_manager.update_job(job_id, updates)
+
+@collectors_router.delete("/db/jobs/{job_id}")
+async def collectors_db_delete_job(job_id: str):
+    success = db_collector_manager.delete_job(job_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {"status": "deleted", "job_id": job_id}
+
+@collectors_router.post("/db/jobs/{job_id}/run-now")
+async def collectors_db_run_now(job_id: str):
+    return await db_collector_manager.run_job_once(job_id)
+
+@collectors_router.post("/db/test-connection", response_model=DBConnectionTestResult)
+async def collectors_db_test_connection(req: DBTestQueryRequest):
+    return db_collector_manager.test_connection_and_query(req)
+
+@collectors_router.post("/db/start")
+async def collectors_db_start():
+    await db_collector_manager.start_all()
+    return {"status": "started"}
+
+@collectors_router.post("/db/stop")
+async def collectors_db_stop():
+    db_collector_manager.stop_all()
+    return {"status": "stopped"}

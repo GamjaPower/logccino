@@ -613,6 +613,21 @@ if HAS_MCP and mcp_app:
         """Logpresso 기능 5: 서드파티 보안 장비 커넥터 앱 원클릭 설치"""
         return json.dumps(mcp_tools.install_connector(app_id), ensure_ascii=False, indent=2)
 
+    @mcp_app.tool()
+    def get_unified_collectors_overview() -> str:
+        """전사 통합 데이터 수집기(Syslog TCP/UDP, Telegraf SNMP, Python DB Poller, 커넥터) 종합 상태 조회"""
+        return json.dumps(mcp_tools.get_all_collectors_overview(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def manage_snmp_collector(action: str = "status", agent_url: str = "udp://192.168.1.1:161", community: str = "public") -> str:
+        """Telegraf 기반 SNMP 수집기 제어 (action: status, start, stop, test_poll)"""
+        return json.dumps(mcp_tools.manage_snmp_collector(action, agent_url, community), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def manage_db_collector(action: str = "list", job_id: Optional[str] = None) -> str:
+        """Python 모듈 기반 DB 수집기 제어 (action: list, run_now, start, stop)"""
+        return json.dumps(mcp_tools.manage_db_collector(action, job_id), ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------

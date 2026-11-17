@@ -1305,4 +1305,55 @@ class LogccinoMCPTools:
         from core.apps.connector_store import connector_store
         return connector_store.install_connector(app_id)
 
+    def get_all_collectors_overview(self) -> Dict[str, Any]:
+        """전사 통합 데이터 수집기(Syslog TCP/UDP, Telegraf SNMP, Python DB Poller, 커넥터) 종합 상태 조회"""
+        import httpx
+        try:
+            with httpx.Client(timeout=2.0) as client:
+                res = client.get("http://127.0.0.1:8000/api/v1/collectors/overview")
+                if res.status_code == 200:
+                    return res.json()
+        except Exception:
+            pass
+        from core.collectors.snmp_telegraf import snmp_collector
+        from core.collectors.db_collector import db_collector_manager
+        return {
+            "status": "healthy",
+            "syslog": self.get_collector_status(),
+            "snmp_telegraf": snmp_collector.get_status(),
+            "database_jobs": [j.model_dump() for j in db_collector_manager.list_jobs()]
+        }
+
+    def manage_snmp_collector(self, action: str = "status", agent_url: str = "udp://192.168.1.1:161", community: str = "public") -> Dict[str, Any]:
+        """Telegraf 기반 SNMP 수집기 제어 (status, start, stop, test_poll)"""
+        from core.collectors.snmp_telegraf import snmp_collector
+        if action == "status":
+            return snmp_collector.get_status()
+        elif action == "stop":
+            return snmp_collector.stop()
+        elif action == "start":
+            import asyncio
+            return asyncio.run(snmp_collector.start())
+        elif action == "test_poll":
+            import asyncio
+            return asyncio.run(snmp_collector.test_poll(agent_url, community))
+        return {"error": f"Unknown action: {action}"}
+
+    def manage_db_collector(self, action: str = "list", job_id: Optional[str] = None) -> Dict[str, Any]:
+        """Python 모듈 기반 DB 수집기 제어 (list, run_now, start, stop)"""
+        from core.collectors.db_collector import db_collector_manager
+        if action == "list":
+            return {"jobs": [j.model_dump() for j in db_collector_manager.list_jobs()]}
+        elif action == "run_now" and job_id:
+            import asyncio
+            return asyncio.run(db_collector_manager.run_job_once(job_id))
+        elif action == "start":
+            import asyncio
+            asyncio.run(db_collector_manager.start_all())
+            return {"status": "started"}
+        elif action == "stop":
+            db_collector_manager.stop_all()
+            return {"status": "stopped"}
+        return {"error": f"Unknown action: {action} or missing job_id"}
+
 mcp_tools = LogccinoMCPTools()

@@ -27,6 +27,7 @@ app.include_router(search.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 app.include_router(collector.router, prefix="/api/v1")
+app.include_router(collector.collectors_router, prefix="/api/v1")
 app.include_router(saved_searches.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(modules.router, prefix="/api/v1")
@@ -38,11 +39,21 @@ app.include_router(siem.router, prefix="/api/v1")
 async def startup_event():
     from core.scheduler.engine import scheduler_engine
     scheduler_engine.start()
+    try:
+        from core.collectors.db_collector import db_collector_manager
+        await db_collector_manager.start_all()
+    except Exception as e:
+        pass
 
 @app.on_event("shutdown")
 async def shutdown_event():
     from core.scheduler.engine import scheduler_engine
     scheduler_engine.stop()
+    try:
+        from core.collectors.db_collector import db_collector_manager
+        db_collector_manager.stop_all()
+    except Exception:
+        pass
 
 # Remote MCP over SSE 라우트 마운트 (Claude Desktop 원격 연동용)
 if mcp_app:

@@ -68,6 +68,25 @@ DEFAULT_APPS = {
             {"title": "RCA Console", "action": "open_sre_console", "icon": "terminal"},
             {"title": "SLO / MTTR", "action": "open_slo_metrics", "icon": "activity"}
         ]
+    },
+    "collectors": {
+        "id": "collectors",
+        "name": "Data Collectors (수집기 관리)",
+        "description": "전사 통합 데이터 수집기 관리: Rust Syslog(TCP/UDP), Telegraf 기반 SNMP, Python 모듈 기반 멀티 DB 수집기 및 플러그블 커넥터",
+        "version": "2.0.0",
+        "author": "Logccino Ingestion Team",
+        "icon": "download-cloud",
+        "category": "ingestion",
+        "enabled": True,
+        "is_system": False,
+        "default_route": "collectors",
+        "nav_items": [
+            {"title": "1. 전체 수집기 현황", "action": "open_collectors_overview", "icon": "layout-dashboard"},
+            {"title": "2. Syslog 수집기 (TCP/UDP)", "action": "open_collectors_syslog", "icon": "radio"},
+            {"title": "3. SNMP 수집기 (Telegraf)", "action": "open_collectors_snmp", "icon": "cpu"},
+            {"title": "4. DB 연동 수집기 (Python)", "action": "open_collectors_db", "icon": "database"},
+            {"title": "5. 보안/클라우드 커넥터", "action": "open_collectors_store", "icon": "store"}
+        ]
     }
 }
 

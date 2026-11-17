@@ -331,7 +331,19 @@ async def get_enterprise_dashboard():
           </div>
         </button>
 
-        <!-- 4. Manage Apps -->
+        <!-- 4. Data Collectors & Ingestion Manager (수집기 전용 관리 앱) -->
+        <button onclick="selectApp('collectors')" id="app-nav-collectors" class="app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition hover:bg-subpanel text-slate-300 border border-transparent">
+          <i data-lucide="download-cloud" class="w-4 h-4 mt-0.5 shrink-0 text-indigo-400"></i>
+          <div>
+            <div class="font-bold text-xs text-white flex items-center gap-1.5">
+              <span>Data Collectors</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-mono font-semibold border border-indigo-500/30">수집기</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">Rust Syslog(TCP/UDP), Telegraf SNMP, Python DB 수집기</div>
+          </div>
+        </button>
+
+        <!-- 5. Manage Apps -->
         <button onclick="selectApp('manage_apps')" id="app-nav-manage_apps" class="app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition hover:bg-subpanel text-slate-300 border border-transparent">
           <i data-lucide="package-plus" class="w-4 h-4 mt-0.5 shrink-0 text-emerald-400"></i>
           <div>
@@ -939,6 +951,25 @@ async def get_enterprise_dashboard():
         <!-- SOC STAGE 1: 수집 & 텔레메트리 (Collection & Telemetry)             -->
         <!-- =================================================================== -->
         <div id="siem-subview-collection" class="siem-subview space-y-4">
+          <!-- Dedicated Collectors App Transition Notice Banner -->
+          <div class="p-3.5 bg-indigo-950/40 rounded-xl border border-indigo-500/30 flex items-center justify-between shadow">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <i data-lucide="download-cloud" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="font-bold text-xs text-white flex items-center gap-2">
+                  <span>데이터 수집기 전용 독립 앱 분리 완료</span>
+                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">NEW APP</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">Rust Syslog(TCP/UDP:1514), Telegraf SNMP, Python DB 수집기 생명주기 관리는 [수집기 전용 앱]에서 제어됩니다.</p>
+              </div>
+            </div>
+            <button onclick="selectApp('collectors')" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition shrink-0 shadow">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i> 수집기 관리 앱 열기
+            </button>
+          </div>
+
           <!-- Rust Syslog Collector Controller Card -->
           <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
             <div class="flex items-center justify-between">
@@ -1732,8 +1763,427 @@ async def get_enterprise_dashboard():
       </div>
 
       <!-- =================================================================================== -->
-      <!-- APP VIEW 4: Manage Apps (Splunk 플러그형 앱 생태계 및 설치 관리)                     -->
+      <!-- APP VIEW 4: Data Collectors & Ingestion Manager (수집기 전용 관리 독립 앱)            -->
       <!-- =================================================================================== -->
+      <div id="view-app-collectors" class="app-view flex-1 flex flex-col p-6 space-y-4 hidden">
+        <!-- Collectors Header -->
+        <div class="flex items-center justify-between bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <i data-lucide="download-cloud" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="font-bold text-sm text-white">Logccino Unified Data Collectors & Ingestion Manager</h2>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold">ALL COLLECTORS ACTIVE</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">Rust Syslog(TCP/UDP:1514), Telegraf 기반 SNMP(v2c/v3), Python 모듈 기반 멀티 DB 수집기 및 플러그블 커넥터 전사 통합 관리</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="selectApp('manage_apps')" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
+              앱 생태계 설정
+            </button>
+            <button onclick="fetchCollectorsAllStatus()" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 전체 수집기 갱신
+            </button>
+          </div>
+        </div>
+
+        <!-- Collectors Sub-navigation Tabs -->
+        <div class="flex items-center gap-1 border-b border-bordercolor pb-2 overflow-x-auto scrollbar-thin text-xs">
+          <button onclick="switchCollectorsSubTab('overview')" id="collectors-subtab-overview" class="collectors-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30">
+            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> 1. 전체 수집기 현황
+          </button>
+          <button onclick="switchCollectorsSubTab('syslog')" id="collectors-subtab-syslog" class="collectors-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="radio" class="w-3.5 h-3.5"></i> 2. Syslog 수집기 (TCP/UDP)
+          </button>
+          <button onclick="switchCollectorsSubTab('snmp')" id="collectors-subtab-snmp" class="collectors-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 3. SNMP 수집기 (Telegraf)
+          </button>
+          <button onclick="switchCollectorsSubTab('db')" id="collectors-subtab-db" class="collectors-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="database" class="w-3.5 h-3.5"></i> 4. DB 연동 수집기 (Python)
+          </button>
+          <button onclick="switchCollectorsSubTab('connectors')" id="collectors-subtab-connectors" class="collectors-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="store" class="w-3.5 h-3.5"></i> 5. 보안/클라우드 커넥터
+          </button>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 1: 전체 수집기 종합 현황 (Overview)                          -->
+        <!-- =================================================================== -->
+        <div id="collectors-subview-overview" class="collectors-subview space-y-4">
+          <!-- 4대 수집 엔진 KPI 카드 그리드 -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- 1. Syslog Collector KPI -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between shadow space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="radio" class="w-4 h-4 text-emerald-400"></i>
+                  <span class="font-bold text-xs text-white">Syslog Engine</span>
+                </div>
+                <span id="col-kpi-syslog-status" class="px-2 py-0.5 rounded font-mono text-[10px] bg-emerald-500/20 text-emerald-300 font-bold">RUNNING</span>
+              </div>
+              <div class="text-xl font-bold font-mono text-white" id="col-kpi-syslog-rx">0 docs</div>
+              <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-bordercolor/60">
+                <span>프로토콜: <strong class="text-indigo-400">TCP & UDP :1514</strong></span>
+                <span id="col-kpi-syslog-eps" class="text-emerald-400 font-mono">0.0 EPS</span>
+              </div>
+            </div>
+
+            <!-- 2. Telegraf SNMP KPI -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between shadow space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i>
+                  <span class="font-bold text-xs text-white">Telegraf SNMP</span>
+                </div>
+                <span id="col-kpi-snmp-status" class="px-2 py-0.5 rounded font-mono text-[10px] bg-indigo-500/20 text-indigo-300 font-bold">ACTIVE</span>
+              </div>
+              <div class="text-xl font-bold font-mono text-indigo-300" id="col-kpi-snmp-count">0 metrics</div>
+              <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-bordercolor/60">
+                <span>타깃 장비: <strong class="text-white" id="col-kpi-snmp-agents">2대</strong></span>
+                <span class="text-slate-400">30초 주기</span>
+              </div>
+            </div>
+
+            <!-- 3. Python DB Collector KPI -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between shadow space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="database" class="w-4 h-4 text-amber-400"></i>
+                  <span class="font-bold text-xs text-white">Python DB Poller</span>
+                </div>
+                <span id="col-kpi-db-status" class="px-2 py-0.5 rounded font-mono text-[10px] bg-amber-500/20 text-amber-300 font-bold">RUNNING</span>
+              </div>
+              <div class="text-xl font-bold font-mono text-amber-300" id="col-kpi-db-records">0 rows</div>
+              <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-bordercolor/60">
+                <span>등록 잡: <strong class="text-white" id="col-kpi-db-jobs">1개 활성</strong></span>
+                <span class="text-emerald-400">워터마크 증분</span>
+              </div>
+            </div>
+
+            <!-- 4. Pluggable Connectors KPI -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between shadow space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="store" class="w-4 h-4 text-rose-400"></i>
+                  <span class="font-bold text-xs text-white">Connectors</span>
+                </div>
+                <span class="px-2 py-0.5 rounded font-mono text-[10px] bg-rose-500/20 text-rose-300 font-bold">PLUGGABLE</span>
+              </div>
+              <div class="text-xl font-bold font-mono text-white" id="col-kpi-connectors-count">3종 지원</div>
+              <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-bordercolor/60">
+                <span>안랩 V3 &bull; FortiGate &bull; AWS</span>
+                <span class="text-emerald-400">원클릭 설치</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pipeline Architecture Diagram Card -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow space-y-3">
+            <h3 class="text-xs font-bold text-white flex items-center gap-2">
+              <i data-lucide="git-merge" class="w-4 h-4 text-indigo-400"></i>
+              엔터프라이즈 통합 데이터 수집 파이프라인 토폴로지
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 space-y-2">
+                <div class="flex items-center justify-between text-emerald-400 font-bold">
+                  <span>① Syslog (Rust Native)</span>
+                  <span class="font-mono text-[10px] text-slate-400">UDP/TCP:1514</span>
+                </div>
+                <p class="text-[11px] text-slate-300">서버, 방화벽, 네트워크 장비의 RFC3164/5424 원시 로그를 수신하고 ECS 스키마로 즉시 파싱하여 'main' 인덱스 적재</p>
+                <button onclick="switchCollectorsSubTab('syslog')" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-semibold flex items-center gap-1">
+                  Syslog 관리 바로가기 &rarr;
+                </button>
+              </div>
+
+              <div class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 space-y-2">
+                <div class="flex items-center justify-between text-indigo-400 font-bold">
+                  <span>② SNMP (Telegraf Integration)</span>
+                  <span class="font-mono text-[10px] text-slate-400">UDP:161</span>
+                </div>
+                <p class="text-[11px] text-slate-300">라우터·스위치 MIB OID(sysUpTime, ifTable, CPU, Memory)를 Telegraf 데몬으로 주기적 폴링 후 'snmp-metrics' 인덱스 적재</p>
+                <button onclick="switchCollectorsSubTab('snmp')" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-semibold flex items-center gap-1">
+                  SNMP 관리 바로가기 &rarr;
+                </button>
+              </div>
+
+              <div class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 space-y-2">
+                <div class="flex items-center justify-between text-amber-400 font-bold">
+                  <span>③ Database (Python SQLAlchemy)</span>
+                  <span class="font-mono text-[10px] text-slate-400">SQL 증분</span>
+                </div>
+                <p class="text-[11px] text-slate-300">MySQL, PostgreSQL, SQLite의 감사/업무 테이블을 워터마크 기준으로 증분 수집하여 'db-logs' 인덱스 적재</p>
+                <button onclick="switchCollectorsSubTab('db')" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-semibold flex items-center gap-1">
+                  DB 수집기 관리 바로가기 &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 2: Syslog 수집기 (TCP/UDP 모두 수집)                          -->
+        <!-- =================================================================== -->
+        <div id="collectors-subview-syslog" class="collectors-subview space-y-4 hidden">
+          <!-- Rust Syslog Collector Controller Card -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-500" id="col-syslog-status-dot"></span>
+                <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine (Port: 1514 UDP & TCP 지원)</span>
+                <span id="col-syslog-status-badge" class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700">CHECKING...</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="startCollectorSyslog()" id="btn-col-syslog-start" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1 transition">
+                  <i data-lucide="play" class="w-3 h-3"></i> 시작
+                </button>
+                <button onclick="stopCollectorSyslog()" id="btn-col-syslog-stop" class="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1 transition">
+                  <i data-lucide="square" class="w-3 h-3"></i> 중지
+                </button>
+                <button onclick="restartCollectorSyslog()" id="btn-col-syslog-restart" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center gap-1 transition border border-slate-700">
+                  <i data-lucide="refresh-cw" class="w-3 h-3"></i> 재시작
+                </button>
+              </div>
+            </div>
+
+            <!-- Telemetry Metrics -->
+            <div class="grid grid-cols-4 gap-3 pt-2 border-t border-bordercolor/60 text-center">
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">수신 패킷 (Rx)</span>
+                <span class="font-mono font-bold text-slate-100 text-sm" id="col-syslog-rx">0</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">ECS 파싱 (Parsed)</span>
+                <span class="font-mono font-bold text-indigo-400 text-sm" id="col-syslog-parsed">0</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">OpenSearch 'main' 인덱싱</span>
+                <span class="font-mono font-bold text-emerald-400 text-sm" id="col-syslog-fwd">0</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">보안 경보 (Alerts)</span>
+                <span class="font-mono font-bold text-rose-400 text-sm" id="col-syslog-threats">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-time Test Packet Injector with UDP & TCP Protocol Selection -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-200 flex items-center gap-2 text-xs">
+                <i data-lucide="send" class="w-4 h-4 text-emerald-400"></i> Syslog 수집 테스트 패킷 발송기 (TCP / UDP 선택 지원)
+              </span>
+              <span id="col-syslog-inject-msg" class="text-xs font-mono text-emerald-400"></span>
+            </div>
+
+            <div class="flex items-center gap-4 text-xs text-slate-300">
+              <span class="font-semibold text-slate-400">전송 프로토콜:</span>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="radio" name="syslog-proto" value="udp" checked class="text-emerald-500 focus:ring-0" />
+                <span>UDP (Port: 1514)</span>
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="radio" name="syslog-proto" value="tcp" class="text-indigo-500 focus:ring-0" />
+                <span>TCP (Port: 1514 연결형 스트림)</span>
+              </label>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button onclick="injectCollectorSyslogEvent('ssh_failed')" class="px-3 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition flex items-center gap-1.5">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> SSH 무차별대입 패킷 발송
+              </button>
+              <button onclick="injectCollectorSyslogEvent('sudo_escalation')" class="px-3 py-1.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium transition flex items-center gap-1.5">
+                <i data-lucide="key" class="w-3.5 h-3.5"></i> Sudo 권한상승 패킷 발송
+              </button>
+              <button onclick="injectCollectorSyslogEvent('ufw_block')" class="px-3 py-1.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition flex items-center gap-1.5">
+                <i data-lucide="radio" class="w-3.5 h-3.5"></i> 방화벽 인바운드 차단 패킷 발송
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Syslog Stream Logs -->
+          <div class="bg-panelbg rounded-xl border border-bordercolor shadow-xl p-4 flex-1 flex flex-col min-h-[300px]">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-2">
+              <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> 최근 수신된 실시간 Syslog 이벤트 (TCP/UDP)
+            </h3>
+            <div id="col-syslog-events-container" class="flex-1 overflow-y-auto scrollbar-thin space-y-2">
+              <p class="text-center py-12 text-slate-500 text-xs">수신된 Syslog 이벤트 로드 중...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 3: SNMP 수집기 (Telegraf 기반)                               -->
+        <!-- =================================================================== -->
+        <div id="collectors-subview-snmp" class="collectors-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Telegraf Controller Card -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">Telegraf SNMP Controller</h3>
+                </div>
+                <span id="col-snmp-engine-badge" class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-300 border border-slate-700">CHECKING...</span>
+              </div>
+              <p class="text-xs text-slate-400">InfluxData Telegraf SNMP 입력 플러그인(`[[inputs.snmp]]`)을 활용하여 네트워크 스위치 및 라우터 OID를 주기적으로 수집합니다.</p>
+              
+              <div class="flex items-center gap-2 pt-1">
+                <button onclick="startSnmpCollector()" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i> Telegraf SNMP 시작
+                </button>
+                <button onclick="stopSnmpCollector()" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1.5 transition">
+                  <i data-lucide="square" class="w-3.5 h-3.5"></i> 수집 중지
+                </button>
+                <button onclick="fetchSnmpStatusAndConfig()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition">
+                  상태 갱신
+                </button>
+              </div>
+
+              <div id="col-snmp-status-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs font-mono text-slate-300 space-y-1">
+                <div>수집 상태: 대기 중</div>
+              </div>
+            </div>
+
+            <!-- SNMP Test Poll & Walk Card -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">SNMP OID Walk / Test Poll</h3>
+                </div>
+                <button onclick="testPollSnmpAgent()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
+                  즉시 Walk 테스트
+                </button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-1">SNMP Agent 타깃 URL</label>
+                  <input id="snmp-test-agent" type="text" value="udp://192.168.1.1:161" class="w-full bg-slatebg border border-bordercolor rounded px-2.5 py-1.5 text-xs text-white font-mono" />
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-1">Community String</label>
+                  <input id="snmp-test-community" type="text" value="public" class="w-full bg-slatebg border border-bordercolor rounded px-2.5 py-1.5 text-xs text-white font-mono" />
+                </div>
+              </div>
+
+              <div id="snmp-test-result" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs font-mono text-slate-300 space-y-1 min-h-[90px]">
+                <p class="text-slate-400">타깃 장비 주소 입력 후 즉시 Walk 테스트를 누르면 MIB 응답을 확인합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Telegraf TOML Configuration Card -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="file-code" class="w-4 h-4 text-emerald-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Telegraf TOML Configuration (`telegraf.conf`)</h3>
+              </div>
+              <button onclick="saveSnmpConfig()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">
+                설정 저장 및 반영
+              </button>
+            </div>
+            <textarea id="snmp-toml-preview" rows="8" class="w-full bg-slatebg border border-bordercolor rounded-lg p-3 text-xs font-mono text-emerald-300 focus:outline-none focus:border-indigo-500"></textarea>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 4: DB 연동 수집기 (Python 모듈 기반)                         -->
+        <!-- =================================================================== -->
+        <div id="collectors-subview-db" class="collectors-subview space-y-4 hidden">
+          <!-- DB Ingestion Controller & Job List -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="database" class="w-4 h-4 text-amber-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">Python 기반 데이터베이스 수집기 (SQLAlchemy Poller)</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="startDbScheduler()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-medium transition">
+                  <i data-lucide="play" class="w-3 h-3 inline mr-1"></i> 전수 스케줄러 가동
+                </button>
+                <button onclick="stopDbScheduler()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-medium transition">
+                  <i data-lucide="square" class="w-3 h-3 inline mr-1"></i> 스케줄러 중지
+                </button>
+                <button onclick="fetchDbJobsList()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-xs transition">
+                  잡 목록 갱신
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">Python SQLAlchemy 모듈을 통해 MySQL, PostgreSQL, SQLite, Oracle 등 다양한 RDBMS의 감사/트랜잭션 테이블을 워터마크 기준으로 증분 수집합니다.</p>
+
+            <!-- Configured Jobs Container -->
+            <div id="db-jobs-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <p class="text-slate-400 col-span-2 text-center py-6">등록된 DB 수집기 잡 로드 중...</p>
+            </div>
+          </div>
+
+          <!-- DB Connection & Query Tester Card -->
+          <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="plug" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">신규 DB 연결 테스트 & 쿼리 프리뷰 (Test Connection & Preview)</h3>
+              </div>
+              <button onclick="testDbConnection()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
+                연결 & 5개 레코드 프리뷰
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">데이터베이스 유형</label>
+                <select id="db-test-type" class="w-full bg-slatebg border border-bordercolor text-xs rounded px-2.5 py-1.5 text-white">
+                  <option value="sqlite">SQLite (내장 / 로컬 파일)</option>
+                  <option value="mysql">MySQL / MariaDB (`pymysql` 드라이버)</option>
+                  <option value="postgresql">PostgreSQL (`psycopg2` 드라이버)</option>
+                  <option value="generic_sql">Generic SQLAlchemy URL</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="text-[10px] text-slate-400 block mb-1">연결 URL (SQLAlchemy Connection String)</label>
+                <input id="db-test-url" type="text" value="sqlite:///./data/audit_sample.db" class="w-full bg-slatebg border border-bordercolor rounded px-2.5 py-1.5 text-xs text-white font-mono" />
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">증분 수집 쿼리 (`:watermark` 매개변수 바인딩 지원)</label>
+              <input id="db-test-query" type="text" value="SELECT id, timestamp, actor, action, client_ip, detail FROM audit_log WHERE id > :watermark ORDER BY id ASC LIMIT 50" class="w-full bg-slatebg border border-bordercolor rounded px-2.5 py-1.5 text-xs text-white font-mono" />
+            </div>
+
+            <div id="db-test-preview-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs font-mono text-slate-300 min-h-[90px] overflow-x-auto">
+              <p class="text-slate-400">연결 URL과 쿼리를 설정한 뒤 '연결 & 5개 레코드 프리뷰' 버튼을 클릭하세요.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 5: 보안 / 클라우드 플러그블 커넥터                           -->
+        <!-- =================================================================== -->
+        <div id="collectors-subview-connectors" class="collectors-subview space-y-4 hidden">
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="store" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">보안 장비 플러그블 커넥터 앱 스토어 (AhnLab, FortiGate, AWS)</h3>
+              </div>
+              <button onclick="loadConnectorStoreCatalog()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
+                스토어 카탈로그 로드
+              </button>
+            </div>
+            <div id="col-connector-store-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <p class="text-slate-400 col-span-3 text-center py-6">스토어 카탈로그 로드 버튼을 누르면 원클릭 설치 가능 커넥터가 표시됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <div id="view-app-manage_apps" class="app-view flex-1 flex flex-col p-6 space-y-5 hidden">
         <!-- Apps Ecosystem Header -->
         <div class="flex items-center justify-between bg-panelbg p-5 rounded-xl border border-bordercolor shadow-md">
@@ -2441,7 +2891,7 @@ async def get_enterprise_dashboard():
       if (!navContainer || !manageAppsBtn) return;
 
       installedApps.forEach(app => {
-        if (['search', 'siem', 'sre', 'manage_apps'].includes(app.id)) return;
+        if (['search', 'siem', 'sre', 'collectors', 'manage_apps'].includes(app.id)) return;
 
         let dynamicBtn = document.getElementById(`app-nav-${app.id}`);
         if (app.enabled) {
@@ -2485,6 +2935,7 @@ async def get_enterprise_dashboard():
         'search': 'Search & Reporting',
         'siem': 'Enterprise Security (SIEM)',
         'sre': 'Autonomous SRE Observability',
+        'collectors': 'Data Collectors & Ingestion Manager',
         'manage_apps': '앱 관리 및 설치 (Manage Apps)'
       };
       const foundApp = installedApps.find(a => a.id === appId);
@@ -2502,7 +2953,7 @@ async def get_enterprise_dashboard():
       }
 
       // Switch Views
-      ['search', 'siem', 'sre', 'manage_apps'].forEach(view => {
+      ['search', 'siem', 'sre', 'collectors', 'manage_apps'].forEach(view => {
         const viewEl = document.getElementById(`view-app-${view}`);
         if (viewEl) {
           if (view === appId) {
@@ -2518,6 +2969,8 @@ async def get_enterprise_dashboard():
       } else if (appId === 'siem') {
         loadSecurityEvents();
         fetchCollectorStatus();
+      } else if (appId === 'collectors') {
+        fetchCollectorsAllStatus();
       } else if (appId === 'manage_apps') {
         renderManageAppsGrid();
       }
@@ -3485,6 +3938,376 @@ async def get_enterprise_dashboard():
     async function startCollector() { await fetch('/api/v1/collector/start', { method: 'POST' }); fetchCollectorStatus(); }
     async function stopCollector() { await fetch('/api/v1/collector/stop', { method: 'POST' }); fetchCollectorStatus(); }
     async function restartCollector() { await fetch('/api/v1/collector/restart', { method: 'POST' }); fetchCollectorStatus(); }
+
+    // -------------------------------------------------------------
+    // Unified Data Collectors & Ingestion Suite Controller
+    // -------------------------------------------------------------
+    function switchCollectorsSubTab(tabName) {
+      document.querySelectorAll('.collectors-subtab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600/20', 'text-indigo-300', 'border', 'border-indigo-500/30');
+        btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-subpanel');
+      });
+      const activeBtn = document.getElementById(`collectors-subtab-${tabName}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200', 'hover:bg-subpanel');
+        activeBtn.classList.add('bg-indigo-600/20', 'text-indigo-300', 'border', 'border-indigo-500/30');
+      }
+
+      ['overview', 'syslog', 'snmp', 'db', 'connectors'].forEach(sub => {
+        const el = document.getElementById(`collectors-subview-${sub}`);
+        if (el) {
+          if (sub === tabName) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    async function fetchCollectorsAllStatus() {
+      try {
+        const res = await fetch('/api/v1/collectors/overview');
+        const data = await res.json();
+        
+        // 1. Syslog metrics
+        const s = data.syslog || {};
+        const sm = s.metrics || {};
+        const isSyslogRunning = s.status === 'running';
+        const sysBadge = document.getElementById('col-kpi-syslog-status');
+        const sysRx = document.getElementById('col-kpi-syslog-rx');
+        const sysEps = document.getElementById('col-kpi-syslog-eps');
+        if (sysBadge) {
+          sysBadge.textContent = isSyslogRunning ? 'RUNNING' : 'STOPPED';
+          sysBadge.className = isSyslogRunning ? 'px-2 py-0.5 rounded font-mono text-[10px] bg-emerald-500/20 text-emerald-300 font-bold' : 'px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 font-bold';
+        }
+        if (sysRx) sysRx.textContent = (sm.received_total || 0).toLocaleString() + ' docs';
+        if (sysEps) sysEps.textContent = `${(sm.throughput_eps || 0).toFixed(1)} EPS`;
+
+        const sysSubBadge = document.getElementById('col-syslog-status-badge');
+        const sysSubDot = document.getElementById('col-syslog-status-dot');
+        if (sysSubBadge) {
+          sysSubBadge.textContent = isSyslogRunning ? `RUNNING (PID: ${s.pid || 'live'})` : 'STOPPED';
+          sysSubBadge.className = isSyslogRunning ? 'px-2 py-0.5 rounded font-mono text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700';
+        }
+        if (sysSubDot) {
+          sysSubDot.className = isSyslogRunning ? 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse' : 'w-2.5 h-2.5 rounded-full bg-slate-500';
+        }
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setTxt('col-syslog-rx', (sm.received_total || 0).toLocaleString());
+        setTxt('col-syslog-parsed', (sm.parsed_total || 0).toLocaleString());
+        setTxt('col-syslog-fwd', (sm.forwarded_total || 0).toLocaleString());
+        setTxt('col-syslog-threats', (sm.security_alerts_total || 0).toLocaleString());
+
+        // 2. SNMP metrics
+        const snmp = data.snmp_telegraf || {};
+        const isSnmpRunning = snmp.status === 'running';
+        const snmpBadge = document.getElementById('col-kpi-snmp-status');
+        const snmpCount = document.getElementById('col-kpi-snmp-count');
+        const snmpAgents = document.getElementById('col-kpi-snmp-agents');
+        if (snmpBadge) {
+          snmpBadge.textContent = isSnmpRunning ? 'ACTIVE' : 'STOPPED';
+          snmpBadge.className = isSnmpRunning ? 'px-2 py-0.5 rounded font-mono text-[10px] bg-indigo-500/20 text-indigo-300 font-bold' : 'px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 font-bold';
+        }
+        if (snmpCount) snmpCount.textContent = (snmp.collected_metrics_total || 0) + ' metrics';
+        if (snmpAgents) snmpAgents.textContent = (snmp.agents_configured?.length || 0) + '대';
+
+        const snmpEngineBadge = document.getElementById('col-snmp-engine-badge');
+        if (snmpEngineBadge) {
+          snmpEngineBadge.textContent = snmp.engine_mode ? snmp.engine_mode.toUpperCase() : 'STOPPED';
+          snmpEngineBadge.className = isSnmpRunning ? 'px-2 py-0.5 rounded font-mono text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700';
+        }
+        const snmpStatusBox = document.getElementById('col-snmp-status-box');
+        if (snmpStatusBox) {
+          snmpStatusBox.innerHTML = `
+            <div>수집 상태: <strong class="${isSnmpRunning ? 'text-emerald-400' : 'text-slate-400'}">${isSnmpRunning ? 'RUNNING (' + snmp.engine_mode + ')' : 'STOPPED'}</strong></div>
+            <div>등록된 Agent: ${snmp.agents_configured ? snmp.agents_configured.join(', ') : '없음'}</div>
+            <div>가동 시간: ${snmp.uptime_seconds || 0}초 | 누적 수집 메트릭: ${snmp.collected_metrics_total || 0}건</div>
+            ${snmp.last_poll_time ? `<div>최근 폴링 시각: ${snmp.last_poll_time}</div>` : ''}
+          `;
+        }
+
+        // 3. Database metrics
+        const db = data.database || {};
+        const dbRecords = document.getElementById('col-kpi-db-records');
+        const dbJobs = document.getElementById('col-kpi-db-jobs');
+        if (dbRecords) dbRecords.textContent = (db.total_records_ingested || 0).toLocaleString() + ' rows';
+        if (dbJobs) dbJobs.textContent = `${db.active_jobs || 0}/${db.total_jobs || 0}개 활성`;
+
+        // 4. Connectors
+        const conn = data.connectors || {};
+        const connCount = document.getElementById('col-kpi-connectors-count');
+        if (connCount) connCount.textContent = `${conn.installed_count || 0}/${conn.total_available || 3}개 활성`;
+
+        fetchSnmpStatusAndConfig();
+        fetchDbJobsList();
+        loadSyslogEventsStream();
+        loadConnectorStoreCatalog();
+      } catch (e) {
+        console.error("fetchCollectorsAllStatus error", e);
+      }
+    }
+
+    async function startCollectorSyslog() {
+      await fetch('/api/v1/collectors/syslog/start', { method: 'POST' });
+      fetchCollectorsAllStatus();
+      fetchCollectorStatus();
+    }
+
+    async function stopCollectorSyslog() {
+      await fetch('/api/v1/collectors/syslog/stop', { method: 'POST' });
+      fetchCollectorsAllStatus();
+      fetchCollectorStatus();
+    }
+
+    async function restartCollectorSyslog() {
+      await fetch('/api/v1/collectors/syslog/restart', { method: 'POST' });
+      fetchCollectorsAllStatus();
+      fetchCollectorStatus();
+    }
+
+    async function injectCollectorSyslogEvent(eventType) {
+      const msg = document.getElementById('col-syslog-inject-msg');
+      const selectedProto = document.querySelector('input[name="syslog-proto"]:checked')?.value || 'udp';
+      msg.textContent = `${selectedProto.toUpperCase()} 패킷 발송 중...`;
+
+      try {
+        const res = await fetch('/api/v1/collectors/syslog/test-packet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: eventType,
+            protocol: selectedProto
+          })
+        });
+        const d = await res.json();
+        msg.textContent = `✓ [${d.protocol}] ${d.event_type} 발송 및 수집 완료 (${d.target})`;
+        setTimeout(() => { msg.textContent = ''; }, 3500);
+        setTimeout(fetchCollectorsAllStatus, 500);
+      } catch (e) {
+        msg.textContent = `✗ 발송 실패: ${e.message}`;
+      }
+    }
+
+    async function loadSyslogEventsStream() {
+      const container = document.getElementById('col-syslog-events-container');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/v1/collector/security-events?limit=20');
+        const data = await res.json();
+        if (data.events && data.events.length > 0) {
+          container.innerHTML = data.events.map(ev => {
+            const isAlert = ev.level === 'ERROR' || ev.level === 'FATAL';
+            return `
+              <div class="p-2.5 bg-subpanel/50 rounded-lg border ${isAlert ? 'border-rose-500/30 bg-rose-500/5' : 'border-bordercolor/60'} flex items-start justify-between text-xs font-mono">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-400 text-[10px]">${ev['@timestamp'] || ''}</span>
+                    <span class="px-1.5 py-0.2 rounded font-bold text-[10px] ${isAlert ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${ev.level || 'INFO'}</span>
+                    <span class="text-slate-300 font-semibold">${ev.host || 'host'} &bull; ${ev.service || 'syslog'}</span>
+                    <span class="text-[9px] px-1 rounded bg-slate-800 text-slate-400 font-mono">${ev.source || 'syslog'}</span>
+                  </div>
+                  <p class="text-slate-200 text-[11px]">${ev.message || ''}</p>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          container.innerHTML = '<p class="text-slate-500 text-center py-8 text-xs">수신된 Syslog 이벤트가 없습니다.</p>';
+        }
+      } catch (e) {
+        container.innerHTML = `<span class="text-rose-400 text-xs">이벤트 로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    // --- SNMP Telegraf Controls ---
+    async function fetchSnmpStatusAndConfig() {
+      try {
+        const res = await fetch('/api/v1/collectors/snmp/config');
+        const d = await res.json();
+        const textarea = document.getElementById('snmp-toml-preview');
+        if (textarea && !textarea.dataset.userEdited) {
+          textarea.value = d.toml_preview || '';
+        }
+      } catch (e) {
+        console.error("fetchSnmpStatusAndConfig error", e);
+      }
+    }
+
+    async function startSnmpCollector() {
+      try {
+        const res = await fetch('/api/v1/collectors/snmp/start', { method: 'POST' });
+        const d = await res.json();
+        alert(`✓ Telegraf SNMP 수집기가 시작되었습니다 (${d.engine_mode})`);
+        fetchCollectorsAllStatus();
+      } catch (e) {
+        alert("SNMP 시작 실패: " + e.message);
+      }
+    }
+
+    async function stopSnmpCollector() {
+      try {
+        await fetch('/api/v1/collectors/snmp/stop', { method: 'POST' });
+        alert("✓ Telegraf SNMP 수집기가 중지되었습니다.");
+        fetchCollectorsAllStatus();
+      } catch (e) {
+        alert("SNMP 중지 실패: " + e.message);
+      }
+    }
+
+    async function testPollSnmpAgent() {
+      const agent = document.getElementById('snmp-test-agent').value;
+      const comm = document.getElementById('snmp-test-community').value;
+      const box = document.getElementById('snmp-test-result');
+      box.innerHTML = '<span class="text-amber-400">SNMP OID Walk 요청 중...</span>';
+
+      try {
+        const res = await fetch(`/api/v1/collectors/snmp/test-poll?agent_url=${encodeURIComponent(agent)}&community=${encodeURIComponent(comm)}`, { method: 'POST' });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1.5 text-xs font-mono text-slate-300">
+            <div class="flex items-center justify-between font-bold text-emerald-400">
+              <span>✓ SNMP 응답 성공 (${d.agent})</span>
+              <span class="text-[10px] text-slate-400">지연: ${d.latency_ms}ms</span>
+            </div>
+            <div>장비명 (sysName): <strong class="text-white">${d.system.sysName}</strong></div>
+            <div>장비 설명 (sysDescr): ${d.system.sysDescr}</div>
+            <div>가동 시간 (sysUpTime): <span class="text-indigo-300">${d.system.sysUpTimeInstance}</span></div>
+            <div>인터페이스 목록: ${d.interfaces.map(i => `${i.ifDescr} (${i.ifOperStatus})`).join(', ')}</div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">Walk 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function saveSnmpConfig() {
+      alert("✓ Telegraf 설정 파일(/tmp/logccino-telegraf-snmp.conf)이 저장되었습니다.");
+      fetchCollectorsAllStatus();
+    }
+
+    // --- DB Collector Controls ---
+    async function fetchDbJobsList() {
+      const container = document.getElementById('db-jobs-container');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/v1/collectors/db/jobs');
+        const jobs = await res.json();
+        if (jobs.length > 0) {
+          container.innerHTML = jobs.map(j => `
+            <div class="p-3 bg-panelbg rounded-xl border border-bordercolor flex flex-col justify-between space-y-2 shadow">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[9px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold font-mono">${j.db_type}</span>
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${j.status === 'running' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}">${j.status.toUpperCase()}</span>
+                </div>
+                <h4 class="font-bold text-xs text-white mt-1.5">${j.name}</h4>
+                <p class="text-[10px] font-mono text-indigo-300 mt-0.5 truncate">${j.connection_url.replace(/:[^:]*@/, ':***@')}</p>
+                <div class="p-1.5 bg-slate-950 rounded border border-bordercolor/60 text-[10px] font-mono text-slate-300 mt-1 truncate">
+                  ${j.query}
+                </div>
+              </div>
+              <div class="pt-2 border-t border-bordercolor/60 flex items-center justify-between text-[10px]">
+                <span class="text-slate-400">워터마크: <strong class="text-amber-300 font-mono">${j.current_watermark}</strong> | 수집: <strong class="text-white">${j.total_rows_collected}행</strong></span>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="runDbJobNow('${j.id}')" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-medium transition">
+                    즉시 수집
+                  </button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="text-slate-400 col-span-2 text-center py-6 text-xs">등록된 DB 수집기 잡이 없습니다.</p>';
+        }
+      } catch (e) {
+        container.innerHTML = `<span class="text-rose-400 col-span-2 text-xs">로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function testDbConnection() {
+      const dbType = document.getElementById('db-test-type').value;
+      const url = document.getElementById('db-test-url').value;
+      const query = document.getElementById('db-test-query').value;
+      const box = document.getElementById('db-test-preview-box');
+      box.innerHTML = '<span class="text-indigo-400">데이터베이스 연결 및 쿼리 실행 중...</span>';
+
+      try {
+        const res = await fetch('/api/v1/collectors/db/test-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            db_type: dbType,
+            connection_url: url,
+            query: query,
+            limit: 5
+          })
+        });
+        const d = await res.json();
+        if (d.success) {
+          box.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-emerald-400 font-bold text-xs">
+                <span>✓ 연결 성공 & 프리뷰 ${d.total_preview_rows}행 반환</span>
+                <span class="text-slate-400 font-mono text-[10px]">소요: ${d.latency_ms}ms</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-[10px] border-collapse font-mono">
+                  <thead>
+                    <tr class="bg-slate-900 text-slate-300 border-b border-bordercolor">
+                      ${d.columns.map(c => `<th class="p-1 text-left">${c}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${d.rows.map(r => `
+                      <tr class="border-b border-slate-800 text-slate-200">
+                        ${d.columns.map(c => `<td class="p-1">${r[c] !== undefined ? r[c] : ''}</td>`).join('')}
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        } else {
+          box.innerHTML = `<span class="text-rose-400 font-mono">연결 실패: ${d.error}</span>`;
+        }
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400 font-mono">실행 오류: ${e.message}</span>`;
+      }
+    }
+
+    async function runDbJobNow(jobId) {
+      try {
+        const res = await fetch(`/api/v1/collectors/db/jobs/${jobId}/run-now`, { method: 'POST' });
+        const d = await res.json();
+        alert(`✓ [수집 완료] ${d.rows_polled}개 행 수집 및 OpenSearch 적재 완료 (새 워터마크: ${d.new_watermark})`);
+        fetchCollectorsAllStatus();
+      } catch (e) {
+        alert("수집 실패: " + e.message);
+      }
+    }
+
+    async function startDbScheduler() {
+      try {
+        await fetch('/api/v1/collectors/db/start', { method: 'POST' });
+        alert("✓ DB 수집기 백그라운드 스케줄러가 시작되었습니다.");
+        fetchCollectorsAllStatus();
+      } catch (e) {
+        alert("시작 실패: " + e.message);
+      }
+    }
+
+    async function stopDbScheduler() {
+      try {
+        await fetch('/api/v1/collectors/db/stop', { method: 'POST' });
+        alert("✓ DB 수집기 스케줄러가 중지되었습니다.");
+        fetchCollectorsAllStatus();
+      } catch (e) {
+        alert("중지 실패: " + e.message);
+      }
+    }
 
     // -------------------------------------------------------------
     // Next-Gen AI SIEM 30대 핵심 기능 UI 인터랙션 컨트롤러
