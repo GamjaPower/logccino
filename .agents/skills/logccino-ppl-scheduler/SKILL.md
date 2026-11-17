@@ -113,7 +113,13 @@ Logccino의 Saved Search 엔진은 다음 6가지 핵심 영역의 옵션을 완
 
 ## 4. 🔔 Webhook 및 알람 발송 JSON 페이로드 규격
 알람이 트리거되면 Slack / Teams / Discord와 호환되는 풍부한 JSON 페이로드가 웹훅 수신처로 전송됩니다:
-```json
+```
+
+---
+
+## 5. 🤖 연계 스킬: Logccino Autonomous AI SOC Detection Scenarios
+보안관제(SIEM) 도메인의 공격 벡터(무차별 대입, 권한 상승, 정찰, 랜섬웨어 카나리, DNS 유출 등) 및 MITRE ATT&CK 엔터프라이즈 매트릭스 연계 관제 시나리오 관리는 자매 스킬인 **`logccino-soc-scenarios`**를 함께 활용하십시오.
+사람이 직접 시나리오를 타이핑하지 않고 클로드가 자율적으로 PPL을 생성하고 튜닝합니다.json
 {
   "text": "🚨 [Logccino Splunk Alert] [SEC-01] SSH 무차별 대입 및 로그인 실패 급증 (심각도: CRITICAL)",
   "saved_search_id": "alert-ssh-bruteforce",
@@ -129,3 +135,9 @@ Logccino의 Saved Search 엔진은 다음 6가지 핵심 영역의 옵션을 완
   "sample_logs": [...]
 }
 ```
+
+---
+
+## 5. 🤖 연계 스킬: Logccino Autonomous AI SOC Detection Scenarios
+보안관제(SIEM) 도메인의 공격 벡터(무차별 대입, 권한 상승, 정찰, 랜섬웨어 카나리, DNS 유출 등) 및 MITRE ATT&CK 엔터프라이즈 매트릭스 연계 관제 시나리오 관리는 자매 스킬인 **`logccino-soc-scenarios`**를 함께 활용하십시오.
+사람이 직접 시나리오를 타이핑하지 않고 클로드가 자율적으로 PPL을 생성하고 튜닝합니다.

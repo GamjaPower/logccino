@@ -1356,4 +1356,125 @@ class LogccinoMCPTools:
             return {"status": "stopped"}
         return {"error": f"Unknown action: {action} or missing job_id"}
 
+    def list_soc_detection_scenarios(self) -> List[Dict[str, Any]]:
+        """클로드 스킬(Claude Skill)이 관리하는 전체 SOC 관제 시나리오 및 MITRE 매핑 상태 조회"""
+        from core.scheduler.engine import scheduler_engine
+        searches = scheduler_engine.get_all()
+        return [s.model_dump() for s in searches]
+
+    def register_soc_detection_scenario(
+        self,
+        name: str,
+        ppl_query: str,
+        mitre_tactic: str = "Credential Access",
+        mitre_technique: str = "T1110 Brute Force",
+        severity: str = "HIGH",
+        ai_rationale: Optional[str] = None,
+        interval_seconds: int = 60,
+        condition_threshold: float = 0.0,
+        alert_suppress_period: str = "5m",
+        webhook_url: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """클로드 스킬이 MITRE ATT&CK 기반 신규 관제 시나리오를 자율 등록 (Splunk savedsearches.conf 호환)"""
+        from core.scheduler.engine import scheduler_engine
+        from core.scheduler.models import SavedSearchCreate
+        
+        create_req = SavedSearchCreate(
+            name=name,
+            ppl_query=ppl_query,
+            app="enterprise_security",
+            mitre_tactic=mitre_tactic,
+            mitre_technique=mitre_technique,
+            severity=severity,  # type: ignore
+            ai_managed=True,
+            ai_rationale=ai_rationale or f"클로드 스킬에 의해 자율 등록된 {mitre_technique} 위협 탐지 시나리오입니다.",
+            interval_seconds=interval_seconds,
+            condition_threshold=condition_threshold,
+            alert_suppress=bool(alert_suppress_period),
+            alert_suppress_period=alert_suppress_period,
+            webhook_url=webhook_url,
+            action_webhook_enabled=bool(webhook_url),
+            action_index_enabled=True,
+            action_index_name="logccino-alerts"
+        )
+        saved = scheduler_engine.create(create_req)
+        return {"status": "registered", "scenario": saved.model_dump()}
+
+    def tune_soc_detection_scenario(
+        self,
+        scenario_id: str,
+        enabled: Optional[bool] = None,
+        condition_threshold: Optional[float] = None,
+        interval_seconds: Optional[int] = None,
+        alert_suppress_period: Optional[str] = None,
+        webhook_url: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """클로드 스킬 또는 분석가가 관제 시나리오를 튜닝 (오탐 방지, 임계치 변경, 주기 조정)"""
+        from core.scheduler.engine import scheduler_engine
+        from core.scheduler.models import SavedSearchUpdate
+
+        update_dict: Dict[str, Any] = {}
+        if enabled is not None:
+            update_dict["enabled"] = enabled
+        if condition_threshold is not None:
+            update_dict["condition_threshold"] = condition_threshold
+        if interval_seconds is not None:
+            update_dict["interval_seconds"] = interval_seconds
+        if alert_suppress_period is not None:
+            update_dict["alert_suppress_period"] = alert_suppress_period
+            update_dict["alert_suppress"] = True
+        if webhook_url is not None:
+            update_dict["webhook_url"] = webhook_url
+            update_dict["action_webhook_enabled"] = bool(webhook_url.strip())
+
+        updated = scheduler_engine.update(scenario_id, SavedSearchUpdate(**update_dict))
+        if not updated:
+            return {"error": f"Scenario {scenario_id} not found"}
+        return {"status": "tuned", "scenario": updated.model_dump()}
+
+    def test_run_soc_detection_scenario(self, scenario_id: str) -> Dict[str, Any]:
+        """관제 시나리오를 대기 시간 없이 즉시 실행(Run Now)하여 탐지 및 억제 여부 검증"""
+        import asyncio
+        from core.scheduler.engine import scheduler_engine
+        rec = asyncio.run(scheduler_engine.run_now(scenario_id))
+        if not rec:
+            return {"error": f"Failed to run scenario {scenario_id}"}
+        return rec.model_dump()
+
+    def get_mitre_attack_coverage(self) -> Dict[str, Any]:
+        """현재 등록된 관제 시나리오의 MITRE ATT&CK 전술 및 기법 커버리지 분석"""
+        from core.scheduler.engine import scheduler_engine
+        searches = scheduler_engine.get_all()
+        ALL_TACTICS = [
+            "Reconnaissance", "Resource Development", "Initial Access", "Execution",
+            "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access",
+            "Discovery", "Lateral Movement", "Collection", "Command and Control",
+            "Exfiltration", "Impact"
+        ]
+        tactic_map: Dict[str, List[Dict[str, Any]]] = {t: [] for t in ALL_TACTICS}
+        total_active = 0
+        for s in searches:
+            if s.enabled:
+                total_active += 1
+            tactic = s.mitre_tactic or "Credential Access"
+            if tactic not in tactic_map:
+                tactic_map[tactic] = []
+            tactic_map[tactic].append({
+                "id": s.id,
+                "name": s.name,
+                "technique": s.mitre_technique or "T1000",
+                "severity": s.severity,
+                "enabled": s.enabled
+            })
+        covered_tactics = sum(1 for t, items in tactic_map.items() if len(items) > 0)
+        return {
+            "total_scenarios": len(searches),
+            "total_active": total_active,
+            "covered_tactics": covered_tactics,
+            "total_tactics": len(ALL_TACTICS),
+            "coverage_percentage": round((covered_tactics / len(ALL_TACTICS)) * 100, 1),
+            "tactic_coverage": tactic_map,
+            "uncovered_tactics": [t for t, items in tactic_map.items() if len(items) == 0]
+        }
+
 mcp_tools = LogccinoMCPTools()

@@ -78,6 +78,10 @@ DEFAULT_SAVED_SEARCHES = [
         "action_email_enabled": False,
         "action_index_enabled": True,
         "action_index_name": "logccino-alerts",
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110.001 Password Guessing",
+        "ai_managed": True,
+        "ai_rationale": "단시간 내 동일 호스트에 대한 다중 계정 로그인 실패는 외부 자격증명 살포(Password Spraying) 공격의 대표적 전조 증상입니다.",
         "enabled": True
     },
     {
@@ -110,6 +114,10 @@ DEFAULT_SAVED_SEARCHES = [
         "action_email_enabled": False,
         "action_index_enabled": True,
         "action_index_name": "logccino-alerts",
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110.001 Password Guessing",
+        "ai_managed": True,
+        "ai_rationale": "단시간 내 동일 호스트에 대한 다중 계정 로그인 실패는 외부 자격증명 살포(Password Spraying) 공격의 대표적 전조 증상입니다.",
         "enabled": True
     },
     {
@@ -143,6 +151,10 @@ DEFAULT_SAVED_SEARCHES = [
         "action_email_enabled": False,
         "action_index_enabled": True,
         "action_index_name": "logccino-alerts",
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110.001 Password Guessing",
+        "ai_managed": True,
+        "ai_rationale": "단시간 내 동일 호스트에 대한 다중 계정 로그인 실패는 외부 자격증명 살포(Password Spraying) 공격의 대표적 전조 증상입니다.",
         "enabled": True
     },
     {
@@ -175,6 +187,10 @@ DEFAULT_SAVED_SEARCHES = [
         "action_email_enabled": False,
         "action_index_enabled": True,
         "action_index_name": "logccino-alerts",
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110.001 Password Guessing",
+        "ai_managed": True,
+        "ai_rationale": "단시간 내 동일 호스트에 대한 다중 계정 로그인 실패는 외부 자격증명 살포(Password Spraying) 공격의 대표적 전조 증상입니다.",
         "enabled": True
     }
 ]

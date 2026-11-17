@@ -73,6 +73,12 @@ class SavedSearch(BaseModel):
     action_script_enabled: bool = Field(False, description="커스텀 스크립트 실행 활성화")
     action_script_command: Optional[str] = Field(None, description="실행할 스크립트 경로 또는 명령")
 
+    # SOC Detection Scenario & MITRE ATT&CK Metadata
+    mitre_tactic: Optional[str] = Field(None, description="MITRE ATT&CK Tactic (e.g. Credential Access, Defense Evasion)")
+    mitre_technique: Optional[str] = Field(None, description="MITRE ATT&CK Technique (e.g. T1110.003 Password Spraying)")
+    ai_managed: bool = Field(True, description="클로드 스킬 또는 AI 에이전트에 의한 자율 관리 여부")
+    ai_rationale: Optional[str] = Field(None, description="AI 탐지 논거 및 배경 설명")
+
     # Runtime Status
     last_run: Optional[str] = Field(None, description="마지막 실행 시각 (ISO 8601)")
     next_run: Optional[str] = Field(None, description="다음 실행 예정 시각 (ISO 8601)")
@@ -142,6 +148,12 @@ class SavedSearchCreate(BaseModel):
     action_index_name: str = "logccino-alerts"
     action_script_enabled: bool = False
     action_script_command: Optional[str] = None
+
+    # SOC Detection Scenario & MITRE ATT&CK Metadata
+    mitre_tactic: Optional[str] = None
+    mitre_technique: Optional[str] = None
+    ai_managed: bool = True
+    ai_rationale: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -220,6 +232,12 @@ class SavedSearchUpdate(BaseModel):
     action_index_name: Optional[str] = None
     action_script_enabled: Optional[bool] = None
     action_script_command: Optional[str] = None
+
+    # SOC Detection Scenario & MITRE ATT&CK Metadata
+    mitre_tactic: Optional[str] = None
+    mitre_technique: Optional[str] = None
+    ai_managed: Optional[bool] = None
+    ai_rationale: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod

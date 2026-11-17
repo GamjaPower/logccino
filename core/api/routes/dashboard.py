@@ -906,7 +906,7 @@ async def get_enterprise_dashboard():
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-sm text-white">Logccino Autonomous AI SIEM & Enterprise Security</h2>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">30 NEXT-GEN AI FEATURES ACTIVE</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">AUTONOMOUS AI SECURITY SUITE</span>
               </div>
               <p class="text-xs text-slate-400 mt-0.5">Rust 고성능 Syslog 수집기, 자율 트리아지, 생성형 위협 헌팅, MITRE 스토리보드, 능동 SOAR 및 SOC 코파일럿</p>
             </div>
@@ -1116,6 +1116,71 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
+                    <!-- ================================================================= -->
+          <!-- CLAUDE SKILL MANAGED SOC DETECTION SCENARIOS CENTER               -->
+          <!-- (사람이 직접 쿼리를 입력하지 않고 클로드 스킬이 자율 등록/관리)        -->
+          <!-- ================================================================= -->
+          <div class="bg-panelbg rounded-xl border border-indigo-500/30 shadow-xl p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-bordercolor/60 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                  <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-white uppercase">AI 자율 관리 관제 시나리오 센터</h3>
+                    <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">CLAUDE SKILL MANAGED</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-0.5">MITRE ATT&amp;CK 기반 자율 생성, PPL 쿼리 자동 합성, 실시간 임계치 튜닝 및 Throttling 관리</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="loadDetectionScenarios()" class="px-2.5 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor flex items-center gap-1 text-xs transition">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i> 새로고침
+                </button>
+                <button onclick="requestNewScenarioViaCopilot()" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition shadow">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 코파일럿에게 새 시나리오 요청
+                </button>
+              </div>
+            </div>
+
+            <!-- AI Operational Notice Banner -->
+            <div class="p-3 bg-indigo-950/40 rounded-lg border border-indigo-500/20 flex items-start gap-2.5 text-xs text-slate-300 leading-relaxed">
+              <i data-lucide="bot" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+              <div>
+                <span class="font-bold text-white">클로드 스킬(`logccino-soc-scenarios`) 자율 관리 체계:</span>
+                관제 시나리오는 사람이 복잡한 쿼리를 직접 작성하지 않고, 클로드 스킬이 MITRE ATT&amp;CK 기법과 위협 인텔리전스를 분석하여 자율적으로 합성·등록합니다.
+                보안관제 분석가는 현황을 모니터링하고 <strong class="text-emerald-400">상태 토글(ON/OFF), 임계치(Threshold), 검사 주기 및 중복 억제 기간만 미세 조정(Tuning)</strong>합니다.
+              </div>
+            </div>
+
+            <!-- Scenarios Metric KPI Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">총 관제 시나리오</span>
+                <span id="scenarios-total-count" class="font-mono font-bold text-slate-100 text-base">5</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">활성 감시 중 (Active)</span>
+                <span id="scenarios-active-count" class="font-mono font-bold text-emerald-400 text-base">5</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">MITRE ATT&amp;CK 커버리지</span>
+                <span id="scenarios-mitre-coverage" class="font-mono font-bold text-indigo-400 text-base">5개 전술 (35.7%)</span>
+              </div>
+              <div class="bg-slatebg p-3 rounded-lg border border-bordercolor/50">
+                <span class="text-[10px] uppercase text-slate-400 block font-semibold">관리 주체</span>
+                <span class="font-mono font-bold text-purple-400 text-xs">Claude Skill Agent</span>
+              </div>
+            </div>
+
+            <!-- Dynamic Scenario Cards Container -->
+            <div id="ai-scenarios-container" class="space-y-3 pt-1">
+              <!-- Dynamically populated by loadDetectionScenarios() -->
+              <p class="text-center py-6 text-slate-500 text-xs">관제 시나리오를 로드하고 있습니다...</p>
+            </div>
+          </div>
+
           <!-- Live Security Incidents Stream Table -->
           <div class="bg-panelbg rounded-xl border border-bordercolor shadow-xl p-4 flex-1 flex flex-col min-h-[350px]">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-2">
@@ -1132,12 +1197,12 @@ async def get_enterprise_dashboard():
         <!-- =================================================================== -->
         <div id="siem-subview-triage" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 01: 자율 다차원 인시던트 트리아지 -->
+            <!-- 자율 다차원 인시던트 트리아지 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="cpu" class="w-4 h-4 text-rose-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 01. 자율 다차원 인시던트 트리아지 (CoT)</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">자율 다차원 인시던트 트리아지 (CoT)</h3>
                 </div>
                 <button onclick="runSampleTriage()" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition">
                   트리아지 실행
@@ -1148,12 +1213,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 02: 동적 가상 분석관 스웜 -->
+            <!-- 동적 가상 분석관 스웜 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 02. 가상 분석관 스웜 (IR & Malware & Network)</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">가상 분석관 스웜 (IR & Malware & Network)</h3>
                 </div>
                 <button onclick="runSampleSwarm()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
                   스웜 토론 소집
@@ -1166,12 +1231,12 @@ async def get_enterprise_dashboard():
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 03: 근본 원인(Root-Cause) 인과 그래프 -->
+            <!-- 근본 원인(Root-Cause) 인과 그래프 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="git-branch" class="w-4 h-4 text-emerald-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 03. 근본 원인(Patient Zero) DAG 그래프</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">근본 원인(Patient Zero) DAG 그래프</h3>
                 </div>
                 <button onclick="runSampleAttackGraph()" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">
                   공격 그래프 생성
@@ -1182,12 +1247,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 04: 경보 노이즈 소멸기 & 유사 알람 군집화 -->
+            <!-- 경보 노이즈 소멸기 & 유사 알람 군집화 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="filter" class="w-4 h-4 text-amber-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 04. 경보 노이즈 소멸기 & 군집화</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">경보 노이즈 소멸기 & 군집화</h3>
                 </div>
                 <button onclick="runNoiseEliminator()" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition">
                   노이즈 소멸 실행
@@ -1199,12 +1264,12 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
-          <!-- Feature 05: 엔티티 이상행동 기반 공격 서사화 -->
+          <!-- 엔티티 이상행동 기반 공격 서사화 -->
           <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <i data-lucide="user-check" class="w-4 h-4 text-indigo-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 05. 엔티티(계정·호스트) 이상행동 기반 공격 서사화</h3>
+                <h3 class="text-xs font-bold text-white uppercase">엔티티(계정·호스트) 이상행동 기반 공격 서사화</h3>
               </div>
               <button onclick="loadEntityStoryboard()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
                 엔티티 스토리 로드
@@ -1221,12 +1286,12 @@ async def get_enterprise_dashboard():
         <!-- =================================================================== -->
         <div id="siem-subview-hunting" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 11: MITRE ATT&CK 킬체인 스토리보드 -->
+            <!-- MITRE ATT&CK 킬체인 스토리보드 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="git-commit" class="w-4 h-4 text-rose-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 11. MITRE ATT&CK 킬체인 실시간 스토리보드</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">MITRE ATT&CK 킬체인 실시간 스토리보드</h3>
                 </div>
                 <button onclick="loadMitreStoryboard()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
                   스토리보드 로드
@@ -1237,12 +1302,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 13: 횡적 이동 경로 재구성 -->
+            <!-- 횡적 이동 경로 재구성 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="repeat" class="w-4 h-4 text-amber-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 13. 계정-네트워크 횡적 이동(Lateral Movement) 재구성</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">계정-네트워크 횡적 이동(Lateral Movement) 재구성</h3>
                 </div>
                 <button onclick="loadLateralMovement()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
                   경로 추적
@@ -1255,10 +1320,10 @@ async def get_enterprise_dashboard():
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Feature 12: 크로스 타임라인 정합성 -->
+            <!-- 크로스 타임라인 정합성 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i> Feature 12. 크로스 타임라인</h4>
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i> 크로스 타임라인 정합성</h4>
                 <button onclick="loadStitchedTimeline()" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] rounded transition">합성</button>
               </div>
               <div id="stitched-timeline-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
@@ -1266,10 +1331,10 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 14: 데이터 유출 잠행 서사화 -->
+            <!-- 데이터 유출 잠행 서사화 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="cloud-download" class="w-3.5 h-3.5 text-rose-400"></i> Feature 14. 데이터 유출 서사</h4>
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="cloud-download" class="w-3.5 h-3.5 text-rose-400"></i> 데이터 유출 잠행 서사화</h4>
                 <button onclick="loadExfiltrationNarrative()" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] rounded transition">추적</button>
               </div>
               <div id="exfil-narrative-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
@@ -1277,10 +1342,10 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 15: K8s/클라우드 설정 변조 추적 -->
+            <!-- K8s/클라우드 설정 변조 추적 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="server" class="w-3.5 h-3.5 text-amber-400"></i> Feature 15. 인프라 변조</h4>
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="server" class="w-3.5 h-3.5 text-amber-400"></i> K8s/클라우드 설정 변조 추적</h4>
                 <button onclick="loadConfigTampering()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-[11px] rounded transition">조회</button>
               </div>
               <div id="config-tamper-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
@@ -1289,11 +1354,11 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
-          <!-- Feature 06: 자연어 NL-to-PPL 합성기 -->
+          <!-- 자연어 NL-to-PPL 합성기 -->
           <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
             <div class="flex items-center gap-2">
               <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
-              <h3 class="text-xs font-bold text-white uppercase">Feature 06. 자연어 기반 제로샷 PPL/Join 쿼리 자동 합성</h3>
+              <h3 class="text-xs font-bold text-white uppercase">자연어 기반 제로샷 PPL/Join 쿼리 자동 합성</h3>
             </div>
             <div class="flex items-center gap-2">
               <input id="nl-hunt-input" type="text" value="어제 로그인 실패가 5번 넘은 호스트와 해당 호스트의 5xx 에러 조인해줘" class="flex-1 bg-slatebg border border-bordercolor rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500" />
@@ -1304,14 +1369,14 @@ async def get_enterprise_dashboard():
             <div id="nl-hunt-output" class="hidden p-3 bg-slatebg rounded-lg border border-amber-500/30 text-xs font-mono text-emerald-400 whitespace-pre overflow-x-auto"></div>
           </div>
 
-          <!-- Feature 07 & Feature 10 -->
+          <!-- -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 07: 가설 주도형 자율 위협 헌팅 -->
+            <!-- 가설 주도형 자율 위협 헌팅 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="compass" class="w-4 h-4 text-indigo-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 07. 가설 주도형 자율 위협 헌팅</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">가설 주도형 자율 위협 헌팅</h3>
                 </div>
                 <button onclick="loadHuntingHypotheses()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
                   가설 전수 탐사 실행
@@ -1322,12 +1387,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 10: 레드팀 헌팅 시뮬레이터 -->
+            <!-- 레드팀 헌팅 시뮬레이터 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 10. 공격자 관점 헌팅 시뮬레이터</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">공격자 관점 헌팅 시뮬레이터</h3>
                 </div>
                 <div class="flex items-center gap-2">
                   <select id="sel-threat-actor" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
@@ -1351,7 +1416,7 @@ async def get_enterprise_dashboard():
         <!-- =================================================================== -->
         <div id="siem-subview-response" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 4: 비주얼 SOAR 플레이북 & 승인 게이트 (Logpresso Maestro) -->
+            <!-- 비주얼 SOAR 플레이북 & 승인 게이트 (Logpresso Maestro) -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -1367,11 +1432,11 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 18: 실시간 능동 대응 오케스트레이터 -->
+            <!-- 실시간 능동 대응 오케스트레이터 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center gap-2">
                 <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 18. 실시간 능동 대응 오케스트레이터 (1초 내 차단)</h3>
+                <h3 class="text-xs font-bold text-white uppercase">실시간 능동 대응 오케스트레이터 (1초 내 차단)</h3>
               </div>
               <div class="flex flex-wrap gap-2">
                 <button onclick="executeActiveAction('block_ip', '198.51.100.42')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs rounded transition flex items-center gap-1">
@@ -1391,12 +1456,12 @@ async def get_enterprise_dashboard():
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Feature 16: 동적 플레이북 자동 합성 -->
+            <!-- 동적 플레이북 자동 합성 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 16. 플레이북 합성</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">동적 플레이북 자동 합성</h3>
                 </div>
                 <button onclick="loadAdaptivePlaybook()" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">생성</button>
               </div>
@@ -1405,12 +1470,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 17: 조치 영향도 사전 시뮬레이터 -->
+            <!-- 조치 영향도 사전 시뮬레이터 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 17. 무중단 영향도 시뮬</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">조치 영향도 사전 시뮬레이터</h3>
                 </div>
                 <button onclick="simulateRemediationImpact()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">검증</button>
               </div>
@@ -1419,12 +1484,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 19: 영속성(Persistence) 완전 소탕 -->
+            <!-- 영속성(Persistence) 완전 소탕 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 19. 잔존 위협 소탕</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">영속성(Persistence) 완전 소탕</h3>
                 </div>
                 <button onclick="sweepPersistenceThreats()" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">소탕</button>
               </div>
@@ -1440,12 +1505,12 @@ async def get_enterprise_dashboard():
         <!-- =================================================================== -->
         <div id="siem-subview-intel" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 21: 비정형 CTI RAG -->
+            <!-- 비정형 CTI RAG -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="database" class="w-4 h-4 text-indigo-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 21. 비정형 사이버 위협 인텔리전스 RAG</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">비정형 사이버 위협 인텔리전스 RAG</h3>
                 </div>
                 <button onclick="queryCTIRAG()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
                   CTI RAG 검색
@@ -1457,12 +1522,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 22: 동적 카나리 허니팟 토큰 -->
+            <!-- 동적 카나리 허니팟 토큰 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="crosshair" class="w-4 h-4 text-emerald-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 22. 동적 허니팟 & 카나리 토큰 자동 합성 (오탐 0%)</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">동적 허니팟 & 카나리 토큰 자동 합성</h3>
                 </div>
                 <button onclick="deployCanaryToken()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">
                   카나리 토큰 배포
@@ -1475,10 +1540,10 @@ async def get_enterprise_dashboard():
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Feature 23: 공급망 Blast Radius -->
+            <!-- 공급망 Blast Radius -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="git-pull-request" class="w-3.5 h-3.5 text-amber-400"></i> Feature 23. 공급망 위험</h4>
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="git-pull-request" class="w-3.5 h-3.5 text-amber-400"></i> 공급망 Blast Radius 분석</h4>
                 <button onclick="assessSupplyChainBlastRadius()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-[11px] rounded transition">분석</button>
               </div>
               <div id="blast-radius-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
@@ -1486,10 +1551,10 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 24: APT 조직 추론기 -->
+            <!-- APT 조직 추론기 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="globe" class="w-3.5 h-3.5 text-rose-400"></i> Feature 24. APT 배후 추론</h4>
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="globe" class="w-3.5 h-3.5 text-rose-400"></i> APT 조직 및 배후 위협 추론</h4>
                 <button onclick="profileAPTAttribution()" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] rounded transition">추론</button>
               </div>
               <div id="apt-profile-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
@@ -1497,10 +1562,10 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 25: 다크웹 유출 계정 상관분석 -->
+            <!-- 다크웹 유출 계정 상관분석 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-2">
               <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="key" class="w-3.5 h-3.5 text-indigo-400"></i> Feature 25. 다크웹 계정</h4>
+                <h4 class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="key" class="w-3.5 h-3.5 text-indigo-400"></i> 다크웹 유출 계정 상관분석</h4>
                 <button onclick="correlateDarkwebCreds()" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] rounded transition">조회</button>
               </div>
               <div id="darkweb-box" class="p-2.5 bg-slatebg rounded border border-bordercolor/60 text-xs text-slate-400">
@@ -1515,11 +1580,11 @@ async def get_enterprise_dashboard():
         <!-- =================================================================== -->
         <div id="siem-subview-copilot" class="siem-subview space-y-4 hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 26: 실시간 대화형 SOC 코파일럿 -->
+            <!-- 실시간 대화형 SOC 코파일럿 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3 flex flex-col h-[380px]">
               <div class="flex items-center gap-2">
                 <i data-lucide="bot" class="w-4 h-4 text-emerald-400"></i>
-                <h3 class="text-xs font-bold text-white uppercase">Feature 26. 대화형 실시간 SOC 코파일럿 (MCP Tool Execution)</h3>
+                <h3 class="text-xs font-bold text-white uppercase">대화형 실시간 SOC 코파일럿 (MCP Tool Execution)</h3>
               </div>
               <div id="copilot-chat-history" class="flex-1 overflow-y-auto space-y-2 bg-slatebg p-3 rounded-lg border border-bordercolor/60 text-xs">
                 <div class="text-slate-400">Logccino SOC Copilot입니다. 무엇을 조사하거나 조치할까요? (예: "트리아지 실행해줘", "공격자 IP 차단해줘")</div>
@@ -1530,13 +1595,13 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 27: 교대 근무 인수인계 & 음성 브리핑 -->
+            <!-- 교대 근무 인수인계 & 음성 브리핑 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3 flex flex-col justify-between">
               <div>
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-2">
                     <i data-lucide="mic" class="w-4 h-4 text-indigo-400"></i>
-                    <h3 class="text-xs font-bold text-white uppercase">Feature 27. 교대 인수인계 5줄 요약 & 음성 브리핑</h3>
+                    <h3 class="text-xs font-bold text-white uppercase">교대 인수인계 5줄 요약 & 음성 브리핑</h3>
                   </div>
                   <button onclick="loadShiftHandover()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition">
                     인수인계 생성
@@ -1555,12 +1620,12 @@ async def get_enterprise_dashboard():
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 20: 사후 보고서 자동 생성 -->
+            <!-- 사후 보고서 자동 생성 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 20. 인시던트 사후 보고서(Post-Mortem) 자동 생성</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">인시던트 사후 보고서(Post-Mortem) 자동 생성</h3>
                 </div>
                 <div class="flex items-center gap-2">
                   <select id="sel-report-audience" class="bg-slatebg border border-bordercolor text-xs rounded px-2 py-1 text-slate-200">
@@ -1578,12 +1643,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 29: ISMS-P / ISO 27001 상시 감사기 -->
+            <!-- ISMS-P / ISO 27001 상시 감사기 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 29. 규제 준수(ISMS-P / ISO 27001) 상시 감사기</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">규제 준수(ISMS-P / ISO 27001) 상시 감사기</h3>
                 </div>
                 <button onclick="runComplianceAudit()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition">
                   상시 감사 검사
@@ -1596,12 +1661,12 @@ async def get_enterprise_dashboard():
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Feature 28: Detection-as-Code 탐지 룰 자동 튜닝 -->
+            <!-- Detection-as-Code 탐지 룰 자동 튜닝 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 28. Detection-as-Code 탐지 룰 자동 튜너</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">Detection-as-Code 탐지 룰 자동 튜너</h3>
                 </div>
                 <button onclick="loadDetectionTuning()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded transition">
                   룰 튜닝 제안
@@ -1612,12 +1677,12 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
-            <!-- Feature 30: 워게임(War-Game) 상시 시뮬레이션 -->
+            <!-- 워게임(War-Game) 상시 시뮬레이션 -->
             <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i data-lucide="swords" class="w-4 h-4 text-rose-400"></i>
-                  <h3 class="text-xs font-bold text-white uppercase">Feature 30. 인터랙티브 워게임(War-Game) 시뮬레이션 & 코치</h3>
+                  <h3 class="text-xs font-bold text-white uppercase">인터랙티브 워게임(War-Game) 시뮬레이션 & 코치</h3>
                 </div>
                 <button onclick="loadWarGameScenarios()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition">
                   훈련 시나리오
@@ -2206,138 +2271,57 @@ async def get_enterprise_dashboard():
         </div>
       </div>
 
-    </main>
-  </div>
-
-  <!-- =================================================================================== -->
-  <!-- 3. Modals & Popups (Field Values Popup, Log Modal, Alerts, Users/Roles, App Install)-->
-  <!-- =================================================================================== -->
-
-  <!-- Splunk Field Values Summary Popup Modal -->
-  <div id="field-summary-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
-      <div class="px-5 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
-        <h3 class="font-bold text-xs text-white flex items-center gap-2">
-          <i data-lucide="tag" class="w-4 h-4 text-emerald-400"></i>
-          <span>Field: <span id="modal-field-name" class="font-mono text-emerald-400">host</span></span>
-        </h3>
-        <button onclick="closeFieldSummaryModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <div class="p-5 space-y-4 text-xs">
-        <div class="flex items-center justify-between text-slate-400 font-mono text-[11px]">
-          <span>Top 10 Values in Current Search Results</span>
-          <span id="modal-field-stats">100% matched</span>
-        </div>
-        <div id="modal-field-values-list" class="space-y-2 max-h-60 overflow-y-auto scrollbar-thin font-mono">
-          <!-- Rendered by JS -->
-        </div>
-        <div class="pt-3 border-t border-bordercolor flex justify-end">
-          <button onclick="closeFieldSummaryModal()" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300">닫기</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Log Detail Modal -->
-  <div id="log-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl">
-      <div class="px-5 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/50">
-        <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
-          <i data-lucide="file-json" class="w-4 h-4 text-emerald-400"></i>
-          <span>원본 로그 레코드 (Raw OpenSearch Document)</span>
-        </h3>
-        <button onclick="closeLogModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <div class="p-5 max-h-[70vh] overflow-y-auto">
-        <pre id="modal-json" class="bg-slatebg p-4 rounded-lg border border-bordercolor text-emerald-400 text-xs overflow-x-auto font-mono leading-relaxed"></pre>
-      </div>
-    </div>
-  </div>
-
-  <!-- Install App Modal -->
-  <div id="install-app-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
-      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
-        <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
-          <i data-lucide="package-plus" class="w-4 h-4 text-emerald-400"></i>
-          <span>새로운 Splunk / Logccino 앱 패키지 설치</span>
-        </h3>
-        <button onclick="closeInstallAppModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <form onsubmit="handleInstallApp(event)" class="p-5 space-y-3.5 text-xs">
-        <div>
-          <label class="block text-slate-400 font-semibold mb-1">앱 ID (App ID, 소문자 식별자)</label>
-          <input type="text" id="new-app-id" required placeholder="예: apm, network_security, kubernetes_audit" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-slate-400 font-semibold mb-1">앱 명칭 (Display Name)</label>
-          <input type="text" id="new-app-name" required placeholder="예: Cloud APM & Distributed Tracing" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-indigo-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-slate-400 font-semibold mb-1">카테고리</label>
-          <select id="new-app-category" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-indigo-500 focus:outline-none">
-            <option value="observability">Observability & APM</option>
-            <option value="security">Security & SOC</option>
-            <option value="custom">Custom Extension</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-slate-400 font-semibold mb-1">설명</label>
-          <textarea id="new-app-desc" rows="2" placeholder="앱의 주요 기능 및 역할 설명" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"></textarea>
-        </div>
-        <div class="flex justify-end gap-2 pt-2 border-t border-bordercolor">
-          <button type="button" onclick="closeInstallAppModal()" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300">취소</button>
-          <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1">
-            <i data-lucide="check" class="w-3.5 h-3.5"></i> 설치 완료
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Saved Searches & Alerts Modal (Splunk Enterprise Style) -->
-  <div id="new-alert-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div id="content-alerts" class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
-      <!-- Modal Header -->
-      <div class="px-6 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80 shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <i data-lucide="bell-ring" class="w-4 h-4"></i>
+        <!-- =================================================================================== -->
+        <!-- DOCKED MAIN BOTTOM PANEL: Splunk Saved Searches & PPL Alert Engine                 -->
+        <!-- (팝업 모달 대신 메인 화면 하단에 상시 도킹/접이식으로 작동)                           -->
+        <!-- =================================================================================== -->
+        <div id="panel-saved-searches" class="border-t-2 border-emerald-500/50 bg-[#0b1120] shadow-2xl flex flex-col shrink-0 hidden transition-all duration-300 mt-6 rounded-t-xl overflow-hidden">
+          <!-- Panel Header -->
+          <div class="px-6 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/90 shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <i data-lucide="bell-ring" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-xs text-slate-100 flex items-center gap-2">
+                  <span id="alert-modal-title">Splunk Saved Searches & PPL Alert Engine</span>
+                  <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">savedsearches.conf 호환</span>
+                </h3>
+                <p class="text-[10px] text-slate-400">PPL 스케줄러, 디스패치 시간 범위, 알람 조건, Throttling(억제) 및 복합 액션 메인 패널</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleCollapseAlertPanel()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" title="패널 접기/펼치기">
+                <i id="btn-collapse-alert-icon" data-lucide="chevron-down" class="w-4 h-4"></i>
+              </button>
+              <button onclick="closeNewAlertModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" title="패널 닫기">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
-          <div>
-            <h3 class="font-bold text-sm text-slate-100 flex items-center gap-2">
-              <span id="alert-modal-title">Splunk Saved Searches & PPL Alert Engine</span>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">savedsearches.conf 호환</span>
-            </h3>
-            <p class="text-[11px] text-slate-400">PPL 스케줄러, 디스패치 시간 범위, 알람 조건, Throttling(억제) 및 복합 액션 통합 관리</p>
-          </div>
-        </div>
-        <button onclick="closeNewAlertModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
 
-      <!-- Navigation Tabs: List vs Form -->
-      <div class="flex items-center justify-between border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0">
-        <div class="flex">
-          <button type="button" id="tab-btn-alert-list" onclick="switchAlertModalTab('list')" class="px-4 py-3 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 transition">
-            <i data-lucide="list" class="w-3.5 h-3.5"></i> 알람 규칙 목록 (<span id="alert-rules-count">4</span>)
-          </button>
-          <button type="button" id="tab-btn-alert-form" onclick="switchAlertModalTab('form')" class="px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition">
-            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> <span id="alert-form-tab-title">신규 알람 등록</span>
-          </button>
-        </div>
-        <div id="alert-list-quick-actions" class="flex items-center gap-2">
-          <button onclick="resetAlertForm(); switchAlertModalTab('form');" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 새로운 알람 규칙
-          </button>
-        </div>
-      </div>
+          <!-- Collapsible Body Area -->
+          <div id="saved-searches-panel-body" class="content-alerts flex flex-col">
+            <!-- Navigation Tabs: List vs Form -->
+            <div class="flex items-center justify-between border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0">
+              <div class="flex">
+                <button type="button" id="tab-btn-alert-list" onclick="switchAlertModalTab('list')" class="px-4 py-2.5 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 transition">
+                  <i data-lucide="list" class="w-3.5 h-3.5"></i> 알람 규칙 목록 (<span id="alert-rules-count">5</span>)
+                </button>
+                <button type="button" id="tab-btn-alert-form" onclick="switchAlertModalTab('form')" class="px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition">
+                  <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> <span id="alert-form-tab-title">신규 알람 등록</span>
+                </button>
+              </div>
+              <div id="alert-list-quick-actions" class="flex items-center gap-2">
+                <button onclick="resetAlertForm(); switchAlertModalTab('form');" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> 새로운 알람 규칙
+                </button>
+              </div>
+            </div>
 
-      <!-- Modal Body (Scrollable) -->
-      <div class="flex-1 overflow-y-auto p-6 text-xs">
-
-        <!-- TAB 1: 알람 규칙 목록 (Rules List Table) -->
+            <!-- Content Area (Scrollable within max height) -->
+            <div class="max-h-[550px] overflow-y-auto p-6 text-xs bg-panelbg/60">
+<!-- TAB 1: 알람 규칙 목록 (Rules List Table) -->
         <div id="alert-modal-view-list" class="space-y-4">
           <div class="flex items-center justify-between">
             <div class="text-slate-400 text-xs">
@@ -2620,8 +2604,96 @@ async def get_enterprise_dashboard():
             </div>
           </form>
         </div>
+            </div>
+          </div>
+        </div>
 
+    </main>
+  </div>
+
+  <!-- =================================================================================== -->
+  <!-- 3. Modals & Popups (Field Values Popup, Log Modal, Alerts, Users/Roles, App Install)-->
+  <!-- =================================================================================== -->
+
+  <!-- Splunk Field Values Summary Popup Modal -->
+  <div id="field-summary-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
+      <div class="px-5 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
+        <h3 class="font-bold text-xs text-white flex items-center gap-2">
+          <i data-lucide="tag" class="w-4 h-4 text-emerald-400"></i>
+          <span>Field: <span id="modal-field-name" class="font-mono text-emerald-400">host</span></span>
+        </h3>
+        <button onclick="closeFieldSummaryModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
+      <div class="p-5 space-y-4 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-mono text-[11px]">
+          <span>Top 10 Values in Current Search Results</span>
+          <span id="modal-field-stats">100% matched</span>
+        </div>
+        <div id="modal-field-values-list" class="space-y-2 max-h-60 overflow-y-auto scrollbar-thin font-mono">
+          <!-- Rendered by JS -->
+        </div>
+        <div class="pt-3 border-t border-bordercolor flex justify-end">
+          <button onclick="closeFieldSummaryModal()" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Detail Modal -->
+  <div id="log-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl">
+      <div class="px-5 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/50">
+        <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+          <i data-lucide="file-json" class="w-4 h-4 text-emerald-400"></i>
+          <span>원본 로그 레코드 (Raw OpenSearch Document)</span>
+        </h3>
+        <button onclick="closeLogModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="p-5 max-h-[70vh] overflow-y-auto">
+        <pre id="modal-json" class="bg-slatebg p-4 rounded-lg border border-bordercolor text-emerald-400 text-xs overflow-x-auto font-mono leading-relaxed"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install App Modal -->
+  <div id="install-app-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
+      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
+        <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+          <i data-lucide="package-plus" class="w-4 h-4 text-emerald-400"></i>
+          <span>새로운 Splunk / Logccino 앱 패키지 설치</span>
+        </h3>
+        <button onclick="closeInstallAppModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form onsubmit="handleInstallApp(event)" class="p-5 space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">앱 ID (App ID, 소문자 식별자)</label>
+          <input type="text" id="new-app-id" required placeholder="예: apm, network_security, kubernetes_audit" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">앱 명칭 (Display Name)</label>
+          <input type="text" id="new-app-name" required placeholder="예: Cloud APM & Distributed Tracing" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">카테고리</label>
+          <select id="new-app-category" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-indigo-500 focus:outline-none">
+            <option value="observability">Observability & APM</option>
+            <option value="security">Security & SOC</option>
+            <option value="custom">Custom Extension</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">설명</label>
+          <textarea id="new-app-desc" rows="2" placeholder="앱의 주요 기능 및 역할 설명" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-bordercolor">
+          <button type="button" onclick="closeInstallAppModal()" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-slate-300">취소</button>
+          <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> 설치 완료
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2650,6 +2722,78 @@ async def get_enterprise_dashboard():
 
   <!-- =================================================================================== -->
   <!-- 4. JavaScript Logic: Login, Real Splunk Search, Timeline, Field Inspector, Modals   -->
+    <!-- Scenario Micro-Tuning Modal -->
+  <div id="scenario-tuning-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i>
+          <span class="font-bold text-xs text-white">관제 시나리오 미세 조정 (Micro-Tuning)</span>
+        </div>
+        <button onclick="closeScenarioTuneModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="saveScenarioTuning(event)" class="p-5 space-y-4 text-xs">
+        <input type="hidden" id="tune-scenario-id">
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">시나리오 명칭</label>
+          <div id="tune-scenario-name" class="font-bold text-white bg-slatebg p-2.5 rounded border border-bordercolor"></div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">AI 탐지 논거 (Claude Rationale)</label>
+          <div id="tune-scenario-rationale" class="text-slate-300 bg-slatebg/70 p-2.5 rounded border border-bordercolor/60 leading-relaxed text-[11px]"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">탐지 임계치 (건수 초과)</label>
+            <input type="number" step="1" min="0" id="tune-scenario-threshold" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono focus:border-emerald-500 focus:outline-none">
+            <span class="text-[10px] text-slate-500 mt-0.5 block">0: 1건 이상 발생 시 즉시 탐지</span>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">실행 주기 (초)</label>
+            <input type="number" step="10" min="30" id="tune-scenario-interval" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono focus:border-emerald-500 focus:outline-none">
+            <span class="text-[10px] text-slate-500 mt-0.5 block">기본 60초 또는 120초</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">중복 알람 억제 (Throttling)</label>
+            <input type="text" id="tune-scenario-suppress" placeholder="예: 5m, 15m, 1h" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono focus:border-emerald-500 focus:outline-none">
+            <span class="text-[10px] text-slate-500 mt-0.5 block">경보 피로 방지 시간</span>
+          </div>
+
+          <div class="flex items-center pt-5">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="tune-scenario-enabled" class="w-4 h-4 rounded text-emerald-500 focus:ring-0">
+              <span class="font-bold text-white">시나리오 활성화 (Active)</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">알람 Webhook URL (Slack / Teams / Discord)</label>
+          <input type="url" id="tune-scenario-webhook" placeholder="https://hooks.slack.com/services/..." class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono text-[11px] focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-bordercolor">
+          <button type="button" onclick="closeScenarioTuneModal()" class="px-3.5 py-1.5 rounded bg-subpanel text-slate-300 hover:bg-slate-800 transition">
+            취소
+          </button>
+          <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 shadow">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> 튜닝 저장
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- =================================================================================== -->
   <script>
     let activeApp = 'search';
@@ -2969,6 +3113,7 @@ async def get_enterprise_dashboard():
       } else if (appId === 'siem') {
         loadSecurityEvents();
         fetchCollectorStatus();
+        loadDetectionScenarios();
       } else if (appId === 'collectors') {
         fetchCollectorsAllStatus();
       } else if (appId === 'manage_apps') {
@@ -4338,6 +4483,7 @@ async def get_enterprise_dashboard():
         if (el) {
           if (sub === target) {
             el.classList.remove('hidden');
+            if (target === 'monitoring') loadDetectionScenarios();
           } else {
             el.classList.add('hidden');
           }
@@ -5555,25 +5701,256 @@ async def get_enterprise_dashboard():
 
     let currentSavedSearches = [];
 
+    
+    // -------------------------------------------------------------
+    // Splunk Saved Searches Docked Bottom Panel & Collapse Logic
+    // -------------------------------------------------------------
+    let isAlertPanelCollapsed = false;
+
     function openSavedSearchesModal(isNewWithCurrentQuery = false) {
-      document.getElementById('new-alert-modal').classList.remove('hidden');
+      const panel = document.getElementById('panel-saved-searches');
+      if (!panel) return;
+      panel.classList.remove('hidden');
+      const body = document.getElementById('saved-searches-panel-body');
+      if (body) body.classList.remove('hidden');
+      isAlertPanelCollapsed = false;
+      const icon = document.getElementById('btn-collapse-alert-icon');
+      if (icon) icon.setAttribute('data-lucide', 'chevron-down');
+
       if (isNewWithCurrentQuery) {
         resetAlertForm();
-        const currentQuery = document.getElementById('splunk-search-input')?.value || "source = main | head 50";
-        const currentTime = document.getElementById('splunk-time-window')?.value || "-15m";
+        const currentQuery = document.getElementById('search-query-input')?.value || "source = main | head 50";
+        const currentTime = document.getElementById('current-time-label')?.textContent || "-15m";
         document.getElementById('alert-form-query').value = currentQuery;
-        document.getElementById('alert-form-earliest').value = currentTime;
+        document.getElementById('alert-form-earliest').value = currentTime.includes('15m') ? '-15m' : (currentTime.includes('1h') ? '-1h' : '-24h');
         document.getElementById('alert-form-name').value = `[Saved Alert] ${currentQuery.slice(0, 30)}...`;
         switchAlertModalTab('form');
       } else {
         switchAlertModalTab('list');
         loadSavedSearchesList();
       }
+      lucide.createIcons();
+      panel.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
     function closeNewAlertModal() {
-      document.getElementById('new-alert-modal').classList.add('hidden');
+      const panel = document.getElementById('panel-saved-searches');
+      if (panel) panel.classList.add('hidden');
     }
+
+    function toggleCollapseAlertPanel() {
+      const body = document.getElementById('saved-searches-panel-body');
+      const icon = document.getElementById('btn-collapse-alert-icon');
+      if (!body) return;
+      isAlertPanelCollapsed = !isAlertPanelCollapsed;
+      if (isAlertPanelCollapsed) {
+        body.classList.add('hidden');
+        if (icon) icon.setAttribute('data-lucide', 'chevron-up');
+      } else {
+        body.classList.remove('hidden');
+        if (icon) icon.setAttribute('data-lucide', 'chevron-down');
+      }
+      lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // AI 자율 관리 관제 시나리오 센터 (Claude Skill Managed Scenarios)
+    // -------------------------------------------------------------
+    let currentDetectionScenarios = [];
+
+    async function loadDetectionScenarios() {
+      const container = document.getElementById('ai-scenarios-container');
+      if (!container) return;
+      container.innerHTML = `<div class="p-4 text-center text-slate-400"><i data-lucide="loader" class="w-4 h-4 inline animate-spin mr-1"></i> 관제 시나리오 로딩 중...</div>`;
+      lucide.createIcons();
+
+      try {
+        const [scenariosRes, coverageRes] = await Promise.all([
+          fetch('/api/v1/siem/detection-scenarios'),
+          fetch('/api/v1/siem/detection-scenarios/mitre-coverage')
+        ]);
+        currentDetectionScenarios = await scenariosRes.json();
+        const coverage = await coverageRes.json();
+
+        // Update KPIs
+        const totalEl = document.getElementById('scenarios-total-count');
+        const activeEl = document.getElementById('scenarios-active-count');
+        const mitreEl = document.getElementById('scenarios-mitre-coverage');
+        if (totalEl) totalEl.textContent = coverage.total_scenarios || currentDetectionScenarios.length;
+        if (activeEl) activeEl.textContent = coverage.total_active || currentDetectionScenarios.filter(s => s.enabled).length;
+        if (mitreEl) mitreEl.textContent = `${coverage.covered_tactics_count}개 전술 (${coverage.coverage_percentage}%)`;
+
+        if (currentDetectionScenarios.length === 0) {
+          container.innerHTML = `<div class="p-6 text-center text-slate-400">등록된 관제 시나리오가 없습니다. 클로드 스킬을 통해 시나리오를 자동 생성하세요.</div>`;
+          return;
+        }
+
+        container.innerHTML = currentDetectionScenarios.map(s => {
+          const isEnabled = s.enabled;
+          const severityColors = {
+            'CRITICAL': 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+            'HIGH': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+            'MEDIUM': 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+            'LOW': 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+          };
+          const sevClass = severityColors[s.severity] || 'bg-slate-800 text-slate-300 border-slate-700';
+          const statusDot = isEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500';
+          const statusText = isEnabled ? 'ACTIVE' : 'DISABLED';
+
+          const mitreBadge = s.mitre_tactic 
+            ? `<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono text-[10px]">
+                <i data-lucide="shield" class="w-3 h-3 inline mr-1"></i>${s.mitre_tactic} | ${s.mitre_technique || 'T1000'}
+               </span>`
+            : '';
+
+          const rationale = s.ai_rationale || s.description || '클로드 스킬이 자율적으로 합성한 탐지 로직입니다.';
+
+          return `
+            <div class="p-4 rounded-xl bg-slatebg/70 border border-bordercolor hover:border-bordercolor/80 transition shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full ${statusDot}"></span>
+                  <span class="font-bold text-white text-xs">${s.name}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${sevClass}">${s.severity}</span>
+                  ${mitreBadge}
+                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">AI MANAGED</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button onclick="toggleScenarioActive('${s.id}', ${isEnabled})" class="px-2.5 py-1 rounded ${isEnabled ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20'} text-[11px] font-semibold transition">
+                    ${isEnabled ? '비활성화' : '활성화'}
+                  </button>
+                  <button onclick="runScenarioNow('${s.id}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition flex items-center gap-1" title="대기 없이 즉시 실행 검증">
+                    <i data-lucide="play" class="w-3 h-3 text-emerald-400"></i> Run Now
+                  </button>
+                  <button onclick="openScenarioTuneModal('${s.id}')" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition flex items-center gap-1 shadow">
+                    <i data-lucide="sliders" class="w-3 h-3"></i> 튜닝 (Tune)
+                  </button>
+                </div>
+              </div>
+
+              <!-- AI Rationale -->
+              <p class="text-[11px] text-slate-300 leading-relaxed bg-subpanel/40 p-2.5 rounded-lg border border-bordercolor/40">
+                <strong class="text-indigo-300 font-semibold">💡 AI 탐지 원리:</strong> ${rationale}
+              </p>
+
+              <!-- Detection PPL Query Box -->
+              <div class="bg-black/40 p-2.5 rounded-lg border border-slate-800 font-mono text-[11px] text-emerald-400 overflow-x-auto flex items-center justify-between">
+                <span>${s.ppl_query}</span>
+                <span class="text-[10px] text-slate-500 shrink-0 font-sans ml-2">PPL 쿼리 자동 합성됨</span>
+              </div>
+
+              <!-- Quick Meta Bar -->
+              <div class="flex items-center gap-4 text-[10px] text-slate-400 pt-1 font-mono border-t border-bordercolor/40">
+                <span>실행 주기: <strong class="text-slate-200">${s.interval_seconds}초</strong></span>
+                <span>디스패치 범위: <strong class="text-slate-200">${s.dispatch_earliest_time || '-15m'} ~ now</strong></span>
+                <span>임계값: <strong class="text-slate-200">${s.condition_operator} ${s.condition_threshold}</strong></span>
+                <span>중복 억제: <strong class="text-amber-400">${s.alert_suppress ? (s.alert_suppress_period + ' (' + (s.alert_suppress_fields || 'host') + ')') : 'OFF'}</strong></span>
+                <span>최근 상태: <strong class="${s.last_status === 'TRIGGERED' ? 'text-rose-400 font-bold' : 'text-emerald-400'}">${s.last_status || 'PENDING'}</strong></span>
+              </div>
+            </div>
+          `;
+        }).join('');
+        lucide.createIcons();
+      } catch (e) {
+        container.innerHTML = `<div class="p-4 text-center text-rose-400">관제 시나리오 로드 실패: ${e.message}</div>`;
+      }
+    }
+
+    async function toggleScenarioActive(scenarioId, currentEnabled) {
+      try {
+        const res = await fetch(`/api/v1/siem/detection-scenarios/${scenarioId}/tune`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: !currentEnabled })
+        });
+        if (res.ok) {
+          loadDetectionScenarios();
+        } else {
+          alert("상태 변경 실패");
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    async function runScenarioNow(scenarioId) {
+      try {
+        const res = await fetch(`/api/v1/siem/detection-scenarios/${scenarioId}/run`, { method: 'POST' });
+        if (res.ok) {
+          const rec = await res.json();
+          alert(`⚡ [관제 시나리오 즉시 실행 완료]
+- 결과 건수: ${rec.result_count}건
+- 트리거 여부: ${rec.triggered ? '🚨 TRIGGERED (위협 탐지)' : '✅ OK (정상)'}
+- 억제(Suppressed): ${rec.suppressed ? '예 (Throttling 적용)' : '아니오'}
+- 실행 소요: ${rec.execution_took_ms}ms`);
+          loadDetectionScenarios();
+        } else {
+          alert("시나리오 즉시 실행에 실패했습니다.");
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    function openScenarioTuneModal(scenarioId) {
+      const scenario = currentDetectionScenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+
+      document.getElementById('tune-scenario-id').value = scenario.id;
+      document.getElementById('tune-scenario-name').textContent = scenario.name;
+      document.getElementById('tune-scenario-rationale').textContent = scenario.ai_rationale || scenario.description || '클로드 스킬이 생성한 탐지 시나리오입니다.';
+      document.getElementById('tune-scenario-threshold').value = scenario.condition_threshold ?? 0;
+      document.getElementById('tune-scenario-interval').value = scenario.interval_seconds ?? 60;
+      document.getElementById('tune-scenario-suppress').value = scenario.alert_suppress_period || "5m";
+      document.getElementById('tune-scenario-enabled').checked = Boolean(scenario.enabled);
+      document.getElementById('tune-scenario-webhook').value = scenario.webhook_url || "";
+
+      document.getElementById('scenario-tuning-modal').classList.remove('hidden');
+    }
+
+    function closeScenarioTuneModal() {
+      document.getElementById('scenario-tuning-modal').classList.add('hidden');
+    }
+
+    async function saveScenarioTuning(event) {
+      event.preventDefault();
+      const id = document.getElementById('tune-scenario-id').value;
+      const payload = {
+        enabled: document.getElementById('tune-scenario-enabled').checked,
+        condition_threshold: parseFloat(document.getElementById('tune-scenario-threshold').value || 0),
+        interval_seconds: parseInt(document.getElementById('tune-scenario-interval').value || 60),
+        alert_suppress_period: document.getElementById('tune-scenario-suppress').value || "5m",
+        webhook_url: document.getElementById('tune-scenario-webhook').value || null
+      };
+
+      try {
+        const res = await fetch(`/api/v1/siem/detection-scenarios/${id}/tune`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          closeScenarioTuneModal();
+          loadDetectionScenarios();
+        } else {
+          alert("시나리오 튜닝 저장에 실패했습니다.");
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    function requestNewScenarioViaCopilot() {
+      switchSiemSubTab('copilot');
+      const input = document.getElementById('copilot-chat-input');
+      if (input) {
+        input.value = "MITRE ATT&CK T1059 기반 의심스러운 프로세스 및 파워쉘 관제 시나리오를 설계하고 등록해줘.";
+        input.focus();
+      }
+    }
+
+    
 
     function switchAlertModalTab(tab) {
       const listBtn = document.getElementById('tab-btn-alert-list');

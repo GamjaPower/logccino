@@ -388,3 +388,117 @@ def install_connector(app_id: str):
     from core.apps.connector_store import connector_store
     return connector_store.install_connector(app_id)
 
+
+# -----------------------------------------------------------------------------
+# Claude Skill Managed SOC Detection Scenarios & MITRE ATT&CK Coverage
+# -----------------------------------------------------------------------------
+
+class ScenarioTuneRequest(BaseModel):
+    enabled: Optional[bool] = None
+    condition_threshold: Optional[float] = None
+    interval_seconds: Optional[int] = None
+    alert_suppress_period: Optional[str] = None
+    webhook_url: Optional[str] = None
+
+
+@router.get("/detection-scenarios")
+def list_detection_scenarios():
+    """클로드 스킬(Claude Skill)이 자율 관리하는 관제 시나리오 목록 및 MITRE 현황 조회"""
+    from core.scheduler.engine import scheduler_engine
+    searches = scheduler_engine.get_all()
+    # Filter for enterprise security scenarios or AI managed scenarios
+    results = []
+    for s in searches:
+        d = s.model_dump()
+        results.append(d)
+    return results
+
+
+@router.put("/detection-scenarios/{scenario_id}/tune")
+def tune_detection_scenario(scenario_id: str, req: ScenarioTuneRequest):
+    """관제 분석가의 시나리오 경량 튜닝 (임계치, 주기, 중복 억제, 활성화 여부)"""
+    from core.scheduler.engine import scheduler_engine
+    from core.scheduler.models import SavedSearchUpdate
+    
+    update_dict = {}
+    if req.enabled is not None:
+        update_dict["enabled"] = req.enabled
+    if req.condition_threshold is not None:
+        update_dict["condition_threshold"] = req.condition_threshold
+    if req.interval_seconds is not None:
+        update_dict["interval_seconds"] = req.interval_seconds
+    if req.alert_suppress_period is not None:
+        update_dict["alert_suppress_period"] = req.alert_suppress_period
+        update_dict["alert_suppress"] = True
+    if req.webhook_url is not None:
+        update_dict["webhook_url"] = req.webhook_url
+        update_dict["action_webhook_enabled"] = bool(req.webhook_url.strip())
+        
+    updated = scheduler_engine.update(scenario_id, SavedSearchUpdate(**update_dict))
+    if not updated:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="시나리오를 찾을 수 없습니다.")
+    return {
+        "status": "tuned",
+        "scenario": updated.model_dump()
+    }
+
+
+@router.post("/detection-scenarios/{scenario_id}/run")
+async def run_detection_scenario(scenario_id: str):
+    """관제 시나리오 즉시 시뮬레이션 및 PPL 평가 (Run Now)"""
+    from core.scheduler.engine import scheduler_engine
+    from fastapi import HTTPException
+    rec = await scheduler_engine.run_now(scenario_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="시나리오를 찾을 수 없거나 실행 실패")
+    return rec.model_dump()
+
+
+@router.get("/detection-scenarios/mitre-coverage")
+def get_mitre_coverage():
+    """MITRE ATT&CK 엔터프라이즈 매트릭스 커버리지 및 미탐지 Gap 분석 통계"""
+    from core.scheduler.engine import scheduler_engine
+    searches = scheduler_engine.get_all()
+    
+    ALL_TACTICS = [
+        "Reconnaissance", "Resource Development", "Initial Access", "Execution",
+        "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access",
+        "Discovery", "Lateral Movement", "Collection", "Command and Control",
+        "Exfiltration", "Impact"
+    ]
+    
+    tactic_map: Dict[str, List[Dict[str, Any]]] = {t: [] for t in ALL_TACTICS}
+    total_active = 0
+    total_scenarios = len(searches)
+    
+    for s in searches:
+        if s.enabled:
+            total_active += 1
+        tactic = s.mitre_tactic or "Credential Access"
+        if tactic not in tactic_map:
+            tactic_map[tactic] = []
+        tactic_map[tactic].append({
+            "id": s.id,
+            "name": s.name,
+            "technique": s.mitre_technique or "T1000",
+            "severity": s.severity,
+            "enabled": s.enabled,
+            "last_status": s.last_status,
+            "ai_managed": s.ai_managed
+        })
+        
+    covered_tactics = sum(1 for t, items in tactic_map.items() if len(items) > 0)
+    coverage_pct = round((covered_tactics / len(ALL_TACTICS)) * 100, 1)
+    
+    return {
+        "total_scenarios": total_scenarios,
+        "total_active": total_active,
+        "covered_tactics_count": covered_tactics,
+        "total_tactics_count": len(ALL_TACTICS),
+        "coverage_percentage": coverage_pct,
+        "tactic_coverage": tactic_map,
+        "recommended_uncovered_tactics": [t for t, items in tactic_map.items() if len(items) == 0]
+    }
+
+

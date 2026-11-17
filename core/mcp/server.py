@@ -628,6 +628,72 @@ if HAS_MCP and mcp_app:
         """Python 모듈 기반 DB 수집기 제어 (action: list, run_now, start, stop)"""
         return json.dumps(mcp_tools.manage_db_collector(action, job_id), ensure_ascii=False, indent=2)
 
+    # -------------------------------------------------------------------------
+    # Claude Skill Autonomous SOC Detection Scenario Tools
+    # -------------------------------------------------------------------------
+    @mcp_app.tool()
+    def list_soc_detection_scenarios() -> str:
+        """클로드 스킬이 자율 관리하는 전체 SOC 관제 시나리오 및 MITRE ATT&CK 매핑 상태 조회"""
+        return json.dumps(mcp_tools.list_soc_detection_scenarios(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def register_soc_detection_scenario(
+        name: str,
+        ppl_query: str,
+        mitre_tactic: str = "Credential Access",
+        mitre_technique: str = "T1110 Brute Force",
+        severity: str = "HIGH",
+        ai_rationale: Optional[str] = None,
+        interval_seconds: int = 60,
+        condition_threshold: float = 0.0,
+        alert_suppress_period: str = "5m",
+        webhook_url: Optional[str] = None
+    ) -> str:
+        """클로드 스킬이 MITRE ATT&CK 기반 신규 관제 시나리오를 자율 등록 (Splunk savedsearches.conf 호환)"""
+        res = mcp_tools.register_soc_detection_scenario(
+            name=name,
+            ppl_query=ppl_query,
+            mitre_tactic=mitre_tactic,
+            mitre_technique=mitre_technique,
+            severity=severity,
+            ai_rationale=ai_rationale,
+            interval_seconds=interval_seconds,
+            condition_threshold=condition_threshold,
+            alert_suppress_period=alert_suppress_period,
+            webhook_url=webhook_url
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def tune_soc_detection_scenario(
+        scenario_id: str,
+        enabled: Optional[bool] = None,
+        condition_threshold: Optional[float] = None,
+        interval_seconds: Optional[int] = None,
+        alert_suppress_period: Optional[str] = None,
+        webhook_url: Optional[str] = None
+    ) -> str:
+        """클로드 스킬 또는 분석가가 관제 시나리오를 튜닝 (오탐 방지, 임계치 변경, 주기 조정)"""
+        res = mcp_tools.tune_soc_detection_scenario(
+            scenario_id=scenario_id,
+            enabled=enabled,
+            condition_threshold=condition_threshold,
+            interval_seconds=interval_seconds,
+            alert_suppress_period=alert_suppress_period,
+            webhook_url=webhook_url
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def test_run_soc_detection_scenario(scenario_id: str) -> str:
+        """관제 시나리오를 대기 시간 없이 즉시 실행(Run Now)하여 탐지 및 억제 여부 검증"""
+        return json.dumps(mcp_tools.test_run_soc_detection_scenario(scenario_id), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def get_mitre_attack_coverage() -> str:
+        """현재 등록된 관제 시나리오의 MITRE ATT&CK 전술 및 기법 커버리지 분석"""
+        return json.dumps(mcp_tools.get_mitre_attack_coverage(), ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------
