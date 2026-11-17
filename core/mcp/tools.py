@@ -69,11 +69,12 @@ class LogccinoMCPTools:
         except Exception as e:
             return {"error": f"Failed to search logs: {str(e)}"}
 
-    def search_natural(self, natural_query: str, size: int = 30) -> Dict[str, Any]:
+    def search_natural(self, natural_query: str = "", prompt: Optional[str] = None, size: int = 30) -> Dict[str, Any]:
         """
         자연어 질문(예: '어제 결제 모듈에서 발생한 타임아웃 에러')으로 OpenSearch를 바로 검색합니다.
         PPL 지원 환경이면 PPL을 사용하고, 미지원 또는 실패 시 OpenSearch 기본 Query DSL로 자동 검색합니다.
         """
+        query_text = prompt or natural_query
         import asyncio
         from core.ai.assistant import ai_assistant
         try:
@@ -82,17 +83,17 @@ class LogccinoMCPTools:
                 if loop.is_running():
                     import concurrent.futures
                     with concurrent.futures.ThreadPoolExecutor() as pool:
-                        return pool.submit(asyncio.run, ai_assistant.execute_natural_query(natural_query, size=size)).result()
+                        return pool.submit(asyncio.run, ai_assistant.execute_natural_query(query_text, size=size)).result()
                 else:
-                    return loop.run_until_complete(ai_assistant.execute_natural_query(natural_query, size=size))
+                    return loop.run_until_complete(ai_assistant.execute_natural_query(query_text, size=size))
             except RuntimeError:
-                return asyncio.run(ai_assistant.execute_natural_query(natural_query, size=size))
+                return asyncio.run(ai_assistant.execute_natural_query(query_text, size=size))
         except Exception as e:
             logger.warning(f"search_natural failed ({e}), falling back to direct Query DSL")
-            dsl = QueryBuilder.build_search_query(query_string=natural_query, size=size)
+            dsl = QueryBuilder.build_search_query(query_string=query_text, size=size)
             dsl_res = self.executor.execute_dsl(dsl)
             return {
-                "prompt": natural_query,
+                "prompt": query_text,
                 "mode": "dsl_fallback",
                 "hits": dsl_res.get("hits", []),
                 "total": dsl_res.get("total", 0),
@@ -166,6 +167,7 @@ class LogccinoMCPTools:
 
         body = {
             "size": 0,
+            "track_total_hits": True,
             "query": {"bool": {"filter": filter_clauses}},
             "aggs": {
                 "services": {
@@ -415,5 +417,7 @@ class LogccinoMCPTools:
             }
         except Exception as e:
             return {"error": f"Failed to get cluster status: {str(e)}"}
+
+    get_cluster_health = get_cluster_status
 
 mcp_tools = LogccinoMCPTools()

@@ -81,6 +81,34 @@ async def get_mcp_status_and_configs() -> Dict[str, Any]:
         }
     ]
 
+    prompts_metadata = [
+        {
+            "name": "diagnose-incident",
+            "description": "서비스별 장애 진단 및 근본 원인 분석 가이드",
+            "parameters": ["service_name"]
+        },
+        {
+            "name": "bigdata-overview",
+            "description": "전사 서비스 대용량 로그 거시적 안정성 및 에러율 분석",
+            "parameters": ["time_window"]
+        },
+        {
+            "name": "deep-dive-analysis",
+            "description": "자연어 심층 로그 분석 및 5단계 리포트 생성",
+            "parameters": ["service_name", "issue_description"]
+        },
+        {
+            "name": "chat-follow-up",
+            "description": "멀티턴 대화형 후속 분석 및 구체적 세부사항 질의",
+            "parameters": ["previous_context", "follow_up_question"]
+        },
+        {
+            "name": "realtime-stream-anomaly",
+            "description": "실시간 고속 스트림 이상 탐지 및 에러 스파이크 감지",
+            "parameters": ["minutes", "service"]
+        }
+    ]
+
     configs = get_all_mcp_configs()
 
     return {
@@ -89,6 +117,8 @@ async def get_mcp_status_and_configs() -> Dict[str, Any]:
         "transport": ["stdio", "sse"],
         "tools_count": len(tools_metadata),
         "tools": tools_metadata,
+        "prompts_count": len(prompts_metadata),
+        "prompts": prompts_metadata,
         "agent_configs": configs
     }
 

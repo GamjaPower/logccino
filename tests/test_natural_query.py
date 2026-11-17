@@ -92,6 +92,28 @@ def test_mcp_config_helper():
     assert "http://logccino.company.internal/sse" in mcp_cfg["args"]
     print("MCP config helper test passed!")
 
+def test_chat_analysis():
+    history = [
+        {"role": "user", "content": "결제 에러 원인 알려줘"},
+        {"role": "assistant", "content": "결제 게이트웨이 타임아웃 발생함"}
+    ]
+    reply = asyncio.run(ai_assistant.chat_about_logs(
+        conversation_history=history,
+        user_question="그때 타임아웃 몇 초였어?",
+        logs_context="Payment gateway timeout 5000ms"
+    ))
+    assert reply is not None
+    assert len(reply) > 0
+    print("Chat analysis test passed!")
+
+def test_mcp_tools_compliance():
+    from core.mcp.tools import mcp_tools
+    # Check cluster health method
+    health = mcp_tools.get_cluster_health()
+    assert isinstance(health, dict)
+    assert "opensearch_connected" in health
+    print("MCP tools compliance test passed!")
+
 if __name__ == "__main__":
     test_log_parser()
     test_query_builder()
@@ -99,4 +121,6 @@ if __name__ == "__main__":
     test_executor_ppl_to_dsl_fallback()
     test_executor_ppl_success()
     test_mcp_config_helper()
+    test_chat_analysis()
+    test_mcp_tools_compliance()
     print("\nAll tests passed successfully!")

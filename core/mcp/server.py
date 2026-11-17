@@ -186,6 +186,43 @@ if HAS_MCP and mcp_app:
 2. Call `get_service_metrics` to inspect error rates across all tiers.
 3. Provide a structured system health summary and recommend which services need immediate inspection."""
 
+    @mcp_app.prompt("deep-dive-analysis")
+    def deep_dive_analysis_prompt(service_name: str, issue_description: str) -> str:
+        """Claude용 자연어 심층 로그 분석 프롬프트 (Deep-Dive Log Analyst)"""
+        return f"""Conduct a comprehensive deep-dive root cause analysis on service '{service_name}' regarding: '{issue_description}':
+1. Call `search_natural(prompt='{service_name} {issue_description}', size=30)` to collect relevant evidence logs.
+2. Call `diagnose_service_errors(service='{service_name}', time_window='24h', limit=15)` to identify top failure patterns and stack traces.
+3. If trace IDs are present, call `trace_transaction(trace_id)` to uncover end-to-end propagation timeline.
+4. Synthesize the findings into a structured report with:
+   - 📌 1. 핵심 요약 (Executive Summary with severity: CRITICAL / WARNING / INFO)
+   - 🔬 2. 상세 분석 및 원인 규명 (Root Cause & Evidence Logs)
+   - ⏱️ 3. 이벤트 타임라인 및 영향도 (Timeline & Impact)
+   - 🛠️ 4. 권장 조치 방안 (Immediate Mitigation vs Permanent Resolution)
+   - 💡 5. 추천 후속 질문 (Suggested Next Steps for further investigation)"""
+
+    @mcp_app.prompt("chat-follow-up")
+    def chat_follow_up_prompt(previous_context: str, follow_up_question: str) -> str:
+        """Claude용 대화형 후속 분석 프롬프트 (Interactive Chat Engine)"""
+        return f"""You are continuing a multi-turn log analysis conversation:
+Previous Context:
+{previous_context}
+
+Follow-up Question:
+"{follow_up_question}"
+
+Instructions:
+1. If additional log evidence is needed to answer specific details (e.g., config values, specific user IDs, error counts), call `search_natural` or `search_logs`.
+2. Answer the follow-up question clearly in Korean, maintaining consistency with previous conclusions."""
+
+    @mcp_app.prompt("realtime-stream-anomaly")
+    def realtime_stream_anomaly_prompt(minutes: int = 15, service: str = "") -> str:
+        """Claude용 실시간 고속 스트림 이상 탐지 프롬프트"""
+        svc_param = f", service='{service}'" if service else ""
+        return f"""Analyze high-velocity real-time streaming logs for the last {minutes} minutes{f' on service {service}' if service else ''}:
+1. Call `get_realtime_stream_summary(minutes={minutes}{svc_param})` to calculate throughput (events/sec) and error rate spikes.
+2. If sudden error rate spikes (>1%) are detected, call `diagnose_service_errors` to identify top error signatures.
+3. Highlight any ongoing outages and recommend immediate operational mitigation."""
+
 def run_mcp_server(transport: str = "stdio"):
     """MCP 서버 실행 (stdio 또는 sse)"""
     if not HAS_MCP or not mcp_app:

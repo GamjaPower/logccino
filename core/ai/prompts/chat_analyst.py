@@ -16,9 +16,14 @@ You maintain conversation context, refer back to previously analyzed logs, and e
 
 def build_chat_analysis_prompt(
     conversation_history: list[dict],
-    new_question: str,
+    user_question: str = "",
+    new_question: str = "",
+    logs_context: str = "",
     new_logs_context: str = ""
 ) -> str:
+    question = user_question or new_question
+    context = logs_context or new_logs_context
+
     history_lines = []
     for turn in conversation_history:
         role = turn.get("role", "user")
@@ -32,10 +37,10 @@ def build_chat_analysis_prompt(
 {history_text}
 
 ### 추가 수집된 로그 컨텍스트 (필요시):
-{new_logs_context if new_logs_context else "(추가 로그 없음 - 이전 맥락 기반 질의)"}
+{context if context else "(추가 로그 없음 - 이전 맥락 기반 질의)"}
 
 ### 사용자의 새로운 질문:
-"{new_question}"
+"{question}"
 
 이전 대화 맥락과 로그 데이터를 종합하여 명확하고 실용적인 답변을 한국어로 작성해주세요."""
     return prompt
