@@ -420,4 +420,122 @@ class LogccinoMCPTools:
 
     get_cluster_health = get_cluster_status
 
+    def analyze_security_incidents(self, time_window: str = "24h", limit: int = 50) -> Dict[str, Any]:
+        """
+        보안 Syslog 수집기에서 파싱 및 인덱싱된 보안 위협 및 침해 시도 로그를 종합 분석합니다.
+        - SSH 무차별 대입(Brute-Force) 공격 및 비인가 로그인 실패 탐지
+        - 의심스러운 sudo 권한 상승(Privilege Escalation) 명령 추적
+        - UFW 방화벽 차단 및 비정상 인바운드 스캔 감지
+        - 공격 발신 IP 및 대상 계정별 위협 요약 집계
+        """
+        client = opensearch_service.get_client()
+        index = f"{settings.opensearch_index_prefix}-*"
+        start_time = self._resolve_relative_time(time_window)
+
+        query: Dict[str, Any] = {
+            "bool": {
+                "should": [
+                    {"term": {"sourcetype": "syslog"}},
+                    {"term": {"service": "security-syslog"}},
+                    {"exists": {"field": "security.action"}},
+                    {"exists": {"field": "attributes.security.action"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+        if start_time:
+            query = {
+                "bool": {
+                    "must": [query],
+                    "filter": [{"range": {"@timestamp": {"gte": start_time}}}]
+                }
+            }
+
+        body = {
+            "size": min(limit, 200),
+            "query": query,
+            "sort": [{"@timestamp": {"order": "desc"}}]
+        }
+
+        try:
+            res = client.search(index=index, body=body)
+            hits = [hit["_source"] for hit in res.get("hits", {}).get("hits", [])]
+            total = res.get("hits", {}).get("total", {}).get("value", len(hits))
+
+            # 파이썬 인메모리 위협 집계
+            action_counts = {}
+            ip_counts = {}
+            user_counts = {}
+            critical_alerts = []
+
+            for h in hits:
+                sec = h.get("security") or h.get("attributes", {}).get("security", {})
+                action = sec.get("action") or "unknown_event"
+                src_ip = sec.get("source_ip")
+                user = sec.get("user_name")
+
+                action_counts[action] = action_counts.get(action, 0) + 1
+                if src_ip:
+                    ip_counts[src_ip] = ip_counts.get(src_ip, 0) + 1
+                if user:
+                    user_counts[user] = user_counts.get(user, 0) + 1
+
+                # 고위험 이벤트 선별
+                if action in ("ssh_login_failed", "sudo_escalation", "pam_auth_failure"):
+                    critical_alerts.append({
+                        "timestamp": h.get("@timestamp"),
+                        "action": action,
+                        "source_ip": src_ip,
+                        "user": user,
+                        "host": h.get("host"),
+                        "command": sec.get("process_command"),
+                        "message": h.get("message")
+                    })
+
+            # 상위 공격자 IP 및 액션 정렬
+            top_actions = sorted([{"action": k, "count": v} for k, v in action_counts.items()], key=lambda x: x["count"], reverse=True)
+            top_ips = sorted([{"ip": k, "count": v} for k, v in ip_counts.items()], key=lambda x: x["count"], reverse=True)
+            top_users = sorted([{"user": k, "count": v} for k, v in user_counts.items()], key=lambda x: x["count"], reverse=True)
+
+            threat_level = "LOW"
+            if len(critical_alerts) >= 5 or (top_ips and top_ips[0]["count"] >= 3):
+                threat_level = "HIGH"
+            elif len(critical_alerts) > 0:
+                threat_level = "MEDIUM"
+
+            return {
+                "time_window": time_window,
+                "total_security_events": total,
+                "evaluated_events": len(hits),
+                "threat_level": threat_level,
+                "top_actions": top_actions[:10],
+                "top_attacker_ips": top_ips[:10],
+                "top_target_users": top_users[:10],
+                "critical_alerts": critical_alerts[:15],
+                "recent_events": hits[:10]
+            }
+        except Exception as e:
+            return {"error": f"Failed to analyze security incidents: {str(e)}"}
+
+    def get_collector_status(self) -> Dict[str, Any]:
+        """
+        Rust 고성능 보안 Syslog 수집기 데몬의 동작 상태, 처리량(EPS), 가동 시간 및 수집 통계를 조회합니다.
+        """
+        import httpx
+        try:
+            with httpx.Client(timeout=1.0) as client:
+                res = client.get("http://127.0.0.1:1515/")
+                if res.status_code == 200:
+                    data = res.json()
+                    data["active"] = True
+                    return data
+        except Exception:
+            pass
+
+        return {
+            "active": False,
+            "status": "stopped",
+            "message": "Syslog collector is not currently running. It can be started from the Logccino dashboard or API."
+        }
+
 mcp_tools = LogccinoMCPTools()

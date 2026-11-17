@@ -64,3 +64,9 @@ venv.bak/
 .coverage
 .pytest_cache/
 htmlcov/
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+

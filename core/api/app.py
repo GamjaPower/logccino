@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.client.opensearch_client import opensearch_service
-from core.api.routes import ingest, search, analysis, admin, install, dashboard
+from core.api.routes import ingest, search, analysis, admin, install, dashboard, collector
 from core.mcp.server import mcp_app
 
 app = FastAPI(
@@ -26,6 +26,7 @@ app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(collector.router, prefix="/api/v1")
 
 # Remote MCP over SSE 라우트 마운트 (Claude Desktop 원격 연동용)
 if mcp_app:

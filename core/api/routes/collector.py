@@ -1,0 +1,263 @@
+import os
+import signal
+import socket
+import subprocess
+import time
+import httpx
+from pathlib import Path
+from typing import Optional, Dict, Any, List
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from core.client.opensearch_client import opensearch_service
+from core.config import settings
+
+router = APIRouter(prefix="/collector", tags=["Collector"])
+
+COLLECTOR_DIR = Path(__file__).resolve().parent.parent.parent.parent / "collectors" / "syslog-collector"
+BINARY_PATH = COLLECTOR_DIR / "target" / "release" / "logccino-syslog-collector"
+PID_FILE = Path("/tmp/logccino-syslog-collector.pid")
+
+class CollectorStartRequest(BaseModel):
+    port: int = 1514
+    metrics_port: int = 1515
+    backend_url: str = "http://127.0.0.1:8000/api/v1/ingest/syslog"
+
+class CollectorTestEventRequest(BaseModel):
+    event_type: str = "ssh_failed"  # ssh_failed, ssh_accepted, sudo_escalation, ufw_block, pam_failure
+    custom_message: Optional[str] = None
+
+class CollectorManager:
+    _process: Optional[subprocess.Popen] = None
+
+    @classmethod
+    def get_binary_path(cls) -> Path:
+        return BINARY_PATH
+
+    @classmethod
+    def is_binary_available(cls) -> bool:
+        return BINARY_PATH.is_file() and os.access(BINARY_PATH, os.X_OK)
+
+    @classmethod
+    def get_pid_from_file(cls) -> Optional[int]:
+        if PID_FILE.exists():
+            try:
+                pid = int(PID_FILE.read_text().strip())
+                # 프로세스가 실제로 살아있는지 확인
+                os.kill(pid, 0)
+                return pid
+            except (ValueError, OSError):
+                if PID_FILE.exists():
+                    try:
+                        PID_FILE.unlink()
+                    except OSError:
+                        pass
+        return None
+
+    @classmethod
+    async def get_live_metrics(cls, metrics_port: int = 1515) -> Optional[Dict[str, Any]]:
+        url = f"http://127.0.0.1:{metrics_port}/"
+        try:
+            async with httpx.AsyncClient(timeout=1.0) as client:
+                res = await client.get(url)
+                if res.status_code == 200:
+                    return res.json()
+        except Exception:
+            pass
+        return None
+
+    @classmethod
+    async def get_status(cls) -> Dict[str, Any]:
+        binary_exists = cls.is_binary_available()
+        pid = cls.get_pid_from_file()
+        live_metrics = await cls.get_live_metrics()
+
+        is_running = (pid is not None) or (live_metrics is not None)
+
+        return {
+            "status": "running" if is_running else "stopped",
+            "pid": pid,
+            "binary_path": str(BINARY_PATH),
+            "binary_exists": binary_exists,
+            "port": 1514,
+            "protocols": ["UDP", "TCP"],
+            "metrics": live_metrics or {
+                "uptime_seconds": 0,
+                "received_total": 0,
+                "parsed_total": 0,
+                "forwarded_total": 0,
+                "security_alerts_total": 0,
+                "throughput_eps": 0.0
+            }
+        }
+
+    @classmethod
+    def start(cls, port: int = 1514, metrics_port: int = 1515, backend_url: str = "http://127.0.0.1:8000/api/v1/ingest/syslog") -> Dict[str, Any]:
+        if not cls.is_binary_available():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Syslog collector binary not found at {BINARY_PATH}. Please compile with 'cargo build --release'."
+            )
+
+        current_pid = cls.get_pid_from_file()
+        if current_pid:
+            return {"status": "already_running", "pid": current_pid, "port": port}
+
+        cmd = [
+            str(BINARY_PATH),
+            "--port", str(port),
+            "--metrics-port", str(metrics_port),
+            "--backend-url", backend_url
+        ]
+
+        log_file = open("/tmp/logccino-syslog-collector.log", "a")
+        proc = subprocess.Popen(
+            cmd,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            preexec_fn=os.setsid
+        )
+        cls._process = proc
+        PID_FILE.write_text(str(proc.pid))
+
+        # 잠시 대기하여 정상 실행 여부 확인
+        time.sleep(0.3)
+        if proc.poll() is not None:
+            PID_FILE.unlink(missing_ok=True)
+            raise HTTPException(status_code=500, detail="Syslog collector terminated immediately upon startup. Check /tmp/logccino-syslog-collector.log")
+
+        return {"status": "started", "pid": proc.pid, "port": port, "metrics_port": metrics_port}
+
+    @classmethod
+    def stop(cls) -> Dict[str, Any]:
+        pid = cls.get_pid_from_file()
+        if not pid:
+            return {"status": "not_running"}
+
+        try:
+            os.kill(pid, signal.SIGTERM)
+            time.sleep(0.5)
+            # 종료 확인 후 필요시 SIGKILL
+            try:
+                os.kill(pid, 0)
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                pass
+        except OSError as e:
+            pass
+        finally:
+            PID_FILE.unlink(missing_ok=True)
+            cls._process = None
+
+        return {"status": "stopped", "terminated_pid": pid}
+
+    @classmethod
+    def send_test_packet(cls, message: str, port: int = 1514) -> bool:
+        """UDP 패킷으로 Syslog 메시지 전송"""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sock.sendto(message.encode("utf-8"), ("127.0.0.1", port))
+            return True
+        finally:
+            sock.close()
+
+
+@router.get("/status")
+async def get_collector_status():
+    """보안 Syslog 수집기 상태 및 실시간 처리 통계 조회"""
+    return await CollectorManager.get_status()
+
+
+@router.post("/start")
+async def start_collector(req: CollectorStartRequest = CollectorStartRequest()):
+    """보안 Syslog 수집기 데몬 시작"""
+    return CollectorManager.start(
+        port=req.port,
+        metrics_port=req.metrics_port,
+        backend_url=req.backend_url
+    )
+
+
+@router.post("/stop")
+async def stop_collector():
+    """보안 Syslog 수집기 데몬 중지"""
+    return CollectorManager.stop()
+
+
+@router.post("/restart")
+async def restart_collector(req: CollectorStartRequest = CollectorStartRequest()):
+    """보안 Syslog 수집기 데몬 재시작"""
+    CollectorManager.stop()
+    time.sleep(0.5)
+    return CollectorManager.start(
+        port=req.port,
+        metrics_port=req.metrics_port,
+        backend_url=req.backend_url
+    )
+
+
+@router.post("/test-event")
+async def send_test_event(req: CollectorTestEventRequest):
+    """
+    보안 위협 테스트 로그를 Syslog 포트(UDP 1514)로 인젝션하여 실시간 탐지 테스트
+    """
+    ts = time.strftime("%b %d %H:%M:%S")
+
+    presets = {
+        "ssh_failed": f"<{3*8 + 3}>{ts} bastion-gateway sshd[38291]: Failed password for invalid user hacker from 203.0.113.88 port 59281 ssh2",
+        "ssh_accepted": f"<{3*8 + 6}>{ts} bastion-gateway sshd[38300]: Accepted publickey for sst96 from 192.168.1.50 port 52140 ssh2: RSA SHA256:abc123xyz",
+        "sudo_escalation": f"<{10*8 + 5}>{ts} prod-db01 sudo:   devops : TTY=pts/2 ; PWD=/opt/data ; USER=root ; COMMAND=/bin/bash -i",
+        "ufw_block": f"<{0*8 + 4}>{ts} edge-firewall kernel: [UFW BLOCK] IN=eth0 OUT= MAC=00:11:22:33:44:55 SRC=198.51.100.120 DST=192.168.1.1 LEN=40 TOS=0x00 PREC=0x00 TTL=240 ID=54321 PROTO=TCP SPT=49152 DPT=22 WINDOW=1024 RES=0x00 SYN URGP=0",
+        "pam_failure": f"<{10*8 + 3}>{ts} sso-server pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.99  user=root"
+    }
+
+    raw_msg = req.custom_message or presets.get(req.event_type, presets["ssh_failed"])
+
+    success = CollectorManager.send_test_packet(raw_msg, port=1514)
+    return {
+        "status": "injected" if success else "failed",
+        "event_type": req.event_type,
+        "raw_message": raw_msg,
+        "target_udp": "127.0.0.1:1514"
+    }
+
+
+@router.get("/security-events")
+async def get_recent_security_events(limit: int = 50):
+    """
+    OpenSearch에서 수집된 최신 보안 로그 및 ECS 이벤트 조회
+    """
+    client = opensearch_service.get_client()
+    index_pattern = f"{settings.opensearch_index_prefix}-*"
+
+    query = {
+        "size": limit,
+        "sort": [{"@timestamp": {"order": "desc"}}],
+        "query": {
+            "bool": {
+                "should": [
+                    {"term": {"sourcetype": "syslog"}},
+                    {"term": {"service": "security-syslog"}},
+                    {"exists": {"field": "security.action"}},
+                    {"exists": {"field": "attributes.security.action"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    }
+
+    try:
+        res = client.search(index=index_pattern, body=query)
+        hits = [hit["_source"] for hit in res.get("hits", {}).get("hits", [])]
+        total = res.get("hits", {}).get("total", {}).get("value", len(hits))
+        return {
+            "total": total,
+            "count": len(hits),
+            "events": hits
+        }
+    except Exception as e:
+        return {
+            "total": 0,
+            "count": 0,
+            "events": [],
+            "error": str(e)
+        }

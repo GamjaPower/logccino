@@ -235,6 +235,12 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
         <button onclick="sendQuickPrompt('전사 마이크로서비스 24시간 가용성 및 에러율 집계 요약해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
           [SLA AUDIT] 전사 에러율 매트릭스
         </button>
+        <button onclick="sendQuickPrompt('보안 syslog 수집기 침해사고 및 공격자 IP 분석해줘')" class="text-[11px] bg-subpanel hover:bg-rose-600/20 border border-bordercolor hover:border-rose-500/40 text-rose-300 hover:text-rose-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
+          <i data-lucide="shield-alert" class="w-3 h-3 text-rose-400"></i> [SOC THREAT] 침해사고 & 공격 IP 분석
+        </button>
+        <button onclick="sendQuickPrompt('최근 발생한 의심스러운 sudo 권한 상승 및 실패한 SSH 로그인 명령 추적해줘')" class="text-[11px] bg-subpanel hover:bg-amber-600/20 border border-bordercolor hover:border-amber-500/40 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded transition shrink-0 font-medium flex items-center gap-1">
+          <i data-lucide="key" class="w-3 h-3 text-amber-400"></i> [PRIVILEGE] 비인가 Sudo 권한 상승
+        </button>
         <button onclick="sendQuickPrompt('notification-service 429 쿼터 초과 및 발송 실패 원인 분석해줘')" class="text-[11px] bg-subpanel hover:bg-indigo-600/20 border border-bordercolor hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 px-2.5 py-1 rounded transition shrink-0 font-medium">
           [ANOMALY] 알림 쿼터 초과 진단
         </button>
@@ -301,6 +307,9 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
             <button onclick="switchTab('charts')" id="tab-charts" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> 시계열 텔레메트리
             </button>
+            <button onclick="switchTab('security')" id="tab-security" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <i data-lucide="shield" class="w-3.5 h-3.5 text-rose-400"></i> 보안 수집기 (<span id="sec-alert-count">0</span>)
+            </button>
             <button onclick="switchTab('mcp')" id="tab-mcp" class="px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
               <i data-lucide="network" class="w-3.5 h-3.5"></i> MCP 게이트웨이
             </button>
@@ -362,6 +371,98 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
               </button>
             </div>
             <pre id="cursor-cfg" class="bg-slatebg p-3 rounded border border-bordercolor text-slate-300 overflow-x-auto text-[11px] font-mono"></pre>
+          </div>
+        </div>
+
+        <!-- Tab 4: Enterprise Security Syslog Collector & SIEM Console -->
+        <div id="content-security" class="flex-1 p-3.5 hidden overflow-y-auto max-h-[430px] scrollbar-thin text-xs space-y-3">
+          <!-- Daemon Control Card -->
+          <div class="p-3 bg-subpanel rounded-lg border border-bordercolor space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-500" id="collector-status-dot"></span>
+                <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine</span>
+                <span id="collector-status-badge" class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700">CHECKING...</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="startCollector()" id="btn-col-start" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[11px] flex items-center gap-1 transition shadow-sm">
+                  <i data-lucide="play" class="w-3 h-3"></i> 시작
+                </button>
+                <button onclick="stopCollector()" id="btn-col-stop" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-[11px] flex items-center gap-1 transition shadow-sm">
+                  <i data-lucide="square" class="w-3 h-3"></i> 중지
+                </button>
+                <button onclick="restartCollector()" id="btn-col-restart" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px] flex items-center gap-1 transition border border-slate-700">
+                  <i data-lucide="refresh-cw" class="w-3 h-3"></i> 재시작
+                </button>
+              </div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-4 gap-2 pt-1 border-t border-bordercolor/60 text-center">
+              <div class="bg-slatebg/80 p-2 rounded border border-bordercolor/50">
+                <span class="text-[9px] uppercase text-slate-400 block font-semibold">수신 패킷 (Rx)</span>
+                <span class="font-mono font-bold text-slate-100 text-xs" id="sec-rx">0</span>
+              </div>
+              <div class="bg-slatebg/80 p-2 rounded border border-bordercolor/50">
+                <span class="text-[9px] uppercase text-slate-400 block font-semibold">ECS 파싱 (Parsed)</span>
+                <span class="font-mono font-bold text-indigo-400 text-xs" id="sec-parsed">0</span>
+              </div>
+              <div class="bg-slatebg/80 p-2 rounded border border-bordercolor/50">
+                <span class="text-[9px] uppercase text-slate-400 block font-semibold">포워딩 (Ingested)</span>
+                <span class="font-mono font-bold text-emerald-400 text-xs" id="sec-fwd">0</span>
+              </div>
+              <div class="bg-slatebg/80 p-2 rounded border border-bordercolor/50">
+                <span class="text-[9px] uppercase text-slate-400 block font-semibold">위협 경고 (Alerts)</span>
+                <span class="font-mono font-bold text-rose-400 text-xs" id="sec-threats">0</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono px-1">
+              <span>바인드: UDP/TCP 0.0.0.0:1514 | 포워더: :8000</span>
+              <span>가동 시간: <span id="sec-uptime" class="text-slate-200">0s</span> | <span id="sec-eps" class="text-slate-200">0.0 eps</span></span>
+            </div>
+          </div>
+
+          <!-- Attack Simulator Injection Bar -->
+          <div class="p-3 bg-subpanel rounded-lg border border-bordercolor space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-200 flex items-center gap-1.5 text-xs">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-rose-400"></i> 실시간 보안 위협 시뮬레이션 패킷 발송
+              </span>
+              <span id="inject-status-msg" class="text-[10px] font-mono text-emerald-400"></span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="injectTestEvent('ssh_failed')" class="px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-medium transition flex items-center gap-1">
+                <i data-lucide="shield-alert" class="w-3 h-3"></i> SSH 무차별대입 실패
+              </button>
+              <button onclick="injectTestEvent('sudo_escalation')" class="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-medium transition flex items-center gap-1">
+                <i data-lucide="lock" class="w-3 h-3"></i> 비인가 Sudo 실행
+              </button>
+              <button onclick="injectTestEvent('ufw_block')" class="px-2.5 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-medium transition flex items-center gap-1">
+                <i data-lucide="shield-off" class="w-3 h-3"></i> UFW 방화벽 차단
+              </button>
+              <button onclick="injectTestEvent('pam_failure')" class="px-2.5 py-1 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-medium transition flex items-center gap-1">
+                <i data-lucide="key" class="w-3 h-3"></i> PAM 인증 실패
+              </button>
+              <button onclick="injectTestEvent('ssh_accepted')" class="px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-medium transition flex items-center gap-1">
+                <i data-lucide="check" class="w-3 h-3"></i> 정상 SSH 로그인
+              </button>
+            </div>
+          </div>
+
+          <!-- Security Events Stream Table -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between px-1">
+              <span class="font-bold text-slate-300 text-xs flex items-center gap-1">
+                <i data-lucide="flame" class="w-3.5 h-3.5 text-rose-400"></i> 실시간 보안 이벤트 스트림 (최신 50건)
+              </span>
+              <button onclick="loadSecurityEvents()" class="text-slate-400 hover:text-white text-xs flex items-center gap-1 transition">
+                <i data-lucide="refresh-cw" class="w-3 h-3"></i> 새로고침
+              </button>
+            </div>
+            <div id="security-events-list" class="space-y-1.5 max-h-[220px] overflow-y-auto scrollbar-thin">
+              <p class="text-slate-500 text-center py-6 text-xs">보안 로그를 조회 중입니다...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -427,6 +528,8 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
       lucide.createIcons();
       refreshOverview();
       loadMCPConfigs();
+      fetchCollectorStatus();
+      setInterval(fetchCollectorStatus, 4000);
     });
 
     function setTimeWindow(tw) {
@@ -705,18 +808,159 @@ ENTERPRISE_DASHBOARD_HTML = r"""<!DOCTYPE html>
     }
 
     function switchTab(tab) {
-      ['evidence', 'charts', 'mcp'].forEach(t => {
-        document.getElementById(`content-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}`).className = 'px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
+      ['evidence', 'charts', 'mcp', 'security'].forEach(t => {
+        const el = document.getElementById(`content-${t}`);
+        const tabBtn = document.getElementById(`tab-${t}`);
+        if (el) el.classList.add('hidden');
+        if (tabBtn) tabBtn.className = 'px-3.5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
       });
-      document.getElementById(`content-${tab}`).classList.remove('hidden');
-      document.getElementById(`tab-${tab}`).className = 'px-3.5 py-3 text-xs font-semibold border-b-2 border-indigo-500 text-indigo-300 flex items-center gap-1.5 transition';
+      const activeEl = document.getElementById(`content-${tab}`);
+      const activeBtn = document.getElementById(`tab-${tab}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+      if (activeBtn) activeBtn.className = 'px-3.5 py-3 text-xs font-semibold border-b-2 border-indigo-500 text-indigo-300 flex items-center gap-1.5 transition';
 
       if (tab === 'charts') {
         setTimeout(() => {
           if (servicesChartInstance) servicesChartInstance.resize();
           if (levelsChartInstance) levelsChartInstance.resize();
         }, 50);
+      } else if (tab === 'security') {
+        loadSecurityEvents();
+      }
+      lucide.createIcons();
+    }
+
+    async function fetchCollectorStatus() {
+      try {
+        const res = await fetch('/api/v1/collector/status');
+        const data = await res.json();
+        const isRunning = data.status === 'running';
+        const badge = document.getElementById('collector-status-badge');
+        const dot = document.getElementById('collector-status-dot');
+        const m = data.metrics || {};
+
+        if (badge && dot) {
+          if (isRunning) {
+            badge.textContent = `RUNNING (PID: ${data.pid || 'live'})`;
+            badge.className = 'px-2 py-0.5 rounded font-mono text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+          } else {
+            badge.textContent = 'STOPPED';
+            badge.className = 'px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700';
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-500';
+          }
+        }
+
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setTxt('sec-rx', (m.received_total || 0).toLocaleString());
+        setTxt('sec-parsed', (m.parsed_total || 0).toLocaleString());
+        setTxt('sec-fwd', (m.forwarded_total || 0).toLocaleString());
+        setTxt('sec-threats', (m.security_alerts_total || 0).toLocaleString());
+        setTxt('sec-alert-count', m.security_alerts_total || 0);
+        setTxt('sec-uptime', (m.uptime_seconds || 0) + 's');
+        setTxt('sec-eps', (m.throughput_eps || 0.0).toFixed(1) + ' eps');
+      } catch (e) {
+        console.error("Collector status fetch failed", e);
+      }
+    }
+
+    async function startCollector() {
+      try {
+        const res = await fetch('/api/v1/collector/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        await fetchCollectorStatus();
+      } catch (e) {
+        alert("수집기 시작 오류: " + e.message);
+      }
+    }
+
+    async function stopCollector() {
+      try {
+        await fetch('/api/v1/collector/stop', { method: 'POST' });
+        await fetchCollectorStatus();
+      } catch (e) {
+        alert("수집기 중지 오류: " + e.message);
+      }
+    }
+
+    async function restartCollector() {
+      try {
+        await fetch('/api/v1/collector/restart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        await fetchCollectorStatus();
+      } catch (e) {
+        alert("수집기 재시작 오류: " + e.message);
+      }
+    }
+
+    async function injectTestEvent(type) {
+      const msgEl = document.getElementById('inject-status-msg');
+      if (msgEl) msgEl.textContent = '패킷 전송 중...';
+      try {
+        const res = await fetch('/api/v1/collector/test-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_type: type })
+        });
+        const data = await res.json();
+        if (msgEl) msgEl.textContent = `✅ 패킷 전송 완료 (${type})`;
+        setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 3000);
+        setTimeout(async () => {
+          await fetchCollectorStatus();
+          await loadSecurityEvents();
+        }, 800);
+      } catch (e) {
+        if (msgEl) msgEl.textContent = '❌ 전송 실패: ' + e.message;
+      }
+    }
+
+    async function loadSecurityEvents() {
+      const listDom = document.getElementById('security-events-list');
+      if (!listDom) return;
+      try {
+        const res = await fetch('/api/v1/collector/security-events?limit=30');
+        const data = await res.json();
+        const events = data.events || [];
+        if (events.length === 0) {
+          listDom.innerHTML = '<p class="text-slate-500 text-center py-6 text-xs">수집된 보안 이벤트가 없습니다. 상단의 위협 시뮬레이션 버튼을 눌러 테스트 패킷을 발송해보세요.</p>';
+          return;
+        }
+
+        listDom.innerHTML = events.map(ev => {
+          const sec = ev.security || (ev.attributes && ev.attributes.security) || {};
+          const action = sec.action || 'syslog_event';
+          const srcIp = sec.source_ip || ev.host || 'unknown';
+          const user = sec.user_name || '';
+          const ts = (ev['@timestamp'] || '').replace('T', ' ').split('.')[0];
+          
+          let actionColor = 'bg-slate-700 text-slate-300';
+          if (action.includes('failed') || action.includes('failure')) actionColor = 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+          else if (action.includes('sudo') || action.includes('escalation')) actionColor = 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+          else if (action.includes('block') || action.includes('drop')) actionColor = 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+          else if (action.includes('accepted')) actionColor = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+
+          return `
+            <div class="p-2 bg-slatebg rounded border border-bordercolor text-xs flex flex-col gap-1">
+              <div class="flex items-center justify-between text-[10px]">
+                <div class="flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.5 rounded font-mono font-semibold text-[9px] ${actionColor}">${escapeHtml(action)}</span>
+                  ${srcIp ? `<span class="font-mono text-slate-300">SRC: ${escapeHtml(srcIp)}</span>` : ''}
+                  ${user ? `<span class="font-mono text-indigo-300">USER: ${escapeHtml(user)}</span>` : ''}
+                </div>
+                <span class="text-slate-500 font-mono text-[9px]">${escapeHtml(ts)}</span>
+              </div>
+              <p class="text-slate-400 font-mono text-[10px] truncate">${escapeHtml(ev.message || '')}</p>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        listDom.innerHTML = `<p class="text-rose-400 text-center py-4 text-xs">보안 로그 조회 실패: ${escapeHtml(e.message)}</p>`;
       }
     }
 

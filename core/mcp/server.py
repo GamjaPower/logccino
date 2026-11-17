@@ -153,6 +153,24 @@ if HAS_MCP and mcp_app:
         res = mcp_tools.get_cluster_status()
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    @mcp_app.tool()
+    def analyze_security_incidents(time_window: str = "24h", limit: int = 50) -> str:
+        """
+        Analyze enterprise security syslog incidents, unauthorized logins, and threat attempts.
+        Detects SSH brute force attempts, unauthorized sudo privilege escalations, UFW firewall drops, and PAM auth failures.
+        Returns top attacker IPs, targeted users, attack breakdown, threat severity level, and critical alerts.
+        """
+        res = mcp_tools.analyze_security_incidents(time_window=time_window, limit=limit)
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def get_syslog_collector_status() -> str:
+        """
+        Get real-time operational status, throughput (EPS), and event metrics of the Rust High-Performance Syslog Collector daemon.
+        """
+        res = mcp_tools.get_collector_status()
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------
@@ -222,6 +240,20 @@ Instructions:
 1. Call `get_realtime_stream_summary(minutes={minutes}{svc_param})` to calculate throughput (events/sec) and error rate spikes.
 2. If sudden error rate spikes (>1%) are detected, call `diagnose_service_errors` to identify top error signatures.
 3. Highlight any ongoing outages and recommend immediate operational mitigation."""
+
+    @mcp_app.prompt("security-soc-analyst")
+    def security_soc_analyst_prompt(time_window: str = "24h") -> str:
+        """Claude/Antigravity용 엔터프라이즈 SOC 침해 사고 분석 프롬프트"""
+        return f"""You are acting as an Enterprise SOC (Security Operations Center) Tier-2/3 Security Analyst for Logccino:
+1. First, call `get_syslog_collector_status` to verify that the Rust Security Syslog Collector is actively collecting logs.
+2. Call `analyze_security_incidents(time_window='{time_window}', limit=50)` to inspect aggregated threat indicators, top attacker IPs, brute-force attempts, and unauthorized privilege escalations.
+3. If specific attacker IPs or accounts appear suspicious, call `search_logs(query='<attacker_ip_or_user>', size=30)` to trace their detailed attack vectors and command history.
+4. Deliver an authoritative SOC Incident Response Report formatted in Korean with:
+   - 🛡️ 1. 보안 종합 위협 등급 (CRITICAL / HIGH / MEDIUM / LOW)
+   - 🚨 2. 탐지된 주요 침해 시도 (SSH 무차별 대입, 비인가 Sudo 실행, 방화벽 차단 등)
+   - 🌐 3. 주요 위협 IP 및 공격 대상 계정 (Top Threat Actors & Targeted Accounts)
+   - 🔍 4. 상세 타임라인 및 침해 영향도 분석 (Timeline & Compromise Impact)
+   - 🛡️ 5. 긴급 방어 조치 및 방화벽/계정 보안 권고 (Mitigation: IP 차단, 2FA 강제, 권한 회수 등)"""
 
 def run_mcp_server(transport: str = "stdio"):
     """MCP 서버 실행 (stdio 또는 sse)"""
