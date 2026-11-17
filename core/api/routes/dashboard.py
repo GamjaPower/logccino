@@ -1190,24 +1190,90 @@ async def get_enterprise_dashboard():
     }
 
     function renderAppsNav() {
-      const siemApp = installedApps.find(a => a.id === 'siem');
-      const isSiemEnabled = siemApp ? siemApp.enabled : true;
+      // 1. 모든 installedApps에 대해 disabled 상태인 앱을 좌측 앱 리스트에서 완전 숨김 처리
+      installedApps.forEach(app => {
+        const isEnabled = !!app.enabled;
+        
+        // 특정 앱의 좌측 내비게이션 버튼 탐색 (app-nav-<id> 또는 siem의 tab-security)
+        const navBtn = document.getElementById(`app-nav-${app.id}`) || (app.id === 'siem' ? document.getElementById('tab-security') : null);
+        if (navBtn) {
+          if (isEnabled) {
+            navBtn.classList.remove('hidden');
+            navBtn.style.setProperty('display', 'flex', 'important');
+          } else {
+            navBtn.classList.add('hidden');
+            navBtn.style.setProperty('display', 'none', 'important');
+          }
+        }
 
-      const siemElements = document.querySelectorAll('.siem-app-feature, .siem-menu-item');
-      siemElements.forEach(el => {
-        if (isSiemEnabled) {
-          el.classList.remove('hidden');
-        } else {
-          el.classList.add('hidden');
+        // SIEM 전용 피처 및 메뉴 아이템 (설정 풀다운 메뉴 등)
+        if (app.id === 'siem') {
+          const siemElements = document.querySelectorAll('.siem-app-feature, .siem-menu-item, .siem-feature');
+          siemElements.forEach(el => {
+            if (isEnabled) {
+              el.classList.remove('hidden');
+              el.style.display = '';
+            } else {
+              el.classList.add('hidden');
+              el.style.setProperty('display', 'none', 'important');
+            }
+          });
+        }
+
+        // 현재 선택된 화면이 disabled된 앱이라면 즉시 기본 검색 앱('search')으로 전환
+        if (activeApp === app.id && !isEnabled) {
+          selectApp('search');
         }
       });
 
-      if (activeApp === 'siem' && !isSiemEnabled) {
-        selectApp('search');
-      }
+      // 2. 동적으로 설치된 추가 플러그형 앱이 있다면 좌측 앱 목록에 삽입/표시 (단, enabled인 경우만)
+      renderDynamicNavApps();
+    }
+
+    function renderDynamicNavApps() {
+      const navContainer = document.getElementById('splunk-apps-nav');
+      const manageAppsBtn = document.getElementById('app-nav-manage_apps');
+      if (!navContainer || !manageAppsBtn) return;
+
+      installedApps.forEach(app => {
+        if (['search', 'siem', 'sre', 'manage_apps'].includes(app.id)) return;
+
+        let dynamicBtn = document.getElementById(`app-nav-${app.id}`);
+        if (app.enabled) {
+          if (!dynamicBtn) {
+            dynamicBtn = document.createElement('button');
+            dynamicBtn.id = `app-nav-${app.id}`;
+            dynamicBtn.className = 'app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition hover:bg-subpanel text-slate-300 border border-transparent';
+            dynamicBtn.onclick = () => selectApp(app.id);
+            dynamicBtn.innerHTML = `
+              <i data-lucide="${app.icon || 'box'}" class="w-4 h-4 mt-0.5 shrink-0 text-cyan-400"></i>
+              <div>
+                <div class="font-bold text-xs text-white">${app.name}</div>
+                <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">${app.description || ''}</div>
+              </div>
+            `;
+            navContainer.insertBefore(dynamicBtn, manageAppsBtn);
+            lucide.createIcons();
+          } else {
+            dynamicBtn.classList.remove('hidden');
+            dynamicBtn.style.setProperty('display', 'flex', 'important');
+          }
+        } else {
+          if (dynamicBtn) {
+            dynamicBtn.classList.add('hidden');
+            dynamicBtn.style.setProperty('display', 'none', 'important');
+          }
+        }
+      });
     }
 
     function selectApp(appId) {
+      // 요청된 앱이 disabled 상태인 경우 기본 'search' 앱으로 리디렉션
+      const targetApp = installedApps.find(a => a.id === appId);
+      if (targetApp && !targetApp.enabled) {
+        appId = 'search';
+      }
+
       activeApp = appId;
       
       const titles = {
@@ -1216,15 +1282,18 @@ async def get_enterprise_dashboard():
         'sre': 'Autonomous SRE Observability',
         'manage_apps': '앱 관리 및 설치 (Manage Apps)'
       };
-      document.getElementById('current-app-title').textContent = titles[appId] || appId;
+      const foundApp = installedApps.find(a => a.id === appId);
+      document.getElementById('current-app-title').textContent = (foundApp ? foundApp.name : (titles[appId] || appId));
 
-      // Update Nav Buttons
+      // Update Nav Buttons Styles without wiping out hidden or other classes
       document.querySelectorAll('.app-nav-btn').forEach(btn => {
-        btn.className = 'app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition hover:bg-subpanel text-slate-300 border border-transparent';
+        btn.classList.remove('bg-emerald-600/20', 'text-emerald-300', 'border-emerald-500/40', 'shadow-sm');
+        btn.classList.add('hover:bg-subpanel', 'text-slate-300', 'border-transparent');
       });
-      const activeBtn = document.getElementById(`app-nav-${appId}`);
+      const activeBtn = document.getElementById(`app-nav-${appId}`) || (appId === 'siem' ? document.getElementById('tab-security') : null);
       if (activeBtn) {
-        activeBtn.className = 'app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 shadow-sm';
+        activeBtn.classList.remove('hover:bg-subpanel', 'text-slate-300', 'border-transparent');
+        activeBtn.classList.add('bg-emerald-600/20', 'text-emerald-300', 'border-emerald-500/40', 'shadow-sm');
       }
 
       // Switch Views

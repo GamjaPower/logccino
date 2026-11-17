@@ -143,3 +143,8 @@ def test_dashboard_splunk_layout():
     assert "settings-dropdown" in html
     assert "activity-dropdown" in html
     assert "help-dropdown" in html
+
+    # Disabled 앱 좌측 앱 바 완전 은닉 로직 검증
+    assert "renderAppsNav" in html
+    assert "renderDynamicNavApps" in html
+    assert "display', 'none', 'important'" in html

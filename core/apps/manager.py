@@ -126,6 +126,17 @@ class AppManager:
 
         app.updated_at = datetime.now(timezone.utc).isoformat()
         self.save_storage()
+
+        # Synchronize with module_manager if matching module exists
+        if app_id == "siem":
+            try:
+                from core.modules.manager import module_manager
+                mod = module_manager.get_module(app_id)
+                if mod and mod.enabled != app.enabled:
+                    module_manager.toggle(app_id, app.enabled)
+            except Exception:
+                pass
+
         logger.info(f"App '{app_id}' state updated to enabled={app.enabled}")
         return app
 
