@@ -38,6 +38,9 @@ def test_login_and_auth_workflow():
     assert out_res.status_code == 200
 
 def test_mcp_call_app_unified_dispatcher():
+    from core.apps.manager import app_manager
+    app_manager.toggle_app("siem", True)
+
     # 1. Search App 호출
     search_res = mcp_tools.call_app(
         app_id="search",
@@ -80,3 +83,11 @@ def test_dashboard_real_splunk_search_elements():
     assert "search-event-timeline" in html
     assert "Job: Complete" in html
     assert "field-summary-modal" in html
+
+    # Logccino Enterprise 로고 및 Cmd + \ 자동 파싱 스크립트 검증
+    assert "logccino" in html
+    assert "formatSplunkQuery" in html
+    assert "isFormatShortcut" in html
+    assert "triggerQueryAutoFormat" in html
+    assert "format-feedback-badge" in html
+    assert "btn-cmd-backslash" in html

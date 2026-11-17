@@ -1036,10 +1036,18 @@ async def get_enterprise_dashboard():
       });
 
       // Splunk Command + \ (또는 Ctrl + \) 단축키 리스너: 쿼리 자동 파싱 및 정렬
+      function isFormatShortcut(e) {
+        const isModifier = e.metaKey || e.ctrlKey;
+        if (!isModifier) return false;
+        const isBackslash = e.key === '\\' || e.code === 'Backslash' || e.key === '₩' || e.keyCode === 220;
+        const isShiftF = e.shiftKey && (e.key === 'F' || e.key === 'f' || e.code === 'KeyF');
+        return isBackslash || isShiftF;
+      }
+
       const searchInput = document.getElementById('search-query-input');
       if (searchInput) {
         searchInput.addEventListener('keydown', (e) => {
-          if ((e.metaKey || e.ctrlKey) && (e.key === '\\' || e.code === 'Backslash')) {
+          if (isFormatShortcut(e)) {
             e.preventDefault();
             triggerQueryAutoFormat();
           }
@@ -1047,7 +1055,7 @@ async def get_enterprise_dashboard():
       }
 
       window.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && (e.key === '\\' || e.code === 'Backslash')) {
+        if (isFormatShortcut(e)) {
           if (activeApp === 'search') {
             e.preventDefault();
             triggerQueryAutoFormat();
@@ -1310,58 +1318,81 @@ async def get_enterprise_dashboard():
       const trimmed = rawQuery.trim();
 
       // Multi-line toggle: 이미 다중 라인으로 정렬되어 있다면 한 줄로 깔끔하게 축약
-      if (trimmed.includes("\\n")) {
+      if (trimmed.includes('\n')) {
         return trimmed
-          .replace(/\\r?\\n\\s*/g, " ")
-          .replace(/\\s*\\|\\s*/g, " | ")
-          .replace(/\\s+/g, " ")
+          .replace(/\r?\n\s*/g, " ")
+          .replace(/\s*\|\s*/g, " | ")
+          .replace(/\s*\[\s*/g, " [ ")
+          .replace(/\s*\]\s*/g, " ] ")
+          .replace(/\s+/g, " ")
           .trim();
       }
 
-      // 파이프(|)와 서브서치([ ... ])를 기준으로 Splunk 스타일 다중 라인 정렬
+      // 파이프(|)와 서브서치([ ... ])를 기준으로 Splunk 표준 다중 라인 및 들여쓰기 정렬
       let formatted = "";
       let bracketDepth = 0;
-      let inQuotes = false;
-      let quoteChar = "";
+      const indentStep = "    "; // Splunk 표준 4칸 들여쓰기
+      let inDoubleQuote = false;
+      let inSingleQuote = false;
+      let escape = false;
 
       for (let i = 0; i < trimmed.length; i++) {
         const ch = trimmed[i];
-        const prev = i > 0 ? trimmed[i - 1] : "";
 
-        // 따옴표 내부 파이프 보호
-        if ((ch === '"' || ch === "'") && prev !== "\\\\") {
-          if (!inQuotes) {
-            inQuotes = true;
-            quoteChar = ch;
-          } else if (quoteChar === ch) {
-            inQuotes = false;
-          }
+        // 이스케이프 문자 처리
+        if (escape) {
+          formatted += ch;
+          escape = false;
+          continue;
+        }
+        if (ch === '\\') {
+          escape = true;
           formatted += ch;
           continue;
         }
 
-        if (inQuotes) {
+        // 따옴표 내부의 파이프(|) 및 대괄호([, ]) 보호
+        if (ch === '"' && !inSingleQuote) {
+          inDoubleQuote = !inDoubleQuote;
+          formatted += ch;
+          continue;
+        }
+        if (ch === "'" && !inDoubleQuote) {
+          inSingleQuote = !inSingleQuote;
           formatted += ch;
           continue;
         }
 
-        // 서브서치 대괄호([ ... ]) 들여쓰기
-        if (ch === "[") {
+        if (inDoubleQuote || inSingleQuote) {
+          formatted += ch;
+          continue;
+        }
+
+        // 서브서치 시작 [ (예: join ... [ source = ... ])
+        if (ch === '[') {
           bracketDepth++;
-          formatted += " [\\n" + "    ".repeat(bracketDepth);
-          continue;
-        } else if (ch === "]") {
-          bracketDepth = Math.max(0, bracketDepth - 1);
-          formatted += "\\n" + "    ".repeat(bracketDepth) + "]";
+          formatted = formatted.trimEnd();
+          formatted += '\n' + indentStep.repeat(bracketDepth) + '[ ';
+          while (i + 1 < trimmed.length && trimmed[i + 1] === ' ') {
+            i++;
+          }
           continue;
         }
 
-        // 파이프(|) 마다 새 줄 및 들여쓰기
-        if (ch === "|") {
-          const indent = "    ".repeat(bracketDepth);
+        // 서브서치 종료 ]
+        if (ch === ']') {
           formatted = formatted.trimEnd();
-          formatted += "\\n" + indent + "| ";
-          while (i + 1 < trimmed.length && trimmed[i + 1] === " ") {
+          formatted += ' ]';
+          bracketDepth = Math.max(0, bracketDepth - 1);
+          continue;
+        }
+
+        // 파이프(|) 마다 새 줄 및 현재 깊이 들여쓰기 적용
+        if (ch === '|') {
+          formatted = formatted.trimEnd();
+          const currentIndent = indentStep.repeat(bracketDepth);
+          formatted += '\n' + currentIndent + '| ';
+          while (i + 1 < trimmed.length && trimmed[i + 1] === ' ') {
             i++;
           }
           continue;
@@ -1381,14 +1412,16 @@ async def get_enterprise_dashboard():
       input.value = formatted;
 
       // 행 수에 따라 높이 자동 조절
-      const lines = formatted.split('\\n').length;
-      input.rows = Math.min(10, Math.max(2, lines));
+      const lines = formatted.split('\n').length;
+      input.rows = Math.min(12, Math.max(2, lines));
 
       // 알림 배지 피드백
       const badge = document.getElementById('format-feedback-badge');
       if (badge) {
         badge.classList.remove('hidden');
-        badge.textContent = lines > 1 ? "✓ 쿼리 다중라인 자동 파싱 완료 (Cmd + \\)" : "✓ 쿼리 한 줄로 축약 완료 (Cmd + \\)";
+        badge.textContent = lines > 1 
+          ? "✓ 쿼리 다중라인 자동 파싱 완료 (Cmd + \\)" 
+          : "✓ 쿼리 한 줄로 축약 완료 (Cmd + \\)";
         setTimeout(() => { badge.classList.add('hidden'); }, 2500);
       }
     }
