@@ -23,12 +23,12 @@ router = APIRouter(tags=["UI & Dashboard"])
 @router.get("/ui", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def get_enterprise_dashboard():
-    return HTMLResponse(content="""<!DOCTYPE html>
+    return HTMLResponse(content=r"""<!DOCTYPE html>
 <html lang="ko" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>splunk> enterprise | Logccino Autonomous Platform</title>
+  <title>logccino> enterprise | Autonomous Observability Platform</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -75,8 +75,9 @@ async def get_enterprise_dashboard():
   <div id="splunk-login-overlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4">
     <div class="bg-panelbg border border-bordercolor rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6">
       <div class="text-center space-y-2">
-        <div class="flex items-center justify-center gap-2">
-          <span class="font-extrabold text-3xl tracking-tight text-white font-mono">splunk<span class="text-emerald-400 font-black">&gt;</span></span>
+        <div class="flex items-center justify-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-indigo-600 to-emerald-400 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20 text-base">☕</div>
+          <span class="font-extrabold text-3xl tracking-tight text-white font-mono">logccino<span class="text-emerald-400 font-black">&gt;</span></span>
           <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">enterprise</span>
         </div>
         <p class="text-xs text-slate-400">Logccino AI Agent-Native Observability & SIEM</p>
@@ -120,9 +121,10 @@ async def get_enterprise_dashboard():
   <header class="border-b border-bordercolor bg-panelbg sticky top-0 z-50 px-5 py-2 flex items-center justify-between shadow-md">
     <!-- Left Brand & App Indicator -->
     <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 via-indigo-600 to-emerald-400 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/20 text-xs">☕</div>
         <span class="font-extrabold text-xl tracking-tight text-white font-mono flex items-center">
-          <span>splunk</span><span class="text-emerald-400 font-black">&gt;</span>
+          <span>logccino</span><span class="text-emerald-400 font-black">&gt;</span>
         </span>
         <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">enterprise</span>
       </div>
@@ -402,6 +404,13 @@ async def get_enterprise_dashboard():
               </div>
             </div>
 
+            <!-- Command + \ Auto-Format Button -->
+            <button onclick="triggerQueryAutoFormat()" id="btn-cmd-backslash" class="px-3 py-3 rounded-lg bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-[11px] font-mono flex items-center gap-1.5 transition shrink-0 shadow-sm" title="Splunk 쿼리 자동 파싱 및 정렬 (단축키: Cmd + \ 또는 Ctrl + \)">
+              <i data-lucide="code" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <kbd class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 font-sans text-[10px] text-slate-300">⌘\\</kbd>
+              <span>자동 파싱</span>
+            </button>
+
             <!-- Big Green Splunk Search Button -->
             <button onclick="executeSplunkSearch()" id="btn-search-run" class="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-600/25 shrink-0">
               <i data-lucide="search" class="w-4 h-4"></i>
@@ -411,6 +420,7 @@ async def get_enterprise_dashboard():
 
           <!-- Quick Join & PPL Presets Bar -->
           <div class="flex items-center gap-2 overflow-x-auto scrollbar-thin text-[11px] pt-1">
+            <span id="format-feedback-badge" class="hidden text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition shrink-0 font-semibold">✓ 쿼리 자동 파싱 완료 (Cmd + \\)</span>
             <span class="text-[10px] uppercase font-bold text-slate-400 shrink-0 flex items-center gap-1">
               <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> Join 예제:
             </span>
@@ -1024,6 +1034,26 @@ async def get_enterprise_dashboard():
           closeAllDropdowns();
         }
       });
+
+      // Splunk Command + \ (또는 Ctrl + \) 단축키 리스너: 쿼리 자동 파싱 및 정렬
+      const searchInput = document.getElementById('search-query-input');
+      if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+          if ((e.metaKey || e.ctrlKey) && (e.key === '\\' || e.code === 'Backslash')) {
+            e.preventDefault();
+            triggerQueryAutoFormat();
+          }
+        });
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && (e.key === '\\' || e.code === 'Backslash')) {
+          if (activeApp === 'search') {
+            e.preventDefault();
+            triggerQueryAutoFormat();
+          }
+        }
+      });
     });
 
     // -------------------------------------------------------------
@@ -1273,8 +1303,96 @@ async def get_enterprise_dashboard():
     }
 
     // -------------------------------------------------------------
-    // Real Splunk Search & Reporting Experience
+    // Real Splunk Search & Reporting Experience & Command + \ Parsing
     // -------------------------------------------------------------
+    function formatSplunkQuery(rawQuery) {
+      if (!rawQuery) return "";
+      const trimmed = rawQuery.trim();
+
+      // Multi-line toggle: 이미 다중 라인으로 정렬되어 있다면 한 줄로 깔끔하게 축약
+      if (trimmed.includes("\\n")) {
+        return trimmed
+          .replace(/\\r?\\n\\s*/g, " ")
+          .replace(/\\s*\\|\\s*/g, " | ")
+          .replace(/\\s+/g, " ")
+          .trim();
+      }
+
+      // 파이프(|)와 서브서치([ ... ])를 기준으로 Splunk 스타일 다중 라인 정렬
+      let formatted = "";
+      let bracketDepth = 0;
+      let inQuotes = false;
+      let quoteChar = "";
+
+      for (let i = 0; i < trimmed.length; i++) {
+        const ch = trimmed[i];
+        const prev = i > 0 ? trimmed[i - 1] : "";
+
+        // 따옴표 내부 파이프 보호
+        if ((ch === '"' || ch === "'") && prev !== "\\\\") {
+          if (!inQuotes) {
+            inQuotes = true;
+            quoteChar = ch;
+          } else if (quoteChar === ch) {
+            inQuotes = false;
+          }
+          formatted += ch;
+          continue;
+        }
+
+        if (inQuotes) {
+          formatted += ch;
+          continue;
+        }
+
+        // 서브서치 대괄호([ ... ]) 들여쓰기
+        if (ch === "[") {
+          bracketDepth++;
+          formatted += " [\\n" + "    ".repeat(bracketDepth);
+          continue;
+        } else if (ch === "]") {
+          bracketDepth = Math.max(0, bracketDepth - 1);
+          formatted += "\\n" + "    ".repeat(bracketDepth) + "]";
+          continue;
+        }
+
+        // 파이프(|) 마다 새 줄 및 들여쓰기
+        if (ch === "|") {
+          const indent = "    ".repeat(bracketDepth);
+          formatted = formatted.trimEnd();
+          formatted += "\\n" + indent + "| ";
+          while (i + 1 < trimmed.length && trimmed[i + 1] === " ") {
+            i++;
+          }
+          continue;
+        }
+
+        formatted += ch;
+      }
+
+      return formatted.trim();
+    }
+
+    function triggerQueryAutoFormat() {
+      const input = document.getElementById('search-query-input');
+      if (!input) return;
+      const original = input.value;
+      const formatted = formatSplunkQuery(original);
+      input.value = formatted;
+
+      // 행 수에 따라 높이 자동 조절
+      const lines = formatted.split('\\n').length;
+      input.rows = Math.min(10, Math.max(2, lines));
+
+      // 알림 배지 피드백
+      const badge = document.getElementById('format-feedback-badge');
+      if (badge) {
+        badge.classList.remove('hidden');
+        badge.textContent = lines > 1 ? "✓ 쿼리 다중라인 자동 파싱 완료 (Cmd + \\)" : "✓ 쿼리 한 줄로 축약 완료 (Cmd + \\)";
+        setTimeout(() => { badge.classList.add('hidden'); }, 2500);
+      }
+    }
+
     function setSearchPreset(query) {
       document.getElementById('search-query-input').value = query;
       executeSplunkSearch();

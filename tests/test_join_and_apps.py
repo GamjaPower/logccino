@@ -131,12 +131,13 @@ def test_dashboard_splunk_layout():
     assert res.status_code == 200
     html = res.text
 
-    # Splunk 브랜드 및 좌측 앱 바 확인
-    assert "splunk" in html
+    # Logccino 브랜드 및 좌측 앱 바 확인
+    assert "logccino" in html
     assert "Search &amp; Reporting" in html or "Search & Reporting" in html
     assert "Enterprise Security" in html
     assert "Autonomous SRE" in html
     assert "앱 관리 및 설치" in html
+    assert "btn-cmd-backslash" in html
 
     # 풀다운 메뉴 확인 (설정, 활동, 도움말)
     assert "settings-dropdown" in html
