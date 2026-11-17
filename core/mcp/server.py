@@ -571,6 +571,49 @@ if HAS_MCP and mcp_app:
         return json.dumps(mcp_tools.evaluate_war_game_action(scenario_id, user_action), ensure_ascii=False, indent=2)
 
     # -------------------------------------------------------------
+    # Logpresso 벤치마킹 5대 차별화 MCP 도구
+    # -------------------------------------------------------------
+    @mcp_app.tool()
+    def siem_mask_pii(text: str) -> str:
+        """Logpresso 기능 1: 실시간 개인정보(주민번호/카드/전화/이메일) 인라인 마스킹"""
+        return json.dumps(mcp_tools.mask_pii(text), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_seal_log_integrity(records: List[str]) -> str:
+        """Logpresso 기능 2: 블록 단위 머클트리 해시체인(WORM) 봉인"""
+        return json.dumps(mcp_tools.seal_log_integrity_block(records), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_verify_log_integrity() -> str:
+        """Logpresso 기능 2: 로그 해시체인 위변조 무결성 실시간 검증"""
+        return json.dumps(mcp_tools.verify_log_integrity(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_process_stream_cep(event: Dict[str, Any]) -> str:
+        """Logpresso 기능 3: 인메모리 슬라이딩 윈도우 실시간 복합 이벤트 처리(CEP)"""
+        return json.dumps(mcp_tools.process_stream_cep_event(event), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_trigger_visual_playbook(playbook_id: str, context: Optional[Dict[str, Any]] = None) -> str:
+        """Logpresso 기능 4: 비주얼 SOAR 플레이북 트리거 및 실행 (Maestro 호환)"""
+        return json.dumps(mcp_tools.trigger_visual_playbook(playbook_id, context), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_approve_playbook_step(run_id: str, token: str, approved: bool = True, notes: str = "") -> str:
+        """Logpresso 기능 4: Human-in-the-loop (분석가 승인/반려 게이트)"""
+        return json.dumps(mcp_tools.approve_playbook_step(run_id, token, approved, notes), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_list_connector_store() -> str:
+        """Logpresso 기능 5: 플러그블 커넥터 & 앱 스토어 카탈로그 조회"""
+        return json.dumps(mcp_tools.list_connector_store(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def siem_install_connector(app_id: str) -> str:
+        """Logpresso 기능 5: 서드파티 보안 장비 커넥터 앱 원클릭 설치"""
+        return json.dumps(mcp_tools.install_connector(app_id), ensure_ascii=False, indent=2)
+
+    # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------
     @mcp_app.resource("logccino://cluster/status")

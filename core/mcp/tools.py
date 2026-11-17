@@ -1254,4 +1254,55 @@ class LogccinoMCPTools:
         from core.siem.engine import siem_engine
         return siem_engine.copilot.evaluate_war_game_action(scenario_id, user_action).model_dump()
 
+    # Logpresso 벤치마킹 5대 엔터프라이즈 차별화 기능
+    def mask_pii(self, text: str) -> Dict[str, Any]:
+        """Logpresso 기능 1: 실시간 개인정보(주민번호/카드/전화/이메일) 인라인 마스킹"""
+        from core.ingestion.pii_masker import pii_masker
+        masked = pii_masker.mask_text(text)
+        findings = pii_masker.detect_pii(text)
+        return {"original": text, "masked": masked, "findings": findings}
+
+    def seal_log_integrity_block(self, records: List[str]) -> Dict[str, Any]:
+        """Logpresso 기능 2: 블록 단위 머클트리 해시체인(WORM) 봉인"""
+        from core.security.integrity import integrity_engine
+        block = integrity_engine.seal_block(records)
+        return block.model_dump()
+
+    def verify_log_integrity(self) -> Dict[str, Any]:
+        """Logpresso 기능 2: 로그 해시체인 위변조 무결성 실시간 검증"""
+        from core.security.integrity import integrity_engine
+        return integrity_engine.verify_chain()
+
+    def process_stream_cep_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Logpresso 기능 3: 인메모리 슬라이딩 윈도우 실시간 복합 이벤트 처리(CEP)"""
+        from core.detection.cep_stream import cep_stream_engine
+        alerts = cep_stream_engine.process_event(event)
+        return {
+            "processed": True,
+            "triggered_count": len(alerts),
+            "alerts": [a.model_dump() for a in alerts]
+        }
+
+    def trigger_visual_playbook(self, playbook_id: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Logpresso 기능 4: 비주얼 SOAR 플레이북 트리거 및 실행 (Maestro 호환)"""
+        from core.soar.playbook_runner import visual_soar_engine
+        execution = visual_soar_engine.trigger_playbook(playbook_id, context or {})
+        return execution.model_dump()
+
+    def approve_playbook_step(self, run_id: str, token: str, approved: bool = True, notes: str = "") -> Dict[str, Any]:
+        """Logpresso 기능 4: Human-in-the-loop (분석가 승인/반려 게이트)"""
+        from core.soar.playbook_runner import visual_soar_engine
+        execution = visual_soar_engine.approve_step(run_id, token, approved, notes)
+        return execution.model_dump()
+
+    def list_connector_store(self) -> List[Dict[str, Any]]:
+        """Logpresso 기능 5: 플러그블 커넥터 & 앱 스토어 카탈로그 조회"""
+        from core.apps.connector_store import connector_store
+        return [c.model_dump() for c in connector_store.list_available_connectors()]
+
+    def install_connector(self, app_id: str) -> Dict[str, Any]:
+        """Logpresso 기능 5: 서드파티 보안 장비 커넥터 앱 원클릭 설치"""
+        from core.apps.connector_store import connector_store
+        return connector_store.install_connector(app_id)
+
 mcp_tools = LogccinoMCPTools()

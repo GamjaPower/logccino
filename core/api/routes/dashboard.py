@@ -933,6 +933,9 @@ async def get_enterprise_dashboard():
           <button onclick="switchSiemSubTab('copilot')" id="siem-subtab-copilot" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
             <i data-lucide="bot" class="w-3.5 h-3.5"></i> P6: SOC Copilot & Audit
           </button>
+          <button onclick="switchSiemSubTab('logpresso')" id="siem-subtab-logpresso" class="siem-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i> Logpresso Core (CEP·WORM·PII·Maestro)
+          </button>
         </div>
 
         <!-- =================================================================== -->
@@ -1344,6 +1347,106 @@ async def get_enterprise_dashboard():
             </div>
             <div id="compliance-audit-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs text-slate-300">
               <p class="text-slate-400">로그 1년 이상 보존, 관리자 권한 분립, 접근 통제 항목을 상시 자동 감사합니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- SUBVIEW 8: Logpresso Core (CEP, WORM, PII, Maestro, Store)          -->
+        <!-- =================================================================== -->
+        <div id="siem-subview-logpresso" class="siem-subview space-y-4 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 1: 실시간 PII 인라인 마스킹 (Logpresso Enterprise) -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="eye-off" class="w-4 h-4 text-emerald-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">기능 1. 실시간 PII 인라인 마스킹 (ISMS-P 준수)</h3>
+                </div>
+                <button onclick="runPIIMaskingTest()" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">
+                  마스킹 실행
+                </button>
+              </div>
+              <input id="pii-input-box" type="text" value="홍길동 고객의 주민번호는 900101-1234567 이며 카드번호는 4518-1234-5678-9012, 전화번호는 010-1234-5678 입니다." class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-xs text-white" />
+              <div id="pii-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">주민번호, 카드번호, 휴대전화, 이메일을 인라인에서 자동 탐지하고 마스킹합니다.</p>
+              </div>
+            </div>
+
+            <!-- Feature 2: 블록 해시체인 무결성 검증기 (WORM & Merkle Tree) -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-indigo-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">기능 2. 로그 무결성(WORM) 블록 해시체인</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="runSealBlockTest()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
+                    새 블록 봉인
+                  </button>
+                  <button onclick="runVerifyIntegrityTest()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
+                    무결성 전수 검증
+                  </button>
+                </div>
+              </div>
+              <div id="integrity-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">블록 단위 SHA-256 해시체인과 머클트리를 통해 로그 위변조를 실시간 수학적으로 입증합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Feature 3: 인메모리 스트림 윈도우 CEP 엔진 (Logpresso Sonar) -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">기능 3. 인메모리 스트림 윈도우 CEP 엔진</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="injectCEPStreamTest()" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition">
+                    SSH 5회 폭증 스트림 주입
+                  </button>
+                  <button onclick="loadCEPMetrics()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition">
+                    메트릭
+                  </button>
+                </div>
+              </div>
+              <div id="cep-result-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2 font-mono text-emerald-400">
+                디스크 색인 전 60초 슬라이딩 윈도우에서 복합 위협 패턴을 0.1초 내 탐지합니다.
+              </div>
+            </div>
+
+            <!-- Feature 4: 비주얼 SOAR 플레이북 & 승인 게이트 (Logpresso Maestro) -->
+            <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="git-pull-request" class="w-4 h-4 text-rose-400"></i>
+                  <h3 class="text-xs font-bold text-white uppercase">기능 4. 비주얼 SOAR & Human-in-the-Loop</h3>
+                </div>
+                <button onclick="triggerVisualPlaybookTest()" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition">
+                  Maestro 플레이북 구동
+                </button>
+              </div>
+              <div id="visual-playbook-box" class="p-3 bg-slatebg rounded-lg border border-bordercolor/60 text-xs space-y-2">
+                <p class="text-slate-400">5단계 워크플로 실행 및 분석가 승인 게이트(Human-in-the-loop)를 거쳐 능동 차단을 집행합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 5: 서드파티 보안 장비 커넥터 앱 스토어 (Logpresso Store) -->
+          <div class="bg-panelbg p-4 rounded-xl border border-bordercolor shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="store" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase">기능 5. 플러그블 커넥터 & 앱 스토어 카탈로그 (Logpresso Store)</h3>
+              </div>
+              <button onclick="loadConnectorStoreCatalog()" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">
+                스토어 카탈로그 로드
+              </button>
+            </div>
+            <div id="connector-store-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <p class="text-slate-400 col-span-3 text-center py-6">스토어 카탈로그 로드 버튼을 누르면 안랩 V3, 포티넷 등 원클릭 설치 가능 커넥터가 표시됩니다.</p>
             </div>
           </div>
         </div>
@@ -3251,7 +3354,7 @@ async def get_enterprise_dashboard():
         activeBtn.classList.add('bg-rose-600/20', 'text-rose-300', 'border', 'border-rose-500/30');
       }
 
-      ['overview', 'triage', 'hunting', 'storyboard', 'soar', 'intel', 'copilot'].forEach(sub => {
+      ['overview', 'triage', 'hunting', 'storyboard', 'soar', 'intel', 'copilot', 'logpresso'].forEach(sub => {
         const el = document.getElementById(`siem-subview-${sub}`);
         if (el) {
           if (sub === tabName) {
@@ -3262,6 +3365,290 @@ async def get_enterprise_dashboard():
         }
       });
       lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // Logpresso 벤치마킹 5대 엔터프라이즈 차별화 기능 UI 제어
+    // -------------------------------------------------------------
+    let latestPlaybookRunId = "";
+    let latestApprovalToken = "";
+
+    async function runPIIMaskingTest() {
+      const text = document.getElementById('pii-input-box').value;
+      const box = document.getElementById('pii-result-box');
+      box.innerHTML = '<span class="text-emerald-400">인라인 PII 마스킹 분석 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/pii/mask-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2">
+            <div>
+              <span class="font-bold text-white text-xs block">마스킹 완료 결과:</span>
+              <div class="p-2 bg-slate-950 rounded border border-emerald-500/40 font-mono text-emerald-300 text-xs mt-1">${d.masked}</div>
+            </div>
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              ${d.findings.map(f => `
+                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
+                  ✓ ${f.type} (${f.count}건) - ${f.description}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">마스킹 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function runSealBlockTest() {
+      const box = document.getElementById('integrity-result-box');
+      box.innerHTML = '<span class="text-indigo-400">새 로그 블록 머클트리 해시 봉인 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/integrity/seal-block', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            records: [
+              "2026-11-17T12:00:00Z sshd[4102]: Accepted publickey for sst96 from 10.0.0.5",
+              "2026-11-17T12:00:05Z sudo[4108]: sst96 : TTY=pts/0 ; COMMAND=/usr/bin/apt update",
+              "2026-11-17T12:00:10Z ufw[102]: [UFW BLOCK] IN=eth0 SRC=198.51.100.42 DST=10.0.0.5 PROTO=TCP DPT=22"
+            ]
+          })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex items-center justify-between text-emerald-400 font-bold">
+              <span>✓ 블록 #${d.block_index} 암호화 봉인 완료 (레코드 ${d.record_count}건)</span>
+              <span class="text-[10px] text-slate-400">${d.timestamp}</span>
+            </div>
+            <div class="text-[10px] text-slate-400">이전 블록 해시: ${d.prev_hash.slice(0, 24)}...</div>
+            <div class="text-[10px] text-indigo-300">머클 루트 (Merkle Root): ${d.merkle_root.slice(0, 32)}...</div>
+            <div class="text-[10px] text-amber-300">블록 해시: ${d.block_hash}</div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">블록 봉인 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function runVerifyIntegrityTest() {
+      const box = document.getElementById('integrity-result-box');
+      box.innerHTML = '<span class="text-indigo-400">로그 해시체인 전수 무결성 검증 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/integrity/verify');
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center justify-between font-bold ${d.is_valid ? 'text-emerald-400' : 'text-rose-400'}">
+              <span>${d.is_valid ? '✓ 전체 체인 무결성 100% 정상 (위변조 없음)' : '🚨 무결성 훼손 탐지'}</span>
+              <span class="font-mono text-[10px]">총 검증 블록: ${d.total_blocks}개</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${d.message || d.error}</p>
+            ${d.latest_block_hash ? `<div class="font-mono text-[10px] text-slate-400">최신 앵커 해시: ${d.latest_block_hash}</div>` : ''}
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">검증 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function injectCEPStreamTest() {
+      const box = document.getElementById('cep-result-box');
+      box.innerHTML = '<span class="text-amber-400">SSH 5회 연속 실패 이벤트 인메모리 슬라이딩 윈도우 주입 중...</span>';
+      try {
+        let triggered = [];
+        for (let i = 1; i <= 5; i++) {
+          const res = await fetch('/api/v1/siem/cep/process-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: {
+                event_type: 'ssh_failed',
+                src_ip: '203.0.113.88',
+                host: 'bastion-gateway',
+                message: `Failed password for invalid user admin from 203.0.113.88 port ${40000 + i}`
+              }
+            })
+          });
+          const d = await res.json();
+          if (d.triggered_count > 0) {
+            triggered = triggered.concat(d.alerts);
+          }
+        }
+        if (triggered.length > 0) {
+          box.innerHTML = `
+            <div class="space-y-1.5">
+              <span class="text-rose-400 font-bold text-xs">🚨 [CEP 실시간 탐지 격발] ${triggered[0].rule_name}</span>
+              <div class="text-[11px] text-slate-200">키: ${triggered[0].key} | 카운트: ${triggered[0].matched_count}회 (${triggered[0].window_seconds}초 윈도우)</div>
+              <div class="text-[10px] text-emerald-400 font-mono">디스크 색인 전 인메모리 링버퍼에서 0.1초 미만으로 즉시 검출 완료!</div>
+            </div>
+          `;
+        } else {
+          box.textContent = "✓ 이벤트가 정상 처리되었습니다. 임계치 도달 시 CEP 알람이 격발됩니다.";
+        }
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">주입 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadCEPMetrics() {
+      const box = document.getElementById('cep-result-box');
+      try {
+        const res = await fetch('/api/v1/siem/cep/metrics');
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-1 text-xs font-mono">
+            <div>총 처리 이벤트 수: ${d.total_processed_events}건</div>
+            <div>실시간 격발 알람 수: ${d.total_triggered_alerts}건</div>
+            <div>활성 추적 윈도우 버킷: ${d.active_tracking_buckets}개</div>
+            <div>등록된 스트림 룰 수: ${d.registered_rules_count}개</div>
+          </div>
+        `;
+      } catch (e) {
+        box.textContent = "메트릭 로드 실패: " + e.message;
+      }
+    }
+
+    async function triggerVisualPlaybookTest() {
+      const box = document.getElementById('visual-playbook-box');
+      box.innerHTML = '<span class="text-rose-400">Maestro 비주얼 플레이북 구동 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/playbooks/pb_ssh_bruteforce_remediation/trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            context: {
+              incident_id: 'INC-MAESTRO-01',
+              src_ip: '198.51.100.42',
+              user: 'sst96',
+              host: 'bastion-gateway'
+            }
+          })
+        });
+        const d = await res.json();
+        latestPlaybookRunId = d.run_id;
+        latestApprovalToken = d.approval_token || "";
+
+        box.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between pb-1 border-b border-bordercolor">
+              <span class="font-bold text-white">실행 ID: ${d.run_id}</span>
+              <span class="px-2 py-0.5 rounded font-bold ${d.status === 'waiting_approval' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300'}">
+                ${d.status.toUpperCase()}
+              </span>
+            </div>
+            ${d.approval_details ? `
+              <div class="p-2.5 bg-amber-500/10 rounded-lg border border-amber-500/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-amber-300">✋ [Human-in-the-Loop] 분석가 승인 대기 중</span>
+                  <span class="font-mono text-[10px] text-slate-400">토큰: ${latestApprovalToken.slice(0, 10)}...</span>
+                </div>
+                <p class="text-slate-200 text-[11px]">${d.approval_details.prompt}</p>
+                <div class="flex items-center gap-2 pt-1">
+                  <button onclick="approveVisualPlaybook(true)" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium text-xs transition">
+                    ✓ 승인 및 방화벽 차단 집행
+                  </button>
+                  <button onclick="approveVisualPlaybook(false)" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded font-medium text-xs transition">
+                    ✗ 반려 (오탐 처리)
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+            <div class="space-y-1">
+              <span class="text-[10px] text-slate-400 font-semibold">완료된 단계 계보:</span>
+              ${d.step_history.map(s => `
+                <div class="p-1.5 bg-slate-950 rounded border border-bordercolor flex items-center justify-between text-[10px]">
+                  <span>${s.node_name} (${s.node_type})</span>
+                  <span class="text-emerald-400 font-bold font-mono">${s.status}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">구동 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function approveVisualPlaybook(approved) {
+      const box = document.getElementById('visual-playbook-box');
+      box.innerHTML = '<span class="text-emerald-400">승인 처리 및 후속 조치 자동 집행 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/playbooks/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            run_id: latestPlaybookRunId,
+            token: latestApprovalToken,
+            approved: approved,
+            notes: approved ? "분석가 확인 후 능동 방화벽 차단 승인 완료" : "내부 테스트 트래픽으로 인한 오탐 반려"
+          })
+        });
+        const d = await res.json();
+        box.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between font-bold ${d.status === 'completed' ? 'text-emerald-400' : 'text-slate-400'}">
+              <span>최종 상태: ${d.status.toUpperCase()}</span>
+              <span class="text-[10px] text-slate-400">${d.completed_at || ''}</span>
+            </div>
+            <div class="space-y-1">
+              ${d.step_history.map(s => `
+                <div class="p-1.5 bg-slate-950 rounded border border-bordercolor flex items-center justify-between text-[10px]">
+                  <span>${s.node_name}</span>
+                  <span class="text-emerald-400 font-bold font-mono">${s.status}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span class="text-rose-400">승인 처리 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function loadConnectorStoreCatalog() {
+      const container = document.getElementById('connector-store-container');
+      container.innerHTML = '<span class="text-indigo-400 col-span-3 text-center py-6">로그프레소 스타일 커넥터 앱 카탈로그 로드 중...</span>';
+      try {
+        const res = await fetch('/api/v1/siem/connectors/store');
+        const list = await res.json();
+        container.innerHTML = list.map(c => `
+          <div class="bg-panelbg rounded-xl border border-bordercolor p-3.5 flex flex-col justify-between space-y-3 shadow">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">${c.category}</span>
+                <span class="text-[10px] text-slate-400 font-mono">v${c.version}</span>
+              </div>
+              <h4 class="font-bold text-xs text-white mt-1.5">${c.name}</h4>
+              <p class="text-[10px] text-slate-400 mt-1">${c.description}</p>
+            </div>
+            <div class="pt-2 border-t border-bordercolor/60 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400">${c.vendor}</span>
+              <button onclick="installConnectorFromStore('${c.app_id}')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[11px] font-medium transition">
+                원클릭 설치
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<span class="text-rose-400 col-span-3">로드 실패: ${e.message}</span>`;
+      }
+    }
+
+    async function installConnectorFromStore(appId) {
+      try {
+        const res = await fetch(`/api/v1/siem/connectors/${appId}/install`, { method: 'POST' });
+        const d = await res.json();
+        alert(`✓ 커넥터 앱 '${d.name}' 설치 완료! (연계 탐지 룰 ${d.rules_registered}건 자동 등록)`);
+        fetchInstalledApps();
+      } catch (e) {
+        alert("설치 실패: " + e.message);
+      }
     }
 
     async function runSampleTriage() {

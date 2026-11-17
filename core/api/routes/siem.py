@@ -293,3 +293,98 @@ class WarGameActionRequest(BaseModel):
 def evaluate_war_game_action(req: WarGameActionRequest):
     """Feature 30: 보안 분석관 역량 강화 가상 코칭 에이전트 - 조치 평가"""
     return siem_engine.copilot.evaluate_war_game_action(req.scenario_id, req.user_action_taken)
+
+
+# -----------------------------------------------------------------------------
+# Logpresso 벤치마킹 5대 엔터프라이즈 차별화 기능 API
+# -----------------------------------------------------------------------------
+class PIIMaskRequest(BaseModel):
+    text: str
+
+@router.post("/pii/mask-text")
+def mask_pii_text(req: PIIMaskRequest):
+    """Logpresso 기능 1: 실시간 개인정보(주민번호/카드/전화/이메일) 인라인 마스킹"""
+    from core.ingestion.pii_masker import pii_masker
+    masked = pii_masker.mask_text(req.text)
+    findings = pii_masker.detect_pii(req.text)
+    return {"original": req.text, "masked": masked, "findings": findings}
+
+
+class LogIntegritySealRequest(BaseModel):
+    records: List[str]
+
+@router.post("/integrity/seal-block")
+def seal_integrity_block(req: LogIntegritySealRequest):
+    """Logpresso 기능 2: 블록 단위 머클트리 해시체인(WORM) 봉인"""
+    from core.security.integrity import integrity_engine
+    block = integrity_engine.seal_block(req.records)
+    return block.model_dump()
+
+
+@router.get("/integrity/verify")
+def verify_log_integrity():
+    """Logpresso 기능 2: 로그 해시체인 위변조 무결성 실시간 검증"""
+    from core.security.integrity import integrity_engine
+    return integrity_engine.verify_chain()
+
+
+class StreamCEPEventRequest(BaseModel):
+    event: Dict[str, Any]
+
+@router.post("/cep/process-event")
+def process_cep_stream_event(req: StreamCEPEventRequest):
+    """Logpresso 기능 3: 인메모리 슬라이딩 윈도우 실시간 복합 이벤트 처리(CEP)"""
+    from core.detection.cep_stream import cep_stream_engine
+    alerts = cep_stream_engine.process_event(req.event)
+    return {
+        "processed": True,
+        "triggered_count": len(alerts),
+        "alerts": [a.model_dump() for a in alerts]
+    }
+
+
+@router.get("/cep/metrics")
+def get_cep_metrics():
+    """Logpresso 기능 3: 스트림 CEP 엔진 실시간 윈도우 메트릭"""
+    from core.detection.cep_stream import cep_stream_engine
+    return cep_stream_engine.get_metrics()
+
+
+class TriggerPlaybookRequest(BaseModel):
+    context: Dict[str, Any] = Field(default_factory=dict)
+
+@router.post("/playbooks/{playbook_id}/trigger")
+def trigger_visual_playbook(playbook_id: str, req: TriggerPlaybookRequest):
+    """Logpresso 기능 4: 비주얼 SOAR 플레이북 트리거 및 실행 (Maestro 호환)"""
+    from core.soar.playbook_runner import visual_soar_engine
+    execution = visual_soar_engine.trigger_playbook(playbook_id, req.context)
+    return execution.model_dump()
+
+
+class ApprovePlaybookRequest(BaseModel):
+    run_id: str
+    token: str
+    approved: bool = True
+    notes: str = ""
+
+@router.post("/playbooks/approve")
+def approve_visual_playbook(req: ApprovePlaybookRequest):
+    """Logpresso 기능 4: Human-in-the-loop (분석가 승인/반려 게이트)"""
+    from core.soar.playbook_runner import visual_soar_engine
+    execution = visual_soar_engine.approve_step(req.run_id, req.token, req.approved, req.notes)
+    return execution.model_dump()
+
+
+@router.get("/connectors/store")
+def list_connector_store():
+    """Logpresso 기능 5: 플러그블 커넥터 & 앱 스토어 카탈로그 조회"""
+    from core.apps.connector_store import connector_store
+    return [c.model_dump() for c in connector_store.list_available_connectors()]
+
+
+@router.post("/connectors/{app_id}/install")
+def install_connector(app_id: str):
+    """Logpresso 기능 5: 서드파티 보안 장비 커넥터 앱 원클릭 설치"""
+    from core.apps.connector_store import connector_store
+    return connector_store.install_connector(app_id)
+
