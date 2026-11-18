@@ -742,6 +742,75 @@ if HAS_MCP and mcp_app:
         )
         return json.dumps(res, ensure_ascii=False, indent=2)
 
+    # -------------------------------------------------------------------------
+    # Syslog Multi-Port & Field Parsing Rules Tools
+    # -------------------------------------------------------------------------
+    @mcp_app.tool()
+    def get_syslog_ports() -> str:
+        """Syslog 수집기에 등록된 모든 리스닝 포트(기본 1514 및 추가 포트)와 연결된 파싱 규칙 상세 목록 조회"""
+        return json.dumps(mcp_tools.get_syslog_ports(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def add_syslog_port(
+        port: int,
+        name: str,
+        parser_rule_id: str = "rule-default-syslog",
+        protocol: str = "BOTH",
+        target_index: str = "main",
+        description: Optional[str] = None
+    ) -> str:
+        """새로운 Syslog 수신 포트를 추가하고 특정 필드 파싱 규칙(Parser Profile)과 연결"""
+        res = mcp_tools.add_syslog_port(
+            port=port,
+            name=name,
+            parser_rule_id=parser_rule_id,
+            protocol=protocol,
+            target_index=target_index,
+            description=description
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def delete_syslog_port(port: int) -> str:
+        """Syslog 수신 포트 삭제 (기본 1514 포트는 영구 보존되어 삭제 불가)"""
+        return json.dumps(mcp_tools.delete_syslog_port(port), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def get_parsing_rules() -> str:
+        """설정된 모든 필드 파싱 규칙(표준 Syslog, Regex, Key-Value, JSON, CEF 등) 목록 조회"""
+        return json.dumps(mcp_tools.get_parsing_rules(), ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def create_parsing_rule(
+        rule_id: str,
+        name: str,
+        parser_type: str,
+        pattern: Optional[str] = None,
+        delimiter: Optional[str] = None,
+        kv_delimiter: Optional[str] = None,
+        field_mappings: Optional[Dict[str, str]] = None,
+        description: Optional[str] = None,
+        sample_log: Optional[str] = None
+    ) -> str:
+        """새로운 필드 파싱 규칙을 생성하거나 기존 규칙을 튜닝/업데이트"""
+        res = mcp_tools.create_parsing_rule(
+            rule_id=rule_id,
+            name=name,
+            parser_type=parser_type,
+            pattern=pattern,
+            delimiter=delimiter,
+            kv_delimiter=kv_delimiter,
+            field_mappings=field_mappings,
+            description=description,
+            sample_log=sample_log
+        )
+        return json.dumps(res, ensure_ascii=False, indent=2)
+
+    @mcp_app.tool()
+    def test_parsing_rule(sample_text: str, rule_id: Optional[str] = None) -> str:
+        """샘플 로그 텍스트에 특정 파싱 규칙을 적용하여 실시간 필드 분해 및 매핑 결과 미리보기"""
+        return json.dumps(mcp_tools.test_parsing_rule(sample_text, rule_id), ensure_ascii=False, indent=2)
+
     # -------------------------------------------------------------
     # 2. MCP Resources 등록
     # -------------------------------------------------------------

@@ -14,6 +14,12 @@ from core.client.opensearch_client import opensearch_service
 from core.config import settings
 from core.collectors.snmp_telegraf import snmp_collector, TelegrafSNMPConfig
 from core.collectors.db_collector import db_collector_manager, DBCollectorJob, DBTestQueryRequest, DBConnectionTestResult
+from core.collectors.syslog_ports import (
+    syslog_ports_manager,
+    SyslogPortConfig,
+    SyslogPortCreateRequest,
+    SyslogPortUpdateRequest
+)
 from core.apps.connector_store import connector_store
 
 logger = logging.getLogger(__name__)
@@ -33,6 +39,7 @@ class CollectorStartRequest(BaseModel):
 class CollectorTestEventRequest(BaseModel):
     event_type: str = "ssh_failed"  # ssh_failed, ssh_accepted, sudo_escalation, ufw_block, pam_failure
     protocol: str = "udp"            # udp or tcp
+    port: int = 1514                 # target port (1514 default or any configured port)
     custom_message: Optional[str] = None
 
 class CollectorManager:
@@ -81,6 +88,7 @@ class CollectorManager:
 
         is_running = (pid is not None) or (live_metrics is not None)
 
+        ports_list = syslog_ports_manager.list_ports()
         return {
             "status": "running" if is_running else "stopped",
             "pid": pid,
@@ -90,6 +98,8 @@ class CollectorManager:
             "protocols": ["UDP", "TCP"],
             "udp_listening": is_running,
             "tcp_listening": is_running,
+            "configured_ports": ports_list,
+            "total_ports_count": len(ports_list),
             "metrics": live_metrics or {
                 "uptime_seconds": 0,
                 "received_total": 0,
@@ -244,15 +254,17 @@ async def send_test_event(req: CollectorTestEventRequest):
 
     raw_msg = req.custom_message or presets.get(req.event_type, presets["ssh_failed"])
     proto = req.protocol.lower() if req.protocol else "udp"
-    success = CollectorManager.send_test_packet(raw_msg, port=1514, protocol=proto)
+    target_port = req.port if req.port else 1514
+    success = CollectorManager.send_test_packet(raw_msg, port=target_port, protocol=proto)
 
     return {
         "status": "injected" if success else "failed",
         "protocol": proto.upper(),
+        "port": target_port,
         "event_type": req.event_type,
         "raw_message": raw_msg,
-        "target": f"127.0.0.1:1514 ({proto.upper()})",
-        "target_udp": "127.0.0.1:1514"
+        "target": f"127.0.0.1:{target_port} ({proto.upper()})",
+        "target_udp": f"127.0.0.1:{target_port}"
     }
 
 @router.get("/security-events")
@@ -354,6 +366,47 @@ async def collectors_syslog_restart(req: CollectorStartRequest = CollectorStartR
 @collectors_router.post("/syslog/test-packet")
 async def collectors_syslog_test_packet(req: CollectorTestEventRequest):
     return await send_test_event(req)
+
+# --- Syslog Multi-Port & Parser Binding Endpoints ---
+@collectors_router.get("/syslog/ports")
+async def collectors_list_syslog_ports():
+    """모든 등록된 Syslog 포트와 연결된 파싱 규칙 상세 조회"""
+    return syslog_ports_manager.list_ports()
+
+@collectors_router.post("/syslog/ports")
+async def collectors_add_syslog_port(req: SyslogPortCreateRequest):
+    """새로운 Syslog 수집 포트 추가 및 파싱 규칙 연결"""
+    try:
+        return await syslog_ports_manager.add_port(req)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@collectors_router.put("/syslog/ports/{port}")
+async def collectors_update_syslog_port(port: int, req: SyslogPortUpdateRequest):
+    """Syslog 포트 설정(파싱 규칙, 프로토콜, 대상 인덱스 등) 수정"""
+    updated = await syslog_ports_manager.update_port(port, req)
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"포트 {port}를 찾을 수 없습니다.")
+    return updated
+
+@collectors_router.delete("/syslog/ports/{port}")
+async def collectors_delete_syslog_port(port: int):
+    """Syslog 포트 삭제 (기본 1514 포트는 삭제 불가)"""
+    try:
+        success = await syslog_ports_manager.delete_port(port)
+        if not success:
+            raise HTTPException(status_code=404, detail=f"포트 {port}를 찾을 수 없습니다.")
+        return {"status": "deleted", "port": port}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@collectors_router.post("/syslog/ports/{port}/toggle")
+async def collectors_toggle_syslog_port(port: int, enabled: Optional[bool] = Query(None)):
+    """Syslog 포트 활성화/비활성화 토글"""
+    updated = await syslog_ports_manager.toggle_port(port, enabled)
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"포트 {port}를 찾을 수 없습니다.")
+    return updated
 
 # --- SNMP Telegraf Sub-endpoints ---
 @collectors_router.get("/snmp/status")

@@ -1,0 +1,123 @@
+[
+  {
+    "id": "rule-default-syslog",
+    "name": "표준 RFC 3164/5424 Syslog & 보안 이벤트 파서",
+    "description": "기본 1514 포트 표준 규격. PRI, Facility, Severity, Host, Program, PID 파싱 및 SSH, Sudo, UFW 보안 이벤트 자동 매핑",
+    "parser_type": "syslog_standard",
+    "pattern": null,
+    "delimiter": null,
+    "kv_delimiter": null,
+    "field_mappings": {
+      "source_ip": "security.source_ip",
+      "destination_ip": "security.destination_ip",
+      "user_name": "security.user_name",
+      "action": "security.action"
+    },
+    "sample_log": "<34>Nov 18 10:14:00 bastion-gateway sshd[38291]: Failed password for invalid user root from 203.0.113.88 port 59281 ssh2",
+    "is_builtin": true,
+    "created_at": "2026-11-18T01:15:08.985497+00:00",
+    "updated_at": null
+  },
+  {
+    "id": "rule-firewall-kv",
+    "name": "방화벽/네트워크 Key-Value (src= dst= action=) 파서",
+    "description": "Fortigate, Cisco, Palo Alto 등 방화벽 및 네트워크 장비의 key=value 형식 로그 파싱",
+    "parser_type": "key_value",
+    "pattern": null,
+    "delimiter": " ",
+    "kv_delimiter": "=",
+    "field_mappings": {
+      "src": "security.source_ip",
+      "dst": "security.destination_ip",
+      "spt": "security.source_port",
+      "dpt": "security.destination_port",
+      "proto": "network.protocol",
+      "action": "security.action",
+      "user": "security.user_name",
+      "policy": "security.policy_id"
+    },
+    "sample_log": "device=firewall src=198.51.100.45 dst=10.0.1.5 spt=52341 dpt=443 proto=TCP action=deny policy=FW-RULE-99 user=guest msg=\"Blocked suspicious outbound traffic\"",
+    "is_builtin": true,
+    "created_at": "2026-11-18T01:15:08.985526+00:00",
+    "updated_at": null
+  },
+  {
+    "id": "rule-nginx-combined",
+    "name": "웹 서버 Access Log (Nginx/Apache Combined Regex)",
+    "description": "정규표현식 Named Groups 기반 웹 서버 Combined Access Log (클라이언트 IP, 메서드, URI, 응답코드 등)",
+    "parser_type": "regex",
+    "pattern": "^(?P<client_ip>\\S+) \\S+ (?P<remote_user>\\S+) \\[(?P<time_local>[^\\]]+)\\] \"(?P<http_method>\\S+) (?P<request_uri>\\S+) (?P<http_version>[^\"]+)\" (?P<status_code>\\d{3}) (?P<body_bytes_sent>\\d+) \"(?P<http_referer>[^\"]*)\" \"(?P<http_user_agent>[^\"]*)\"",
+    "delimiter": null,
+    "kv_delimiter": null,
+    "field_mappings": {
+      "client_ip": "security.source_ip",
+      "remote_user": "security.user_name",
+      "status_code": "http.response.status_code",
+      "request_uri": "url.path",
+      "http_method": "http.request.method",
+      "http_user_agent": "user_agent.original"
+    },
+    "sample_log": "203.0.113.15 - admin [18/Nov/2026:10:14:22 +0000] \"POST /api/v1/auth/login HTTP/1.1\" 401 128 \"https://example.com\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64)\"",
+    "is_builtin": true,
+    "created_at": "2026-11-18T01:15:08.985536+00:00",
+    "updated_at": null
+  },
+  {
+    "id": "rule-json-event",
+    "name": "JSON 구조화 로그 파서",
+    "description": "클라우드, 마이크로서비스 및 애플리케이션의 JSON 포맷 로그를 구조화 필드로 파싱",
+    "parser_type": "json",
+    "pattern": null,
+    "delimiter": null,
+    "kv_delimiter": null,
+    "field_mappings": {
+      "src_ip": "security.source_ip",
+      "dest_ip": "security.destination_ip",
+      "user": "security.user_name",
+      "action": "security.action",
+      "event_type": "event.category"
+    },
+    "sample_log": "{\"timestamp\": \"2026-11-18T10:14:00Z\", \"src_ip\": \"10.0.4.15\", \"dest_ip\": \"10.0.1.20\", \"user\": \"admin\", \"action\": \"login_failed\", \"error_code\": 403, \"host\": \"auth-srv-01\"}",
+    "is_builtin": true,
+    "created_at": "2026-11-18T01:15:08.985543+00:00",
+    "updated_at": null
+  },
+  {
+    "id": "rule-cef-standard",
+    "name": "CEF (Common Event Format) 보안 장비 파서",
+    "description": "ArcSight CEF 규격 (CEF:Version|Vendor|Product|Version|SignatureID|Name|Severity|Extension) 파서",
+    "parser_type": "cef",
+    "pattern": null,
+    "delimiter": " ",
+    "kv_delimiter": "=",
+    "field_mappings": {
+      "src": "security.source_ip",
+      "dst": "security.destination_ip",
+      "suser": "security.user_name",
+      "act": "security.action",
+      "name": "event.action",
+      "severity": "security.severity"
+    },
+    "sample_log": "CEF:0|CheckPoint|VPN-1 & FireWall-1|1.0|drop|Drop packet|3|src=198.51.100.99 dst=10.0.0.1 spt=44122 dpt=22 proto=6 act=drop suser=anonymous",
+    "is_builtin": true,
+    "created_at": "2026-11-18T01:15:08.985550+00:00",
+    "updated_at": null
+  },
+  {
+    "id": "rule-delimiter-pipe",
+    "name": "구분자 기반 파서 (Pipe | 분리)",
+    "description": "파이프(|) 구분자로 정렬된 엔터프라이즈 감사 로그 파싱",
+    "parser_type": "delimiter",
+    "pattern": "timestamp|host|service|level|user|action|detail",
+    "delimiter": "|",
+    "kv_delimiter": null,
+    "field_mappings": {
+      "user": "security.user_name",
+      "action": "security.action"
+    },
+    "sample_log": "2026-11-18 10:14:00|db-prod-01|postgresql|ERROR|db_admin|unauthorized_access|attempted SELECT on confidential_table",
+    "is_builtin": true,
+    "created_at": "2026-11-18T01:15:08.985555+00:00",
+    "updated_at": null
+  }
+]

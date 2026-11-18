@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.client.opensearch_client import opensearch_service
-from core.api.routes import ingest, search, analysis, admin, install, dashboard, collector, saved_searches, users, modules, apps, auth, siem
+from core.api.routes import ingest, search, analysis, admin, install, dashboard, collector, saved_searches, users, modules, apps, auth, siem, parsing_rules
 from core.mcp.server import mcp_app
 
 app = FastAPI(
@@ -34,6 +34,7 @@ app.include_router(modules.router, prefix="/api/v1")
 app.include_router(apps.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(siem.router, prefix="/api/v1")
+app.include_router(parsing_rules.router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup_event():
@@ -44,6 +45,11 @@ async def startup_event():
         await db_collector_manager.start_all()
     except Exception as e:
         pass
+    try:
+        from core.collectors.syslog_ports import syslog_ports_manager
+        await syslog_ports_manager.start_all_listeners()
+    except Exception as e:
+        pass
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -52,6 +58,11 @@ async def shutdown_event():
     try:
         from core.collectors.db_collector import db_collector_manager
         db_collector_manager.stop_all()
+    except Exception:
+        pass
+    try:
+        from core.collectors.syslog_ports import syslog_ports_manager
+        await syslog_ports_manager.stop_all_listeners()
     except Exception:
         pass
 

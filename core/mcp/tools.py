@@ -548,6 +548,7 @@ class LogccinoMCPTools:
         return {
             "active": False,
             "status": "stopped",
+            "port": 1514,
             "message": "Syslog collector is not currently running. It can be started from the Logccino dashboard or API."
         }
 
@@ -1536,5 +1537,109 @@ class LogccinoMCPTools:
         if not inc:
             return {"error": f"Incident {incident_id} not found"}
         return {"status": "claude_review_completed", "incident": inc.model_dump()}
+
+    # -------------------------------------------------------------------------
+    # Syslog Multi-Port & Field Parsing Rules Tools
+    # -------------------------------------------------------------------------
+    def get_syslog_ports(self) -> List[Dict[str, Any]]:
+        """Syslog 수집기에 등록된 모든 리스닝 포트와 연결된 필드 파싱 규칙(Parser Profile) 목록 조회"""
+        from core.collectors.syslog_ports import syslog_ports_manager
+        return syslog_ports_manager.list_ports()
+
+    def add_syslog_port(
+        self,
+        port: int,
+        name: str,
+        parser_rule_id: str = "rule-default-syslog",
+        protocol: str = "BOTH",
+        target_index: str = "main",
+        description: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """새로운 Syslog 수신 포트를 추가하고 특정 필드 파싱 규칙과 연결"""
+        import asyncio
+        from core.collectors.syslog_ports import syslog_ports_manager, SyslogPortCreateRequest
+        req = SyslogPortCreateRequest(
+            port=port,
+            name=name,
+            parser_rule_id=parser_rule_id,
+            protocol=protocol,
+            target_index=target_index,
+            description=description
+        )
+        try:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    cfg = pool.submit(asyncio.run, syslog_ports_manager.add_port(req)).result()
+            else:
+                cfg = asyncio.run(syslog_ports_manager.add_port(req))
+            return {"status": "created", "port": cfg.model_dump()}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def delete_syslog_port(self, port: int) -> Dict[str, Any]:
+        """Syslog 수신 포트 삭제 (기본 1514 포트는 보호되어 삭제 불가)"""
+        import asyncio
+        from core.collectors.syslog_ports import syslog_ports_manager
+        try:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    success = pool.submit(asyncio.run, syslog_ports_manager.delete_port(port)).result()
+            else:
+                success = asyncio.run(syslog_ports_manager.delete_port(port))
+            return {"status": "deleted" if success else "failed", "port": port}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def get_parsing_rules(self) -> List[Dict[str, Any]]:
+        """설정된 모든 필드 파싱 규칙(RFC3164, Regex, Key-Value, JSON, CEF 등) 목록 조회"""
+        from core.collectors.parsing_rules import parsing_rule_manager
+        return [r.model_dump() for r in parsing_rule_manager.list_rules()]
+
+    def create_parsing_rule(
+        self,
+        rule_id: str,
+        name: str,
+        parser_type: str,
+        pattern: Optional[str] = None,
+        delimiter: Optional[str] = None,
+        kv_delimiter: Optional[str] = None,
+        field_mappings: Optional[Dict[str, str]] = None,
+        description: Optional[str] = None,
+        sample_log: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """새로운 필드 파싱 규칙 등록 또는 갱신"""
+        from core.collectors.parsing_rules import parsing_rule_manager, ParsingRule
+        rule = ParsingRule(
+            id=rule_id,
+            name=name,
+            parser_type=parser_type,
+            pattern=pattern,
+            delimiter=delimiter,
+            kv_delimiter=kv_delimiter,
+            field_mappings=field_mappings or {},
+            description=description,
+            sample_log=sample_log
+        )
+        saved = parsing_rule_manager.create_rule(rule)
+        return {"status": "saved", "rule": saved.model_dump()}
+
+    def test_parsing_rule(self, sample_text: str, rule_id: Optional[str] = None) -> Dict[str, Any]:
+        """샘플 로그 텍스트에 파싱 규칙을 적용하여 실시간 필드 추출 및 정규화 결과 검증"""
+        from core.collectors.parsing_rules import parsing_rule_manager, ParsingRuleTestRequest
+        req = ParsingRuleTestRequest(sample_text=sample_text, rule_id=rule_id or "rule-default-syslog")
+        res = parsing_rule_manager.test_parser(req)
+        return res.model_dump()
 
 mcp_tools = LogccinoMCPTools()

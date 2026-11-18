@@ -1,0 +1,20 @@
+[
+  {
+    "port": 1514,
+    "name": "기본 보안 Syslog 리스너 (기본포트)",
+    "description": "기본 1514 포트 (UDP/TCP) - Linux, SSH, Sudo, UFW 표준 보안 로그 수집 및 탐지",
+    "protocol": "BOTH",
+    "parser_rule_id": "rule-default-syslog",
+    "target_index": "main",
+    "enabled": true,
+    "status": "active",
+    "error_message": null,
+    "received_total": 20,
+    "parsed_total": 20,
+    "forwarded_total": 20,
+    "error_total": 0,
+    "last_event_time": "2026-11-18T01:23:49.738045+00:00",
+    "created_at": "2026-11-18T01:15:52.499223+00:00",
+    "updated_at": null
+  }
+]

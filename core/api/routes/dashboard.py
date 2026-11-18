@@ -198,6 +198,25 @@ async def get_enterprise_dashboard():
             </a>
           </div>
                     <div class="py-1.5 px-2">
+            <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1">
+              <i data-lucide="split" class="w-3 h-3 text-amber-400"></i> PARSING &amp; COLLECTORS (파싱 및 수집)
+            </span>
+            <a href="javascript:void(0)" onclick="openParsingRulesModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-amber-200 hover:text-white transition mt-1 bg-amber-500/10 border border-amber-500/20">
+              <i data-lucide="file-code-2" class="w-3.5 h-3.5 text-amber-400"></i>
+              <div>
+                <div class="font-bold text-xs text-amber-200">필드 파싱 규칙 관리 (Field Parsing)</div>
+                <div class="text-[10px] text-amber-300/70">포트별 정규식, KV, JSON, CEF 파서 정의 및 시뮬레이터</div>
+              </div>
+            </a>
+            <a href="javascript:void(0)" onclick="selectApp('collectors'); switchCollectorsSubTab('syslog'); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-0.5">
+              <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <div>
+                <div class="font-medium text-slate-200">Syslog 포트 및 리스너 설정</div>
+                <div class="text-[10px] text-slate-400">기본 1514 포트 및 추가 포트 파싱 규칙 연결</div>
+              </div>
+            </a>
+          </div>
+          <div class="py-1.5 px-2">
             <span class="text-[10px] uppercase font-bold text-purple-400 tracking-wider flex items-center gap-1">
               <i data-lucide="bot" class="w-3 h-3 text-purple-400"></i> AI AGENT & CLAUDE (AI 연동)
             </span>
@@ -2071,20 +2090,51 @@ async def get_enterprise_dashboard():
         <!-- SUBVIEW 2: Syslog 수집기 (TCP/UDP 모두 수집)                          -->
         <!-- =================================================================== -->
         <div id="collectors-subview-syslog" class="collectors-subview space-y-4 hidden">
-          <!-- Rust Syslog Collector Controller Card -->
+          <!-- 1. Syslog Multi-Port Listeners & Parsing Rules Binding Card -->
+          <div class="p-5 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-bordercolor/60 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                  <i data-lucide="network" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="text-xs font-bold text-white uppercase flex items-center gap-2">
+                    Syslog 다중 포트 리스너 &amp; 필드 파싱 규칙 연결
+                    <span class="px-2 py-0.5 rounded font-mono text-[9px] bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">DEFAULT PORT: 1514</span>
+                  </h3>
+                  <p class="text-[11px] text-slate-400 mt-0.5">기본 1514 포트 및 추가 포트별로 독립적인 필드 파싱 규칙(RFC3164, Regex, KV, JSON, CEF)을 연결하여 수집합니다.</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="openParsingRulesModal()" class="px-3 py-1.5 rounded bg-subpanel hover:bg-slate-800 text-amber-300 border border-amber-500/30 text-xs font-medium flex items-center gap-1.5 transition">
+                  <i data-lucide="file-code-2" class="w-3.5 h-3.5 text-amber-400"></i> 필드 파싱 규칙 관리
+                </button>
+                <button onclick="openAddSyslogPortModal()" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> 포트 추가
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Multi-Port Listeners List -->
+            <div id="col-syslog-ports-container" class="space-y-2">
+              <div class="p-4 text-center text-slate-400 text-xs">포트 리스너 목록 로드 중...</div>
+            </div>
+          </div>
+
+          <!-- 2. Rust Syslog Collector Controller Card -->
           <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-slate-500" id="col-syslog-status-dot"></span>
-                <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine (Port: 1514 UDP & TCP 지원)</span>
+                <span class="font-bold text-white text-xs">Rust High-Performance Syslog Engine (기본 1514 포트 데몬)</span>
                 <span id="col-syslog-status-badge" class="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700">CHECKING...</span>
               </div>
               <div class="flex items-center gap-2">
                 <button onclick="startCollectorSyslog()" id="btn-col-syslog-start" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1 transition">
-                  <i data-lucide="play" class="w-3 h-3"></i> 시작
+                  <i data-lucide="play" class="w-3 h-3"></i> 데몬 시작
                 </button>
                 <button onclick="stopCollectorSyslog()" id="btn-col-syslog-stop" class="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1 transition">
-                  <i data-lucide="square" class="w-3 h-3"></i> 중지
+                  <i data-lucide="square" class="w-3 h-3"></i> 데몬 중지
                 </button>
                 <button onclick="restartCollectorSyslog()" id="btn-col-syslog-restart" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center gap-1 transition border border-slate-700">
                   <i data-lucide="refresh-cw" class="w-3 h-3"></i> 재시작
@@ -2113,25 +2163,34 @@ async def get_enterprise_dashboard():
             </div>
           </div>
 
-          <!-- Real-time Test Packet Injector with UDP & TCP Protocol Selection -->
+          <!-- 3. Real-time Test Packet Injector with Target Port & Protocol Selection -->
           <div class="p-4 bg-panelbg rounded-xl border border-bordercolor shadow-xl space-y-3">
             <div class="flex items-center justify-between">
               <span class="font-bold text-slate-200 flex items-center gap-2 text-xs">
-                <i data-lucide="send" class="w-4 h-4 text-emerald-400"></i> Syslog 수집 테스트 패킷 발송기 (TCP / UDP 선택 지원)
+                <i data-lucide="send" class="w-4 h-4 text-emerald-400"></i> Syslog 수집 테스트 패킷 발송기 (포트 및 프로토콜 선택 지원)
               </span>
               <span id="col-syslog-inject-msg" class="text-xs font-mono text-emerald-400"></span>
             </div>
 
-            <div class="flex items-center gap-4 text-xs text-slate-300">
-              <span class="font-semibold text-slate-400">전송 프로토콜:</span>
-              <label class="flex items-center gap-1.5 cursor-pointer">
-                <input type="radio" name="syslog-proto" value="udp" checked class="text-emerald-500 focus:ring-0" />
-                <span>UDP (Port: 1514)</span>
-              </label>
-              <label class="flex items-center gap-1.5 cursor-pointer">
-                <input type="radio" name="syslog-proto" value="tcp" class="text-indigo-500 focus:ring-0" />
-                <span>TCP (Port: 1514 연결형 스트림)</span>
-              </label>
+            <div class="flex items-center gap-5 text-xs text-slate-300">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-slate-400">대상 수신 포트:</span>
+                <select id="col-syslog-test-port-select" class="bg-slatebg border border-bordercolor rounded px-2.5 py-1 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none">
+                  <option value="1514">1514 (기본 Syslog)</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-slate-400">전송 프로토콜:</span>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="radio" name="syslog-proto" value="udp" checked class="text-emerald-500 focus:ring-0" />
+                  <span>UDP</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="radio" name="syslog-proto" value="tcp" class="text-indigo-500 focus:ring-0" />
+                  <span>TCP (연결형 스트림)</span>
+                </label>
+              </div>
             </div>
 
             <div class="flex flex-wrap gap-2">
@@ -3047,6 +3106,249 @@ async def get_enterprise_dashboard():
           </button>
           <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 shadow">
             <i data-lucide="check" class="w-3.5 h-3.5"></i> 튜닝 저장
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =================================================================================== -->
+  <!-- 3-B. Field Parsing Rules Management Modal (#modal-parsing-rules)                      -->
+  <!-- =================================================================================== -->
+  <div id="modal-parsing-rules" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-amber-500/40 rounded-xl w-full max-w-5xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-bordercolor flex items-center justify-between bg-subpanel/90 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <i data-lucide="file-code-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-sm text-white uppercase tracking-wider">필드 파싱 규칙 관리 (Field Parsing Rules &amp; Profiles)</h3>
+              <span class="px-2 py-0.5 rounded font-mono text-[9px] bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">PARSER ENGINE</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">수집 포트별로 적용할 필드 파싱 규칙(표준 Syslog, Regex, Key-Value, JSON, CEF 등)을 정의하고 실시간으로 시뮬레이션합니다.</p>
+          </div>
+        </div>
+        <button onclick="closeParsingRulesModal()" class="text-slate-400 hover:text-white transition p-1.5 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 px-6 pt-3 border-b border-bordercolor bg-subpanel/40 text-xs shrink-0">
+        <button onclick="switchParsingRulesTab('list')" id="prules-tab-list-btn" class="px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-amber-500 text-amber-300">
+          <i data-lucide="list" class="w-3.5 h-3.5"></i> 파싱 규칙 목록
+        </button>
+        <button onclick="switchParsingRulesTab('form')" id="prules-tab-form-btn" class="px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> 새 파싱 규칙 등록 &amp; 실시간 시뮬레이터
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+        <!-- 1. Rules List View -->
+        <div id="prules-view-list" class="space-y-3">
+          <div class="flex items-center justify-between pb-1">
+            <span class="text-slate-400 text-xs">등록된 파싱 프로파일을 확인하고, 수집기 포트(기본 1514 및 추가 포트)와 연결할 수 있습니다.</span>
+            <button onclick="openNewParsingRuleForm()" class="px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> 새 규칙 등록
+            </button>
+          </div>
+
+          <div id="prules-table-container" class="space-y-2.5">
+            <div class="text-center py-12 text-slate-400">파싱 규칙 로드 중...</div>
+          </div>
+        </div>
+
+        <!-- 2. Add/Edit & Simulator View -->
+        <div id="prules-view-form" class="space-y-4 hidden">
+          <form onsubmit="event.preventDefault(); saveParsingRule(event); return false;" class="space-y-4">
+            <input type="hidden" id="prule-is-editing" value="false">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">규칙 ID (Rule ID)</label>
+                <input type="text" id="prule-id" required placeholder="rule-custom-firewall" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-slate-300 font-bold mb-1">규칙 명칭 (Name)</label>
+                <input type="text" id="prule-name" required placeholder="차세대 방화벽 전용 Key-Value 파서" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">파서 유형 (Parser Type)</label>
+                <select id="prule-type" onchange="handleParserTypeChange()" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white text-xs focus:border-amber-500 focus:outline-none">
+                  <option value="syslog_standard">syslog_standard (RFC 3164/5424 + 보안 이벤트)</option>
+                  <option value="key_value">key_value (Key=Value 또는 Key="Value")</option>
+                  <option value="regex">regex (정규식 Named Capture Groups)</option>
+                  <option value="json">json (JSON 구조화 페이로드)</option>
+                  <option value="cef">cef (Common Event Format 규격)</option>
+                  <option value="delimiter">delimiter (구분자 분리: CSV, Pipe 등)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-bold mb-1" id="prule-delim-label">구분자 (Delimiter)</label>
+                <input type="text" id="prule-delimiter" value=" " placeholder="공백, 쉼표, 파이프(|)" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-300 font-bold mb-1" id="prule-kvdelim-label">KV 구분자 (Key-Value Delim)</label>
+                <input type="text" id="prule-kv-delimiter" value="=" placeholder="=" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div id="prule-pattern-container">
+              <label class="block text-slate-300 font-bold mb-1" id="prule-pattern-label">정규표현식 패턴 또는 헤더 목록</label>
+              <textarea id="prule-pattern" rows="2" placeholder="^(?P<client_ip>\S+) \S+ (?P<remote_user>\S+) ..." class="w-full bg-slatebg border border-bordercolor rounded p-2.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
+              <p class="text-[10px] text-slate-400 mt-0.5">정규식 파서의 경우 (?P&lt;field_name&gt;...) 형식의 Named Groups를 지원합니다.</p>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">필드 매핑 (Field Mappings: 추출 필드 ➔ 표준/보안 필드)</label>
+              <textarea id="prule-mappings" rows="3" placeholder="src: security.source_ip&#10;dst: security.destination_ip&#10;action: security.action" class="w-full bg-slatebg border border-bordercolor rounded p-2.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
+              <p class="text-[10px] text-slate-400 mt-0.5">한 줄에 하나씩 `추출필드: 대상필드` (예: `src: security.source_ip`, `user: security.user_name`)로 입력합니다.</p>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">설명 (Description)</label>
+              <input type="text" id="prule-desc" placeholder="파서 설명 및 타깃 로그 장비" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white text-xs focus:border-amber-500 focus:outline-none">
+            </div>
+
+            <!-- Live Test & Simulator Box -->
+            <div class="p-4 bg-slatebg/70 rounded-xl border border-amber-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-amber-300 flex items-center gap-1.5">
+                  <i data-lucide="play-circle" class="w-4 h-4 text-amber-400"></i> 실시간 파싱 규칙 시뮬레이터 (Live Test)
+                </span>
+                <button type="button" onclick="testParsingRuleSimulator()" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded transition flex items-center gap-1 text-xs shadow">
+                  <i data-lucide="zap" class="w-3.5 h-3.5"></i> 파싱 테스트 실행
+                </button>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 text-[11px] mb-1">테스트 샘플 로그 텍스트:</label>
+                <textarea id="prule-sample-log" rows="2" placeholder="테스트할 원본 로그를 입력하세요..." class="w-full bg-slatebg border border-bordercolor rounded p-2 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
+              </div>
+
+              <!-- Test Result Output Box -->
+              <div id="prule-test-result-box" class="hidden p-3 bg-slate-900 rounded-lg border border-bordercolor text-xs space-y-2">
+                <div class="flex items-center justify-between border-b border-bordercolor pb-1.5">
+                  <span class="font-bold text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> 파싱 성공 결과</span>
+                  <span id="prule-test-status" class="text-[10px] font-mono text-slate-400"></span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
+                  <div>
+                    <span class="text-slate-400 block mb-1">추출된 원시 필드 (Extracted Attributes):</span>
+                    <pre id="prule-test-extracted" class="bg-black/40 p-2 rounded text-emerald-300 max-h-40 overflow-y-auto scrollbar-thin"></pre>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block mb-1">매핑된 보안 필드 (Mapped Security Fields):</span>
+                    <pre id="prule-test-mapped" class="bg-black/40 p-2 rounded text-indigo-300 max-h-40 overflow-y-auto scrollbar-thin"></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-bordercolor">
+              <button type="button" onclick="switchParsingRulesTab('list')" class="px-4 py-1.5 rounded bg-subpanel text-slate-300 hover:bg-slate-800 transition">
+                취소
+              </button>
+              <button type="submit" class="px-5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 shadow">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> 파싱 규칙 저장
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================================================== -->
+  <!-- 3-C. Add / Edit Syslog Port Modal (#modal-add-syslog-port)                           -->
+  <!-- =================================================================================== -->
+  <div id="modal-add-syslog-port" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-lg shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-bordercolor flex items-center justify-between bg-subpanel/90">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i data-lucide="radio" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-xs text-white uppercase" id="modal-syslog-port-title">Syslog 수집 포트 등록 및 파싱 규칙 연결</h3>
+            <p class="text-[10px] text-slate-400">수신 포트와 프로토콜(UDP/TCP), 연결할 필드 파싱 규칙을 지정합니다.</p>
+          </div>
+        </div>
+        <button onclick="closeAddSyslogPortModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="event.preventDefault(); saveSyslogPort(event); return false;" class="p-5 space-y-4 text-xs">
+        <input type="hidden" id="syslog-port-is-editing" value="false">
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">수신 포트 번호 (Port)</label>
+          <input type="number" id="add-port-number" required min="1" max="65535" value="5140" placeholder="1514, 5140, 5141 등" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none">
+          <p class="text-[10px] text-slate-400 mt-0.5">기본 포트는 1514이며, 추가 수신 포트를 자유롭게 지정할 수 있습니다.</p>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">포트 명칭 (Name)</label>
+          <input type="text" id="add-port-name" required placeholder="Cisco ASA 방화벽 전용 수신 포트" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">수신 프로토콜 (Protocol)</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex items-center gap-2 p-2 bg-slatebg rounded border border-bordercolor/60 cursor-pointer hover:border-emerald-500/50">
+              <input type="radio" name="add-port-proto" value="BOTH" checked class="text-emerald-500 focus:ring-0">
+              <span class="font-bold text-white">BOTH (UDP &amp; TCP)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 bg-slatebg rounded border border-bordercolor/60 cursor-pointer hover:border-emerald-500/50">
+              <input type="radio" name="add-port-proto" value="UDP" class="text-emerald-500 focus:ring-0">
+              <span class="font-bold text-white">UDP 전용</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 bg-slatebg rounded border border-bordercolor/60 cursor-pointer hover:border-emerald-500/50">
+              <input type="radio" name="add-port-proto" value="TCP" class="text-emerald-500 focus:ring-0">
+              <span class="font-bold text-white">TCP 전용</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-slate-300 font-bold">연결할 필드 파싱 규칙 (Linked Parsing Rule)</label>
+            <button type="button" onclick="openParsingRulesModal()" class="text-[10px] text-amber-400 hover:underline">
+              규칙 관리 및 추가 &rarr;
+            </button>
+          </div>
+          <select id="add-port-rule-select" required class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
+            <!-- Populated dynamically -->
+          </select>
+          <p class="text-[10px] text-slate-400 mt-0.5">이 포트로 수신된 모든 Syslog 패킷은 선택한 규칙에 따라 필드가 자동 파싱됩니다.</p>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">대상 인덱스 (Target Index)</label>
+          <input type="text" id="add-port-target-index" value="main" required placeholder="main" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none">
+          <p class="text-[10px] text-slate-400 mt-0.5">Splunk 기본 보안 인덱스는 `main`입니다.</p>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">설명 (Description)</label>
+          <input type="text" id="add-port-desc" placeholder="외부 방화벽 장비 Syslog 수집용" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-bordercolor">
+          <button type="button" onclick="closeAddSyslogPortModal()" class="px-3.5 py-1.5 rounded bg-subpanel text-slate-300 hover:bg-slate-800 transition">
+            취소
+          </button>
+          <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 shadow">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> 포트 저장 및 리스너 시작
           </button>
         </div>
       </form>
@@ -4451,6 +4753,7 @@ async def get_enterprise_dashboard():
 
         fetchSnmpStatusAndConfig();
         fetchDbJobsList();
+        fetchSyslogPortsList();
         loadSyslogEventsStream();
         loadConnectorStoreCatalog();
       } catch (e) {
@@ -4480,7 +4783,10 @@ async def get_enterprise_dashboard():
       const msg = document.getElementById('col-syslog-inject-msg');
       const protoRadio = document.querySelector('input[name="syslog-proto"]:checked');
       const selectedProto = (protoRadio && protoRadio.value) ? protoRadio.value : 'udp';
-      msg.textContent = `${selectedProto.toUpperCase()} 패킷 발송 중...`;
+      const portSelect = document.getElementById('col-syslog-test-port-select');
+      const selectedPort = (portSelect && portSelect.value) ? parseInt(portSelect.value) : 1514;
+
+      if (msg) msg.textContent = `[Port ${selectedPort} / ${selectedProto.toUpperCase()}] 패킷 발송 중...`;
 
       try {
         const res = await fetch('/api/v1/collectors/syslog/test-packet', {
@@ -4488,15 +4794,505 @@ async def get_enterprise_dashboard():
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             event_type: eventType,
-            protocol: selectedProto
+            protocol: selectedProto,
+            port: selectedPort
           })
         });
         const d = await res.json();
-        msg.textContent = `✓ [${d.protocol}] ${d.event_type} 발송 및 수집 완료 (${d.target})`;
-        setTimeout(() => { msg.textContent = ''; }, 3500);
+        if (msg) {
+          msg.textContent = `✓ [${d.protocol}] ${d.event_type} 발송 및 수집 완료 (${d.target})`;
+          setTimeout(() => { msg.textContent = ''; }, 3500);
+        }
         setTimeout(fetchCollectorsAllStatus, 500);
       } catch (e) {
-        msg.textContent = `✗ 발송 실패: ${e.message}`;
+        if (msg) msg.textContent = `✗ 발송 실패: ${e.message}`;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Syslog Multi-Port & Parsing Rules Controllers
+    // -------------------------------------------------------------
+    let currentSyslogPorts = [];
+    let currentParsingRules = [];
+
+    async function fetchSyslogPortsList() {
+      const container = document.getElementById('col-syslog-ports-container');
+      const testPortSelect = document.getElementById('col-syslog-test-port-select');
+      try {
+        const res = await fetch('/api/v1/collectors/syslog/ports');
+        if (!res.ok) return;
+        currentSyslogPorts = await res.json();
+
+        // Update Test Packet Port dropdown
+        if (testPortSelect) {
+          const currentVal = testPortSelect.value;
+          testPortSelect.innerHTML = currentSyslogPorts.map(p => {
+            const isDef = p.port === 1514 ? ' (기본 Syslog)' : '';
+            return `<option value="${p.port}">${p.port} - ${p.name}${isDef} [${p.protocol}]</option>`;
+          }).join('');
+          if (currentVal && currentSyslogPorts.some(p => p.port == currentVal)) {
+            testPortSelect.value = currentVal;
+          }
+        }
+
+        if (!container) return;
+        if (currentSyslogPorts.length === 0) {
+          container.innerHTML = '<div class="p-6 text-center text-slate-500 text-xs">등록된 Syslog 포트가 없습니다.</div>';
+          return;
+        }
+
+        container.innerHTML = currentSyslogPorts.map(p => {
+          const isDefault = p.port === 1514;
+          const isActive = p.status === 'active' || p.status.includes('active');
+          const isErr = p.status === 'error';
+          const rule = p.parser_rule || {};
+
+          let badgeClass = 'bg-slate-800 text-slate-400 border border-slate-700';
+          if (isActive) badgeClass = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          if (isErr) badgeClass = 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+
+          return `
+            <div class="p-3.5 bg-slatebg/80 rounded-xl border border-bordercolor flex items-center justify-between hover:border-bordercolor/90 transition shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg ${isDefault ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'} flex flex-col items-center justify-center">
+                  <span class="text-xs font-mono font-bold">${p.port}</span>
+                  <span class="text-[8px] uppercase tracking-tighter">${p.protocol}</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-white text-xs">${p.name}</span>
+                    ${isDefault ? '<span class="px-1.5 py-0.2 rounded font-mono text-[9px] bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">기본포트</span>' : ''}
+                    <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold ${badgeClass}">${p.status.toUpperCase()}</span>
+                  </div>
+                  <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                    <span class="flex items-center gap-1">
+                      <i data-lucide="split" class="w-3 h-3 text-amber-400"></i>
+                      <span>파싱 규칙:</span>
+                      <strong class="text-amber-300 font-mono">${rule.name || p.parser_rule_id}</strong>
+                      <span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] font-mono">${rule.parser_type || 'standard'}</span>
+                    </span>
+                    <span>&bull;</span>
+                    <span>인덱스: <strong class="text-slate-300 font-mono">${p.target_index || 'main'}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <div class="text-right text-[11px] font-mono">
+                  <div class="text-slate-200">수신: <strong>${(p.received_total || 0).toLocaleString()}</strong>건</div>
+                  <div class="text-emerald-400 text-[10px]">파싱/적재: <strong>${(p.forwarded_total || 0).toLocaleString()}</strong>건</div>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <button onclick="toggleSyslogPort(${p.port})" class="px-2.5 py-1 rounded ${p.enabled ? 'bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30'} text-xs font-semibold transition">
+                    ${p.enabled ? '비활성화' : '활성화'}
+                  </button>
+                  ${!isDefault ? `
+                    <button onclick="deleteSyslogPort(${p.port})" class="px-2 py-1 rounded bg-subpanel hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 border border-bordercolor text-xs transition" title="포트 삭제">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        lucide.createIcons();
+      } catch (e) {
+        if (container) container.innerHTML = `<div class="p-4 text-center text-rose-400 text-xs">포트 로드 실패: ${e.message}</div>`;
+      }
+    }
+
+    function openAddSyslogPortModal() {
+      fetchParsingRulesList();
+      const modal = document.getElementById('modal-add-syslog-port');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAddSyslogPortModal() {
+      const modal = document.getElementById('modal-add-syslog-port');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function saveSyslogPort(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const port = parseInt(document.getElementById('add-port-number').value);
+      const name = document.getElementById('add-port-name').value.trim();
+      const protoEl = document.querySelector('input[name="add-port-proto"]:checked');
+      const protocol = protoEl ? protoEl.value : 'BOTH';
+      const parser_rule_id = document.getElementById('add-port-rule-select').value;
+      const target_index = document.getElementById('add-port-target-index').value.trim() || 'main';
+      const description = document.getElementById('add-port-desc').value.trim();
+
+      try {
+        const res = await fetch('/api/v1/collectors/syslog/ports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            port: port,
+            name: name,
+            protocol: protocol,
+            parser_rule_id: parser_rule_id,
+            target_index: target_index,
+            description: description,
+            enabled: true
+          })
+        });
+
+        if (res.ok) {
+          closeAddSyslogPortModal();
+          fetchSyslogPortsList();
+          alert(`✓ Syslog 포트 ${port} (${protocol})가 등록되고 파싱 규칙 '${parser_rule_id}'이 연결되었습니다.`);
+        } else {
+          const err = await res.json();
+          alert("포트 등록 실패: " + (err.detail || "알 수 없는 오류"));
+        }
+      } catch (err) {
+        alert("서버 통신 오류: " + err.message);
+      }
+    }
+
+    async function deleteSyslogPort(port) {
+      if (!confirm(`Syslog 포트 ${port} 수집기를 삭제하시겠습니까?`)) return;
+      try {
+        const res = await fetch(`/api/v1/collectors/syslog/ports/${port}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchSyslogPortsList();
+        } else {
+          const err = await res.json();
+          alert("삭제 실패: " + (err.detail || "알 수 없는 오류"));
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    async function toggleSyslogPort(port) {
+      try {
+        const res = await fetch(`/api/v1/collectors/syslog/ports/${port}/toggle`, { method: 'POST' });
+        if (res.ok) {
+          fetchSyslogPortsList();
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Field Parsing Rules Management & Simulator Controllers
+    // -------------------------------------------------------------
+    function openParsingRulesModal() {
+      fetchParsingRulesList();
+      switchParsingRulesTab('list');
+      const modal = document.getElementById('modal-parsing-rules');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeParsingRulesModal() {
+      const modal = document.getElementById('modal-parsing-rules');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function switchParsingRulesTab(tab) {
+      const listBtn = document.getElementById('prules-tab-list-btn');
+      const formBtn = document.getElementById('prules-tab-form-btn');
+      const listView = document.getElementById('prules-view-list');
+      const formView = document.getElementById('prules-view-form');
+
+      if (tab === 'list') {
+        if (listBtn) { listBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-amber-500 text-amber-300'; }
+        if (formBtn) { formBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200'; }
+        if (listView) listView.classList.remove('hidden');
+        if (formView) formView.classList.add('hidden');
+        fetchParsingRulesList();
+      } else {
+        if (listBtn) { listBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200'; }
+        if (formBtn) { formBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-amber-500 text-amber-300'; }
+        if (listView) listView.classList.add('hidden');
+        if (formView) formView.classList.remove('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    async function fetchParsingRulesList() {
+      const container = document.getElementById('prules-table-container');
+      const ruleSelect = document.getElementById('add-port-rule-select');
+
+      try {
+        const res = await fetch('/api/v1/parsing-rules');
+        if (!res.ok) return;
+        currentParsingRules = await res.json();
+
+        // Populate dropdown in Add Port modal
+        if (ruleSelect) {
+          ruleSelect.innerHTML = currentParsingRules.map(r => {
+            return `<option value="${r.id}">[${r.parser_type}] ${r.name}</option>`;
+          }).join('');
+        }
+
+        if (!container) return;
+        if (currentParsingRules.length === 0) {
+          container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">등록된 파싱 규칙이 없습니다.</div>';
+          return;
+        }
+
+        container.innerHTML = currentParsingRules.map(r => {
+          const isBuiltin = r.is_builtin;
+          const mappingsCount = Object.keys(r.field_mappings || {}).length;
+
+          let typeColor = 'bg-slate-800 text-slate-300 border-slate-700';
+          if (r.parser_type === 'syslog_standard') typeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+          if (r.parser_type === 'key_value') typeColor = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+          if (r.parser_type === 'regex') typeColor = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+          if (r.parser_type === 'json') typeColor = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
+          if (r.parser_type === 'cef') typeColor = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+
+          return `
+            <div class="p-4 bg-slatebg/80 rounded-xl border border-bordercolor flex items-start justify-between gap-4 hover:border-amber-500/40 transition">
+              <div class="space-y-1.5 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-white text-xs">${r.name}</span>
+                  <span class="font-mono text-[10px] text-slate-400">ID: ${r.id}</span>
+                  <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold border ${typeColor}">${r.parser_type.toUpperCase()}</span>
+                  ${isBuiltin ? '<span class="px-1.5 py-0.2 rounded font-mono text-[9px] bg-slate-800 text-slate-400 border border-slate-700">기본규칙</span>' : ''}
+                </div>
+                <p class="text-[11px] text-slate-300">${r.description || '필드 파싱 프로파일'}</p>
+                <div class="flex items-center gap-3 text-[10px] font-mono text-slate-400 pt-1">
+                  <span>매핑 필드: <strong class="text-emerald-400">${mappingsCount}개</strong></span>
+                  ${r.pattern ? `<span>&bull;</span> <span class="truncate max-w-md">패턴: <code class="text-amber-300">${r.pattern.slice(0, 50)}...</code></span>` : ''}
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="openSimulatorWithRule('${r.id}')" class="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition">
+                  <i data-lucide="play-circle" class="w-3.5 h-3.5"></i> 테스트
+                </button>
+                <button onclick="openEditParsingRule('${r.id}')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
+                  수정
+                </button>
+                ${!isBuiltin ? `
+                  <button onclick="deleteParsingRule('${r.id}')" class="px-2 py-1 rounded bg-subpanel hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 border border-bordercolor text-xs transition" title="삭제">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+        lucide.createIcons();
+      } catch (e) {
+        if (container) container.innerHTML = `<div class="p-6 text-center text-rose-400 text-xs">규칙 로드 실패: ${e.message}</div>`;
+      }
+    }
+
+    function openNewParsingRuleForm() {
+      document.getElementById('prule-is-editing').value = "false";
+      document.getElementById('prule-id').disabled = false;
+      document.getElementById('prule-id').value = "rule-" + Math.random().toString(36).substring(2, 8);
+      document.getElementById('prule-name').value = "";
+      document.getElementById('prule-type').value = "syslog_standard";
+      document.getElementById('prule-delimiter').value = " ";
+      document.getElementById('prule-kv-delimiter').value = "=";
+      document.getElementById('prule-pattern').value = "";
+      document.getElementById('prule-mappings').value = "src: security.source_ip\ndst: security.destination_ip\naction: security.action";
+      document.getElementById('prule-desc').value = "";
+      document.getElementById('prule-sample-log').value = "";
+      const resultBox = document.getElementById('prule-test-result-box');
+      if (resultBox) resultBox.classList.add('hidden');
+      handleParserTypeChange();
+      switchParsingRulesTab('form');
+    }
+
+    function openEditParsingRule(ruleId) {
+      const r = currentParsingRules.find(item => item.id === ruleId);
+      if (!r) return;
+
+      document.getElementById('prule-is-editing').value = "true";
+      document.getElementById('prule-id').value = r.id;
+      document.getElementById('prule-id').disabled = true;
+      document.getElementById('prule-name').value = r.name || "";
+      document.getElementById('prule-type').value = r.parser_type || "syslog_standard";
+      document.getElementById('prule-delimiter').value = r.delimiter || " ";
+      document.getElementById('prule-kv-delimiter').value = r.kv_delimiter || "=";
+      document.getElementById('prule-pattern').value = r.pattern || "";
+
+      // Format mappings
+      const mappingLines = [];
+      const m = r.field_mappings || {};
+      for (const k in m) {
+        mappingLines.push(`${k}: ${m[k]}`);
+      }
+      document.getElementById('prule-mappings').value = mappingLines.join('\n');
+      document.getElementById('prule-desc').value = r.description || "";
+      document.getElementById('prule-sample-log').value = r.sample_log || "";
+
+      handleParserTypeChange();
+      switchParsingRulesTab('form');
+    }
+
+    function openSimulatorWithRule(ruleId) {
+      openEditParsingRule(ruleId);
+      setTimeout(testParsingRuleSimulator, 200);
+    }
+
+    function handleParserTypeChange() {
+      const type = document.getElementById('prule-type').value;
+      const patternContainer = document.getElementById('prule-pattern-container');
+      const delimInput = document.getElementById('prule-delimiter');
+      const kvDelimInput = document.getElementById('prule-kv-delimiter');
+
+      if (type === 'regex') {
+        if (patternContainer) patternContainer.classList.remove('hidden');
+        if (delimInput) delimInput.disabled = true;
+        if (kvDelimInput) kvDelimInput.disabled = true;
+      } else if (type === 'key_value') {
+        if (patternContainer) patternContainer.classList.add('hidden');
+        if (delimInput) delimInput.disabled = false;
+        if (kvDelimInput) kvDelimInput.disabled = false;
+      } else if (type === 'delimiter') {
+        if (patternContainer) patternContainer.classList.remove('hidden');
+        if (delimInput) delimInput.disabled = false;
+        if (kvDelimInput) kvDelimInput.disabled = true;
+      } else {
+        if (patternContainer) patternContainer.classList.add('hidden');
+        if (delimInput) delimInput.disabled = true;
+        if (kvDelimInput) kvDelimInput.disabled = true;
+      }
+    }
+
+    async function testParsingRuleSimulator() {
+      const sampleText = document.getElementById('prule-sample-log').value.trim();
+      const resultBox = document.getElementById('prule-test-result-box');
+      const statusEl = document.getElementById('prule-test-status');
+      const extractedEl = document.getElementById('prule-test-extracted');
+      const mappedEl = document.getElementById('prule-test-mapped');
+
+      if (!sampleText) {
+        alert("테스트할 샘플 로그 텍스트를 입력해주세요.");
+        return;
+      }
+
+      // Build mappings dict
+      const mappingsText = document.getElementById('prule-mappings').value;
+      const fieldMappings = {};
+      mappingsText.split('\n').forEach(line => {
+        const parts = line.split(':');
+        if (parts.length >= 2) {
+          fieldMappings[parts[0].trim()] = parts.slice(1).join(':').trim();
+        }
+      });
+
+      const payload = {
+        sample_text: sampleText,
+        rule: {
+          id: document.getElementById('prule-id').value.trim() || 'test-rule',
+          name: document.getElementById('prule-name').value.trim() || 'Test Rule',
+          parser_type: document.getElementById('prule-type').value,
+          pattern: document.getElementById('prule-pattern').value.trim() || null,
+          delimiter: document.getElementById('prule-delimiter').value || " ",
+          kv_delimiter: document.getElementById('prule-kv-delimiter').value || "=",
+          field_mappings: fieldMappings,
+          sample_log: sampleText
+        }
+      };
+
+      try {
+        const res = await fetch('/api/v1/parsing-rules/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+
+        if (resultBox) resultBox.classList.remove('hidden');
+        if (d.success) {
+          if (statusEl) statusEl.textContent = `파서: ${d.parser_type} (정규화 완료)`;
+          if (extractedEl) extractedEl.textContent = JSON.stringify(d.extracted_fields, null, 2);
+          if (mappedEl) mappedEl.textContent = JSON.stringify(d.mapped_fields, null, 2);
+        } else {
+          if (statusEl) statusEl.textContent = "파싱 실패: " + (d.error || "오류");
+          if (extractedEl) extractedEl.textContent = "오류: " + (d.error || "");
+          if (mappedEl) mappedEl.textContent = "{}";
+        }
+      } catch (e) {
+        alert("테스트 요청 실패: " + e.message);
+      }
+    }
+
+    async function saveParsingRule(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const isEditing = document.getElementById('prule-is-editing').value === "true";
+      const id = document.getElementById('prule-id').value.trim();
+      const name = document.getElementById('prule-name').value.trim();
+      const parser_type = document.getElementById('prule-type').value;
+      const pattern = document.getElementById('prule-pattern').value.trim() || null;
+      const delimiter = document.getElementById('prule-delimiter').value || " ";
+      const kv_delimiter = document.getElementById('prule-kv-delimiter').value || "=";
+      const description = document.getElementById('prule-desc').value.trim();
+      const sample_log = document.getElementById('prule-sample-log').value.trim();
+
+      const mappingsText = document.getElementById('prule-mappings').value;
+      const field_mappings = {};
+      mappingsText.split('\n').forEach(line => {
+        const parts = line.split(':');
+        if (parts.length >= 2) {
+          field_mappings[parts[0].trim()] = parts.slice(1).join(':').trim();
+        }
+      });
+
+      const bodyData = {
+        id: id,
+        name: name,
+        parser_type: parser_type,
+        pattern: pattern,
+        delimiter: delimiter,
+        kv_delimiter: kv_delimiter,
+        field_mappings: field_mappings,
+        description: description,
+        sample_log: sample_log
+      };
+
+      try {
+        let res;
+        if (isEditing) {
+          res = await fetch(`/api/v1/parsing-rules/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData)
+          });
+        } else {
+          res = await fetch('/api/v1/parsing-rules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData)
+          });
+        }
+
+        if (res.ok) {
+          alert(`✓ 파싱 규칙 '${name}'이 성공적으로 저장되었습니다.`);
+          switchParsingRulesTab('list');
+          fetchSyslogPortsList();
+        } else {
+          const err = await res.json();
+          alert("저장 실패: " + (err.detail || "오류"));
+        }
+      } catch (err) {
+        alert("서버 통신 오류: " + err.message);
+      }
+    }
+
+    async function deleteParsingRule(ruleId) {
+      if (!confirm(`파싱 규칙 '${ruleId}'를 삭제하시겠습니까?`)) return;
+      try {
+        const res = await fetch(`/api/v1/parsing-rules/${ruleId}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchParsingRulesList();
+        } else {
+          const err = await res.json();
+          alert("삭제 실패: " + (err.detail || "기본 내장 규칙은 삭제할 수 없습니다."));
+        }
+      } catch (e) {
+        alert("오류: " + e.message);
       }
     }
 
