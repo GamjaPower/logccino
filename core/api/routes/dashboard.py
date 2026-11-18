@@ -165,14 +165,14 @@ async def get_enterprise_dashboard():
         <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-panelbg border border-bordercolor rounded-lg shadow-2xl z-50 p-2 text-xs divide-y divide-bordercolor/60">
           <div class="py-1.5 px-2">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">KNOWLEDGE (지식 및 검색)</span>
-            <a href="javascript:void(0)" onclick="openSavedSearchesModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-1">
+            <a href="javascript:void(0)" onclick="openSettings('saved_searches');" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-1">
               <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-400"></i>
               <div>
                 <div class="font-medium">저장된 검색 및 알람 (Alerts)</div>
                 <div class="text-[10px] text-slate-400">PPL 스케줄러 및 트리거 규칙 관리</div>
               </div>
             </a>
-            <a href="javascript:void(0)" onclick="selectApp('search'); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
+            <a href="javascript:void(0)" onclick="openSettings('search');" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
               <i data-lucide="git-merge" class="w-3.5 h-3.5 text-indigo-400"></i>
               <div>
                 <div class="font-medium">크로스 인덱스 Join 파이프라인</div>
@@ -182,14 +182,14 @@ async def get_enterprise_dashboard():
           </div>
           <div class="py-1.5 px-2">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">SYSTEM (시스템 및 앱 관리)</span>
-            <a href="javascript:void(0)" onclick="selectApp('manage_apps'); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-1">
+            <a href="javascript:void(0)" onclick="openSettings('manage_apps');" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-1">
               <i data-lucide="package" class="w-3.5 h-3.5 text-emerald-400"></i>
               <div>
                 <div class="font-medium">앱 관리 및 설치 (Manage Apps)</div>
                 <div class="text-[10px] text-slate-400">SIEM 등 플러그형 앱 활성화/설치</div>
               </div>
             </a>
-            <a href="javascript:void(0)" onclick="selectApp('siem'); closeAllDropdowns();" class="siem-menu-item flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
+            <a href="javascript:void(0)" onclick="openSettings('siem');" class="siem-menu-item flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
               <i data-lucide="server" class="w-3.5 h-3.5 text-rose-400"></i>
               <div>
                 <div class="font-medium">보안 Syslog 수집 엔진</div>
@@ -201,14 +201,14 @@ async def get_enterprise_dashboard():
             <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1">
               <i data-lucide="split" class="w-3 h-3 text-amber-400"></i> PARSING &amp; COLLECTORS (파싱 및 수집)
             </span>
-            <a href="javascript:void(0)" onclick="openParsingRulesModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-amber-200 hover:text-white transition mt-1 bg-amber-500/10 border border-amber-500/20">
+            <a href="javascript:void(0)" onclick="openSettings('parsing_rules');" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-amber-200 hover:text-white transition mt-1 bg-amber-500/10 border border-amber-500/20">
               <i data-lucide="file-code-2" class="w-3.5 h-3.5 text-amber-400"></i>
               <div>
                 <div class="font-bold text-xs text-amber-200">필드 파싱 규칙 관리 (Field Parsing)</div>
                 <div class="text-[10px] text-amber-300/70">포트별 정규식, KV, JSON, CEF 파서 정의 및 시뮬레이터</div>
               </div>
             </a>
-            <a href="javascript:void(0)" onclick="selectApp('collectors'); switchCollectorsSubTab('syslog'); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-0.5">
+            <a href="javascript:void(0)" onclick="openSettings('collectors', 'syslog');" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-0.5">
               <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-400"></i>
               <div>
                 <div class="font-medium text-slate-200">Syslog 포트 및 리스너 설정</div>
@@ -218,9 +218,9 @@ async def get_enterprise_dashboard():
           </div>
           <div class="py-1.5 px-2">
             <span class="text-[10px] uppercase font-bold text-purple-400 tracking-wider flex items-center gap-1">
-              <i data-lucide="bot" class="w-3 h-3 text-purple-400"></i> AI AGENT & CLAUDE (AI 연동)
+              <i data-lucide="bot" class="w-3 h-3 text-purple-400"></i> AI AGENT &amp; CLAUDE (AI 연동)
             </span>
-            <a href="javascript:void(0)" onclick="openClaudeGuideModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-purple-200 hover:text-white transition mt-1 bg-purple-500/10 border border-purple-500/20">
+            <a href="javascript:void(0)" onclick="openSettings('claude_guide');" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-purple-200 hover:text-white transition mt-1 bg-purple-500/10 border border-purple-500/20">
               <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i>
               <div>
                 <div class="font-bold text-xs text-purple-200">클로드(Claude) AI 연동 가이드</div>
@@ -229,8 +229,8 @@ async def get_enterprise_dashboard():
             </a>
           </div>
           <div class="py-1.5 px-2">
-            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">USERS & AUTH (사용자 및 권한)</span>
-            <a href="javascript:void(0)" onclick="openUsersModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-1">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">USERS &amp; AUTH (사용자 및 권한)</span>
+            <a href="javascript:void(0)" onclick="openSettings('users');" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-subpanel text-slate-200 hover:text-white transition mt-1">
               <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i>
               <div>
                 <div class="font-medium">사용자 및 롤 (RBAC)</div>
@@ -249,14 +249,14 @@ async def get_enterprise_dashboard():
           <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
         </button>
         <div id="activity-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-panelbg border border-bordercolor rounded-lg shadow-2xl z-50 p-2 text-xs">
-          <a href="javascript:void(0)" onclick="openSavedSearchesModal(); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
+          <a href="javascript:void(0)" onclick="openSettings('saved_searches');" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
             <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-amber-400"></i>
             <div>
               <div class="font-medium">트리거된 알람 (Triggered Alerts)</div>
               <div class="text-[10px] text-slate-400">스케줄러 자동 실행 알람 히스토리</div>
             </div>
           </a>
-          <a href="javascript:void(0)" onclick="selectApp('search'); closeAllDropdowns();" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
+          <a href="javascript:void(0)" onclick="openSettings('search');" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-subpanel text-slate-200 hover:text-white transition">
             <i data-lucide="terminal" class="w-3.5 h-3.5 text-indigo-400"></i>
             <div>
               <div class="font-medium">검색 작업 및 쿼리 이력 (Jobs)</div>
@@ -2596,36 +2596,39 @@ async def get_enterprise_dashboard():
       </div>
 
         <!-- =================================================================================== -->
-        <!-- DOCKED MAIN BOTTOM PANEL: Splunk Saved Searches & PPL Alert Engine                 -->
-        <!-- (팝업 모달 대신 메인 화면 하단에 상시 도킹/접이식으로 작동)                           -->
+        <!-- 7. Splunk Saved Searches & PPL Alert Engine Main View (#view-app-saved_searches)    -->
         <!-- =================================================================================== -->
-        <div id="panel-saved-searches" class="border-t-2 border-emerald-500/50 bg-[#0b1120] shadow-2xl flex flex-col shrink-0 hidden transition-all duration-300 mt-6 rounded-t-xl overflow-hidden">
-          <!-- Panel Header -->
-          <div class="px-6 py-3 border-b border-bordercolor flex items-center justify-between bg-subpanel/90 shrink-0">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <i data-lucide="bell-ring" class="w-4 h-4"></i>
+        <div id="view-app-saved_searches" class="app-view flex-1 flex flex-col p-6 space-y-5 hidden">
+          <div id="panel-saved-searches" class="content-alerts bg-panelbg border border-bordercolor rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+            <!-- Panel Header -->
+            <div class="px-6 py-4 border-b border-bordercolor flex items-center justify-between bg-subpanel/90 shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <i data-lucide="bell-ring" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-sm text-slate-100 flex items-center gap-2">
+                    <span id="alert-modal-title">Splunk Saved Searches & PPL Alert Engine</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">savedsearches.conf 호환</span>
+                  </h3>
+                  <p class="text-xs text-slate-400">PPL 스케줄러, 디스패치 시간 범위, 알람 조건, Throttling(억제) 및 복합 액션 메인 패널</p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-bold text-xs text-slate-100 flex items-center gap-2">
-                  <span id="alert-modal-title">Splunk Saved Searches & PPL Alert Engine</span>
-                  <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">savedsearches.conf 호환</span>
-                </h3>
-                <p class="text-[10px] text-slate-400">PPL 스케줄러, 디스패치 시간 범위, 알람 조건, Throttling(억제) 및 복합 액션 메인 패널</p>
+              <div class="flex items-center gap-2">
+                <button onclick="toggleCollapseAlertPanel()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" title="패널 접기/펼치기">
+                  <i id="btn-collapse-alert-icon" data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+                <button onclick="loadSavedSearchesList()" class="px-3 py-1.5 rounded-lg bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor flex items-center gap-1.5 text-xs transition">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i> 새로고침
+                </button>
+                <button onclick="resetAlertForm(); switchAlertModalTab('form');" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/30">
+                  <i data-lucide="plus" class="w-4 h-4"></i> 신규 알람 등록
+                </button>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button onclick="toggleCollapseAlertPanel()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" title="패널 접기/펼치기">
-                <i id="btn-collapse-alert-icon" data-lucide="chevron-down" class="w-4 h-4"></i>
-              </button>
-              <button onclick="closeNewAlertModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" title="패널 닫기">
-                <i data-lucide="x" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
 
-          <!-- Collapsible Body Area -->
-          <div id="saved-searches-panel-body" class="content-alerts flex flex-col">
+            <!-- Collapsible Body Area -->
+            <div id="saved-searches-panel-body" class="content-alerts flex-1 flex flex-col overflow-hidden">
             <!-- Navigation Tabs: List vs Form -->
             <div class="flex items-center justify-between border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0">
               <div class="flex">
@@ -2931,6 +2934,229 @@ async def get_enterprise_dashboard():
             </div>
           </div>
         </div>
+      </div>
+
+        <!-- =================================================================================== -->
+        <!-- 8. Splunk Users & Roles (RBAC) Main View (#view-app-users)                          -->
+        <!-- =================================================================================== -->
+        <div id="view-app-users" class="app-view flex-1 flex flex-col p-6 space-y-5 hidden">
+          <!-- Header -->
+          <div class="flex items-center justify-between bg-panelbg p-5 rounded-xl border border-bordercolor shadow-md">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <i data-lucide="users" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="font-bold text-sm text-white flex items-center gap-2">
+                  <span>사용자 및 역할 관리 (Splunk RBAC)</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Role-Based Access Control</span>
+                </h2>
+                <p class="text-xs text-slate-400">logccino 관리자 및 사용자 계정 관리, 역할(Roles) 권한 부여 및 인덱스 접근 제어</p>
+              </div>
+            </div>
+            <button onclick="loadUsersAndRoles()" class="px-3 py-1.5 rounded-lg bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor flex items-center gap-1.5 text-xs transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i> 새로고침
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+            <!-- Left: 등록된 사용자 계정 (7 cols) -->
+            <div class="lg:col-span-7 bg-panelbg border border-bordercolor rounded-xl p-5 shadow-xl flex flex-col space-y-4">
+              <div class="flex items-center justify-between border-b border-bordercolor pb-3">
+                <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+                  <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i> 등록된 사용자 계정
+                </h3>
+              </div>
+              <div id="users-table-container" class="overflow-x-auto flex-1"></div>
+            </div>
+
+            <!-- Right: Splunk 표준 역할 및 권한 (5 cols) -->
+            <div class="lg:col-span-5 bg-panelbg border border-bordercolor rounded-xl p-5 shadow-xl flex flex-col space-y-4">
+              <div class="flex items-center justify-between border-b border-bordercolor pb-3">
+                <h3 class="font-bold text-xs text-slate-200 flex items-center gap-2">
+                  <i data-lucide="key" class="w-4 h-4 text-amber-400"></i> Splunk 표준 역할 및 권한
+                </h3>
+              </div>
+              <div id="roles-cards-container" class="grid grid-cols-1 gap-3 overflow-y-auto flex-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================================== -->
+        <!-- 9. Claude AI Integration Guide Main View (#view-app-claude_guide)                   -->
+        <!-- =================================================================================== -->
+        <div id="view-app-claude_guide" class="app-view flex-1 flex flex-col p-6 space-y-5 hidden">
+          <!-- Header -->
+          <div class="flex items-center justify-between bg-panelbg p-5 rounded-xl border border-purple-500/30 shadow-md">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                <i data-lucide="bot" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="font-bold text-sm text-white flex items-center gap-2">
+                  <span>클로드(Claude) AI 에이전트 연동 가이드</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">Claude Skill &amp; MCP</span>
+                </h2>
+                <p class="text-xs text-slate-400">Logccino의 기본 검색, 스케줄러 등록, SIEM 시나리오 발굴·입력, 탐지 분석 및 SOAR 후속 조치 가이드</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="copyToClipboard(window.location.origin + '/sse')" class="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 flex items-center gap-1.5 text-xs font-medium transition">
+                <i data-lucide="network" class="w-3.5 h-3.5"></i> MCP SSE 엔드포인트 복사
+              </button>
+            </div>
+          </div>
+
+          <!-- Body with Tabs -->
+          <div class="bg-panelbg border border-bordercolor rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
+            <!-- Navigation Tabs -->
+            <div class="flex items-center border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0 overflow-x-auto scrollbar-thin">
+              <button type="button" onclick="switchClaudeGuideTab('search')" id="tab-cguide-search" class="cguide-tab-btn px-4 py-3 border-b-2 border-purple-500 text-purple-300 font-bold flex items-center gap-1.5 transition">
+                <i data-lucide="search" class="w-3.5 h-3.5"></i> 1. 기본 검색 &amp; Join
+              </button>
+              <button type="button" onclick="switchClaudeGuideTab('scheduler')" id="tab-cguide-scheduler" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+                <i data-lucide="clock" class="w-3.5 h-3.5"></i> 2. 스케줄러 &amp; 알람 등록
+              </button>
+              <button type="button" onclick="switchClaudeGuideTab('scenarios')" id="tab-cguide-scenarios" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> 3. SIEM 시나리오 발굴 &amp; 생성
+              </button>
+              <button type="button" onclick="switchClaudeGuideTab('analysis')" id="tab-cguide-analysis" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+                <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 4. 탐지 데이터 &amp; LLM 자율 분석
+              </button>
+              <button type="button" onclick="switchClaudeGuideTab('soar')" id="tab-cguide-soar" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i> 5. SOAR 해결 &amp; 자동화 정책
+              </button>
+            </div>
+
+            <!-- Body Content -->
+            <div class="p-6 text-xs text-slate-300 space-y-6 flex-1 overflow-y-auto">
+              <!-- TAB 1: 기본 검색 & Join -->
+              <div id="cguide-view-search" class="cguide-view space-y-4">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> PPL 및 Cross-Index Join 검색 방법
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    클로드는 MCP 도구 <code>search_ppl</code>, <code>execute_joined_query</code>, <code>search_natural</code>을 통해 OpenSearch 클러스터에 적재된 모든 원천 로그를 Splunk 파이프라인 문법으로 직접 조회합니다.
+                  </p>
+                </div>
+
+                <div class="space-y-3">
+                  <h5 class="font-bold text-slate-200">주요 쿼리 예시 및 클로드 프롬프트</h5>
+                  <div class="bg-black/50 p-3 rounded-lg border border-slate-800 font-mono text-emerald-400 space-y-1">
+                    <div># 1. 원천 보안 로그 필터링 및 집계</div>
+                    <div class="text-slate-200">source = main | where security.action = 'ssh_login_failure' | stats count() as failures by host, src_ip | sort - failures | head 20</div>
+                    <div class="pt-2"># 2. 이종 인덱스 간 분산 크로스 해시 조인 (Cross-Index Join)</div>
+                    <div class="text-slate-200">source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]</div>
+                  </div>
+                  <div class="p-3 bg-purple-950/30 rounded-lg border border-purple-500/20 text-purple-300 text-[11px]">
+                    <strong>💡 클로드 활용 팁:</strong> "클로드에게 '지난 1시간 동안 SSH 로그인 실패 상위 10개 IP와 해당 IP의 방화벽 차단 이력을 조인해서 분석해줘'라고 자연어로 지시하면 자동으로 PPL 파이프라인을 합성하여 결과를 요약합니다."
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 2: 스케줄러 & 알람 등록 -->
+              <div id="cguide-view-scheduler" class="cguide-view space-y-4 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i> Splunk savedsearches.conf 완전 호환 스케줄러 등록
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    클로드는 <code>create_saved_search</code>, <code>update_saved_search</code>, <code>run_saved_search</code> MCP 도구를 사용하여 백그라운드 실시간 감시 스케줄러를 등록하고 즉시 검증할 수 있습니다.
+                  </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
+                    <span class="font-bold text-amber-400 block font-sans">핵심 파라미터 규격</span>
+                    <div>• dispatch_earliest_time: "-15m" (검색 윈도우)</div>
+                    <div>• interval_seconds: 60 (실행 주기 초)</div>
+                    <div>• alert_type: "number_of_results"</div>
+                    <div>• condition_operator: "gt" | "gte"</div>
+                    <div>• condition_threshold: 0.0</div>
+                  </div>
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
+                    <span class="font-bold text-indigo-400 block font-sans">경보 피로(Alert Fatigue) 방지 억제</span>
+                    <div>• alert_suppress: true (중복 억제 활성화)</div>
+                    <div>• alert_suppress_period: "5m" | "15m" | "1h"</div>
+                    <div>• alert_suppress_fields: "host,src_ip"</div>
+                    <div>• action_webhook_enabled: true (Slack/Teams)</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 3: SIEM 시나리오 발굴 & 생성 -->
+              <div id="cguide-view-scenarios" class="cguide-view space-y-4 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i> 사람이 수동 입력하지 않는 AI 자율 관제 시나리오 엔지니어링
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    사람은 복잡한 쿼리를 직접 작성하지 않습니다. <strong>클로드 스킬(<code>logccino-soc-scenarios</code>)</strong>이 MITRE ATT&amp;CK 14대 엔터프라이즈 전술 매트릭스와 위협 인텔리전스를 분석하여 관제 시나리오를 자율 합성·등록합니다.
+                  </p>
+                </div>
+
+                <div class="space-y-3">
+                  <h5 class="font-bold text-slate-200">클로드에게 시나리오 생성 요청하기 (자연어 프롬프트 예시)</h5>
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor/80 space-y-2 font-mono text-slate-300 text-[11px]">
+                    <div class="text-purple-400">"클로드야, MITRE ATT&amp;CK T1059(명령 프롬프트) 기반으로 공격자가 파워쉘로 악성 스크립트를 다운로드하는 행위를 탐지하는 신규 관제 시나리오를 만들고 등록해줘."</div>
+                    <div class="text-emerald-400">➔ 클로드가 <code>register_soc_detection_scenario</code> 도구를 호출하여 쿼리 검증, 임계치(0건 초과), 중복 억제(10분)를 설정하고 SIEM 엔진에 즉시 배포합니다.</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 4: 탐지 데이터 & LLM 자율 분석 -->
+              <div id="cguide-view-analysis" class="cguide-view space-y-4 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i> .env LLM API 1차 자율 트리아지 및 Claude Fallback 체계
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    스케줄러에서 위협이 감지되면 즉시 <code>.env</code>에 설정된 LLM API(OpenAI/Gemini/vLLM)가 1차 자율 트리아지(오탐 여부, 공격 단계, 위험도, 원인 요약)를 수행합니다.
+                  </p>
+                </div>
+
+                <div class="p-4 bg-rose-950/30 rounded-xl border border-rose-500/30 space-y-2">
+                  <h5 class="font-bold text-rose-300 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> LLM 보안 제약 또는 API 오류 시 클로드(Claude) 자동 위임
+                  </h5>
+                  <p class="text-[11px] text-slate-300 leading-relaxed">
+                    만약 LLM API에서 가드레일 거부(Content Safety Policy)나 키 오류, 네트워크 장애가 발생하면, 시스템은 결코 에러를 방치하지 않고 <strong class="text-rose-400">PENDING_CLAUDE_ANALYSIS</strong> 상태로 안전하게 보관합니다.
+                    클로드는 <code>get_incidents_pending_claude_analysis()</code>로 이를 확인하고 직접 심층 트리아지를 완료할 수 있습니다.
+                  </p>
+                </div>
+              </div>
+
+              <!-- TAB 5: SOAR 해결 & 자동화 정책 -->
+              <div id="cguide-view-soar" class="cguide-view space-y-4 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> SOAR 해결 계획 가시화, 사람 수동 승인 및 유사 건 자동화
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    AI는 해결 시 독단적으로 위험한 조치를 강제하지 않고, <strong>전체 계획을 SOAR 플레이북 단계(IP 차단 ➔ 호스트 격리 ➔ 세션 만료 ➔ 보고서)로 시각화</strong>하여 제시합니다.
+                  </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <span class="font-bold text-white block">1. 사람에 의한 수동 승인 (Human-in-the-Loop)</span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      분석가는 각 단계의 예상 영향도(Impact: None/Low/Medium)와 실제 실행될 리눅스/네트워크 명령을 확인하고 <code>[승인 및 실행]</code> 버튼을 눌러 안전하게 조치합니다.
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <span class="font-bold text-emerald-400 block">2. 유사 건 자동 처리 정책 (Auto-Remediation Policy)</span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      검증된 공격 시나리오(예: SSH Brute-Force 등)에 대해 <code>[유사 건 자동 처리]</code> 토글을 켜두면, 다음 알람 발생 시 사람의 개입 없이 AI가 즉시 자동 해결 완료 처리합니다.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
     </main>
   </div>
@@ -3021,211 +3247,9 @@ async def get_enterprise_dashboard():
     </div>
   </div>
 
-  <!-- Users & Roles RBAC Modal -->
-  <div id="users-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-panelbg border border-bordercolor rounded-xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col">
-      <div class="px-5 py-3.5 border-b border-bordercolor flex items-center justify-between bg-subpanel/80">
-        <div class="flex items-center gap-2">
-          <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
-          <span class="font-bold text-xs text-slate-200">Splunk 사용자 및 역할(Roles) 권한 관리 (RBAC)</span>
-        </div>
-        <button onclick="closeUsersModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <div class="p-5 overflow-y-auto flex-1 space-y-5 text-xs">
-        <div>
-          <h4 class="font-bold text-slate-200 mb-2 flex items-center gap-1.5"><i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400"></i> 등록된 사용자 계정</h4>
-          <div id="users-table-container"></div>
-        </div>
-        <div>
-          <h4 class="font-bold text-slate-200 mb-2 flex items-center gap-1.5"><i data-lucide="key" class="w-3.5 h-3.5 text-amber-400"></i> Splunk 표준 역할 및 권한</h4>
-          <div id="roles-cards-container" class="grid grid-cols-2 gap-3"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- =================================================================================== -->
-  <!-- 4. JavaScript Logic: Login, Real Splunk Search, Timeline, Field Inspector, Modals   -->
-      <!-- Claude AI Integration User Guide Modal -->
-  <div id="modal-claude-guide" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-panelbg border border-purple-500/40 rounded-xl w-full max-w-5xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
-      <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-bordercolor flex items-center justify-between bg-subpanel/90 shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-            <i data-lucide="bot" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-sm text-white flex items-center gap-2">
-              <span>클로드(Claude) AI 에이전트 연동 가이드</span>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">Claude Skill &amp; MCP</span>
-            </h3>
-            <p class="text-xs text-slate-400">Logccino의 기본 검색, 스케줄러 등록, SIEM 시나리오 발굴·입력, 탐지 분석 및 SOAR 후속 조치 가이드</p>
-          </div>
-        </div>
-        <button onclick="closeClaudeGuideModal()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <!-- Navigation Tabs -->
-      <div class="flex items-center border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0 overflow-x-auto scrollbar-thin">
-        <button type="button" onclick="switchClaudeGuideTab('search')" id="tab-cguide-search" class="cguide-tab-btn px-4 py-3 border-b-2 border-purple-500 text-purple-300 font-bold flex items-center gap-1.5 transition">
-          <i data-lucide="search" class="w-3.5 h-3.5"></i> 1. 기본 검색 &amp; Join
-        </button>
-        <button type="button" onclick="switchClaudeGuideTab('scheduler')" id="tab-cguide-scheduler" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-          <i data-lucide="clock" class="w-3.5 h-3.5"></i> 2. 스케줄러 &amp; 알람 등록
-        </button>
-        <button type="button" onclick="switchClaudeGuideTab('scenarios')" id="tab-cguide-scenarios" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-          <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> 3. SIEM 시나리오 발굴 &amp; 생성
-        </button>
-        <button type="button" onclick="switchClaudeGuideTab('analysis')" id="tab-cguide-analysis" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-          <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 4. 탐지 데이터 &amp; LLM 자율 분석
-        </button>
-        <button type="button" onclick="switchClaudeGuideTab('soar')" id="tab-cguide-soar" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-          <i data-lucide="zap" class="w-3.5 h-3.5"></i> 5. SOAR 해결 &amp; 자동화 정책
-        </button>
-      </div>
-
-      <!-- Modal Body (Scrollable) -->
-      <div class="flex-1 overflow-y-auto p-6 text-xs text-slate-300 space-y-6">
-
-        <!-- TAB 1: 기본 검색 & Join -->
-        <div id="cguide-view-search" class="cguide-view space-y-4">
-          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-            <h4 class="font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> PPL 및 Cross-Index Join 검색 방법
-            </h4>
-            <p class="text-slate-300 leading-relaxed">
-              클로드는 MCP 도구 <code>search_ppl</code>, <code>execute_joined_query</code>, <code>search_natural</code>을 통해 OpenSearch 클러스터에 적재된 모든 원천 로그를 Splunk 파이프라인 문법으로 직접 조회합니다.
-            </p>
-          </div>
-
-          <div class="space-y-3">
-            <h5 class="font-bold text-slate-200">주요 쿼리 예시 및 클로드 프롬프트</h5>
-            <div class="bg-black/50 p-3 rounded-lg border border-slate-800 font-mono text-emerald-400 space-y-1">
-              <div># 1. 원천 보안 로그 필터링 및 집계</div>
-              <div class="text-slate-200">source = main | where security.action = 'ssh_login_failure' | stats count() as failures by host, src_ip | sort - failures | head 20</div>
-              <div class="pt-2"># 2. 이종 인덱스 간 분산 크로스 해시 조인 (Cross-Index Join)</div>
-              <div class="text-slate-200">source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]</div>
-            </div>
-            <div class="p-3 bg-purple-950/30 rounded-lg border border-purple-500/20 text-purple-300 text-[11px]">
-              <strong>💡 클로드 활용 팁:</strong> "클로드에게 '지난 1시간 동안 SSH 로그인 실패 상위 10개 IP와 해당 IP의 방화벽 차단 이력을 조인해서 분석해줘'라고 자연어로 지시하면 자동으로 PPL 파이프라인을 합성하여 결과를 요약합니다."
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2: 스케줄러 & 알람 등록 -->
-        <div id="cguide-view-scheduler" class="cguide-view space-y-4 hidden">
-          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-            <h4 class="font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i> Splunk savedsearches.conf 완전 호환 스케줄러 등록
-            </h4>
-            <p class="text-slate-300 leading-relaxed">
-              클로드는 <code>create_saved_search</code>, <code>update_saved_search</code>, <code>run_saved_search</code> MCP 도구를 사용하여 백그라운드 실시간 감시 스케줄러를 등록하고 즉시 검증할 수 있습니다.
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
-            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
-              <span class="font-bold text-amber-400 block font-sans">핵심 파라미터 규격</span>
-              <div>• dispatch_earliest_time: "-15m" (검색 윈도우)</div>
-              <div>• interval_seconds: 60 (실행 주기 초)</div>
-              <div>• alert_type: "number_of_results"</div>
-              <div>• condition_operator: "gt" | "gte"</div>
-              <div>• condition_threshold: 0.0</div>
-            </div>
-            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
-              <span class="font-bold text-indigo-400 block font-sans">경보 피로(Alert Fatigue) 방지 억제</span>
-              <div>• alert_suppress: true (중복 억제 활성화)</div>
-              <div>• alert_suppress_period: "5m" | "15m" | "1h"</div>
-              <div>• alert_suppress_fields: "host,src_ip"</div>
-              <div>• action_webhook_enabled: true (Slack/Teams)</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 3: SIEM 시나리오 발굴 & 생성 -->
-        <div id="cguide-view-scenarios" class="cguide-view space-y-4 hidden">
-          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-            <h4 class="font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i> 사람이 수동 입력하지 않는 AI 자율 관제 시나리오 엔지니어링
-            </h4>
-            <p class="text-slate-300 leading-relaxed">
-              사람은 복잡한 쿼리를 직접 작성하지 않습니다. <strong>클로드 스킬(<code>logccino-soc-scenarios</code>)</strong>이 MITRE ATT&amp;CK 14대 엔터프라이즈 전술 매트릭스와 위협 인텔리전스를 분석하여 관제 시나리오를 자율 합성·등록합니다.
-            </p>
-          </div>
-
-          <div class="space-y-3">
-            <h5 class="font-bold text-slate-200">클로드에게 시나리오 생성 요청하기 (자연어 프롬프트 예시)</h5>
-            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor/80 space-y-2 font-mono text-slate-300 text-[11px]">
-              <div class="text-purple-400">"클로드야, MITRE ATT&amp;CK T1059(명령 프롬프트) 기반으로 공격자가 파워쉘로 악성 스크립트를 다운로드하는 행위를 탐지하는 신규 관제 시나리오를 만들고 등록해줘."</div>
-              <div class="text-emerald-400">➔ 클로드가 <code>register_soc_detection_scenario</code> 도구를 호출하여 쿼리 검증, 임계치(0건 초과), 중복 억제(10분)를 설정하고 SIEM 엔진에 즉시 배포합니다.</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 4: 탐지 데이터 & LLM 자율 분석 -->
-        <div id="cguide-view-analysis" class="cguide-view space-y-4 hidden">
-          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-            <h4 class="font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i> .env LLM API 1차 자율 트리아지 및 Claude Fallback 체계
-            </h4>
-            <p class="text-slate-300 leading-relaxed">
-              스케줄러에서 위협이 감지되면 즉시 <code>.env</code>에 설정된 LLM API(OpenAI/Gemini/vLLM)가 1차 자율 트리아지(오탐 여부, 공격 단계, 위험도, 원인 요약)를 수행합니다.
-            </p>
-          </div>
-
-          <div class="p-4 bg-rose-950/30 rounded-xl border border-rose-500/30 space-y-2">
-            <h5 class="font-bold text-rose-300 flex items-center gap-2">
-              <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> LLM 보안 제약 또는 API 오류 시 클로드(Claude) 자동 위임
-            </h5>
-            <p class="text-[11px] text-slate-300 leading-relaxed">
-              만약 LLM API에서 가드레일 거부(Content Safety Policy)나 키 오류, 네트워크 장애가 발생하면, 시스템은 결코 에러를 방치하지 않고 <strong class="text-rose-400">PENDING_CLAUDE_ANALYSIS</strong> 상태로 안전하게 보관합니다.
-              클로드는 <code>get_incidents_pending_claude_analysis()</code>로 이를 확인하고 직접 심층 트리아지를 완료할 수 있습니다.
-            </p>
-          </div>
-        </div>
-
-        <!-- TAB 5: SOAR 해결 & 자동화 정책 -->
-        <div id="cguide-view-soar" class="cguide-view space-y-4 hidden">
-          <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-            <h4 class="font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> SOAR 해결 계획 가시화, 사람 수동 승인 및 유사 건 자동화
-            </h4>
-            <p class="text-slate-300 leading-relaxed">
-              AI는 해결 시 독단적으로 위험한 조치를 강제하지 않고, <strong>전체 계획을 SOAR 플레이북 단계(IP 차단 ➔ 호스트 격리 ➔ 세션 만료 ➔ 보고서)로 시각화</strong>하여 제시합니다.
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
-              <span class="font-bold text-white block">1. 사람에 의한 수동 승인 (Human-in-the-Loop)</span>
-              <p class="text-[11px] text-slate-400 leading-relaxed">
-                분석가는 각 단계의 예상 영향도(Impact: None/Low/Medium)와 실제 실행될 리눅스/네트워크 명령을 확인하고 <code>[승인 및 실행]</code> 버튼을 눌러 안전하게 조치합니다.
-              </p>
-            </div>
-
-            <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
-              <span class="font-bold text-emerald-400 block">2. 유사 건 자동 처리 정책 (Auto-Remediation Policy)</span>
-              <p class="text-[11px] text-slate-400 leading-relaxed">
-                검증된 공격 시나리오(예: SSH Brute-Force 등)에 대해 <code>[유사 건 자동 처리]</code> 토글을 켜두면, 다음 알람 발생 시 사람의 개입 없이 AI가 즉시 자동 해결 완료 처리합니다.
-              </p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="px-6 py-3 border-t border-bordercolor bg-subpanel/80 flex items-center justify-between shrink-0">
-        <span class="text-[11px] text-slate-400">Logccino Autonomous AI SOC Architecture</span>
-        <button onclick="closeClaudeGuideModal()" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition">
-          확인 완료
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- Legacy placeholders for modals replaced by main views -->
+  <div id="users-modal" class="hidden"></div>
+  <div id="modal-claude-guide" class="hidden"></div>
 
   <!-- Scenario Micro-Tuning Modal -->
   <div id="scenario-tuning-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -3583,20 +3607,41 @@ async def get_enterprise_dashboard():
     // -------------------------------------------------------------
     let isAppsSidebarHidden = false;
 
-    function toggleAppsSidebar() {
+    function hideAppsSidebar() {
       const sidebar = document.getElementById('splunk-apps-sidebar');
       const toggleText = document.getElementById('apps-sidebar-toggle-text');
       if (!sidebar) return;
-
-      isAppsSidebarHidden = !isAppsSidebarHidden;
-      if (isAppsSidebarHidden) {
-        sidebar.classList.add('hidden');
-        if (toggleText) toggleText.textContent = "앱 리스트 열기";
-      } else {
-        sidebar.classList.remove('hidden');
-        if (toggleText) toggleText.textContent = "앱 리스트 숨기기";
-      }
+      isAppsSidebarHidden = true;
+      sidebar.classList.add('hidden');
+      if (toggleText) toggleText.textContent = "앱 리스트 열기";
       lucide.createIcons();
+    }
+
+    function showAppsSidebar() {
+      const sidebar = document.getElementById('splunk-apps-sidebar');
+      const toggleText = document.getElementById('apps-sidebar-toggle-text');
+      if (!sidebar) return;
+      isAppsSidebarHidden = false;
+      sidebar.classList.remove('hidden');
+      if (toggleText) toggleText.textContent = "앱 리스트 숨기기";
+      lucide.createIcons();
+    }
+
+    function toggleAppsSidebar() {
+      if (isAppsSidebarHidden) {
+        showAppsSidebar();
+      } else {
+        hideAppsSidebar();
+      }
+    }
+
+    function openSettings(viewName, subTab = null) {
+      closeAllDropdowns();
+      hideAppsSidebar();
+      selectApp(viewName);
+      if (subTab && viewName === 'collectors') {
+        switchCollectorsSubTab(subTab);
+      }
     }
 
     async function fetchApps() {
@@ -3705,10 +3750,16 @@ async def get_enterprise_dashboard():
         'sre': 'Autonomous SRE Observability',
         'collectors': 'Data Collectors & Ingestion Manager',
         'manage_apps': '앱 관리 및 설치 (Manage Apps)',
-        'parsing_rules': '필드 파싱 규칙 관리 (Field Parsing Rules & Profiles)'
+        'parsing_rules': '필드 파싱 규칙 관리 (Field Parsing Rules & Profiles)',
+        'saved_searches': '저장된 검색 및 알람 (Saved Searches & Alert Engine)',
+        'users': '사용자 및 역할 관리 (Users & Roles RBAC)',
+        'claude_guide': '클로드(Claude) AI 에이전트 연동 가이드'
       };
       const foundApp = installedApps.find(a => a.id === appId);
-      document.getElementById('current-app-title').textContent = (foundApp ? foundApp.name : (titles[appId] || appId));
+      const titleEl = document.getElementById('current-app-title');
+      if (titleEl) {
+        titleEl.textContent = (foundApp ? foundApp.name : (titles[appId] || appId));
+      }
 
       // Update Nav Buttons Styles without wiping out hidden or other classes
       document.querySelectorAll('.app-nav-btn').forEach(btn => {
@@ -3722,7 +3773,8 @@ async def get_enterprise_dashboard():
       }
 
       // Switch Views
-      ['search', 'siem', 'sre', 'collectors', 'manage_apps', 'parsing_rules'].forEach(view => {
+      const allViews = ['search', 'siem', 'sre', 'collectors', 'manage_apps', 'parsing_rules', 'saved_searches', 'users', 'claude_guide'];
+      allViews.forEach(view => {
         const viewEl = document.getElementById(`view-app-${view}`);
         if (viewEl) {
           if (view === appId) {
@@ -3747,6 +3799,12 @@ async def get_enterprise_dashboard():
       } else if (appId === 'parsing_rules') {
         fetchParsingRulesList();
         switchParsingRulesTab('list');
+      } else if (appId === 'saved_searches') {
+        loadSavedSearchesList();
+      } else if (appId === 'users') {
+        loadUsersAndRoles();
+      } else if (appId === 'claude_guide') {
+        switchClaudeGuideTab('search');
       }
 
       lucide.createIcons();
@@ -5099,7 +5157,7 @@ async def get_enterprise_dashboard():
     // Field Parsing Rules Management & Simulator Controllers
     // -------------------------------------------------------------
     function openParsingRulesModal() {
-      selectApp('parsing_rules');
+      openSettings('parsing_rules');
     }
 
     function closeParsingRulesModal() {
@@ -6924,14 +6982,7 @@ async def get_enterprise_dashboard():
     let isAlertPanelCollapsed = false;
 
     function openSavedSearchesModal(isNewWithCurrentQuery = false) {
-      const panel = document.getElementById('panel-saved-searches');
-      if (!panel) return;
-      panel.classList.remove('hidden');
-      const body = document.getElementById('saved-searches-panel-body');
-      if (body) body.classList.remove('hidden');
-      isAlertPanelCollapsed = false;
-      const icon = document.getElementById('btn-collapse-alert-icon');
-      if (icon) icon.setAttribute('data-lucide', 'chevron-down');
+      openSettings('saved_searches');
 
       if (isNewWithCurrentQuery) {
         resetAlertForm();
@@ -6948,12 +6999,10 @@ async def get_enterprise_dashboard():
         loadSavedSearchesList();
       }
       lucide.createIcons();
-      panel.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
     function closeNewAlertModal() {
-      const panel = document.getElementById('panel-saved-searches');
-      if (panel) panel.classList.add('hidden');
+      selectApp('search');
     }
 
     function toggleCollapseAlertPanel() {
@@ -7524,10 +7573,9 @@ async def get_enterprise_dashboard():
     }
 
     async function openUsersModal() {
-      document.getElementById('users-modal').classList.remove('hidden');
-      loadUsersAndRoles();
+      openSettings('users');
     }
-    function closeUsersModal() { document.getElementById('users-modal').classList.add('hidden'); }
+    function closeUsersModal() { selectApp('search'); }
 
     async function loadUsersAndRoles() {
       try {
@@ -7618,13 +7666,11 @@ async def get_enterprise_dashboard():
     // Claude Guide Modal Tab Navigation
     // -------------------------------------------------------------
     function openClaudeGuideModal() {
-      document.getElementById('modal-claude-guide').classList.remove('hidden');
-      switchClaudeGuideTab('search');
-      lucide.createIcons();
+      openSettings('claude_guide');
     }
 
     function closeClaudeGuideModal() {
-      document.getElementById('modal-claude-guide').classList.add('hidden');
+      selectApp('search');
     }
 
     function switchClaudeGuideTab(tab) {
