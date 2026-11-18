@@ -382,6 +382,18 @@ async def get_enterprise_dashboard():
             <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">앱 생태계 On/Off 토글 및 신규 플러그인 추가</div>
           </div>
         </button>
+
+        <!-- 6. Field Parsing Rules & Profiles (필드 파싱 규칙 관리 앱) -->
+        <button onclick="selectApp('parsing_rules')" id="app-nav-parsing_rules" class="app-nav-btn w-full text-left p-3 rounded-lg flex items-start gap-3 transition hover:bg-subpanel text-slate-300 border border-transparent">
+          <i data-lucide="file-code-2" class="w-4 h-4 mt-0.5 shrink-0 text-amber-400"></i>
+          <div>
+            <div class="font-bold text-xs text-white flex items-center gap-1.5">
+              <span>필드 파싱 규칙 관리</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono font-semibold border border-amber-500/30">28종 탑재</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">Palo Alto, Cisco, Suricata 등 벤더별 정규식/KV 파서 관리</div>
+          </div>
+        </button>
       </nav>
 
       <!-- Apps Footer / System Telemetry -->
@@ -1970,6 +1982,9 @@ async def get_enterprise_dashboard():
           <button onclick="switchCollectorsSubTab('connectors')" id="collectors-subtab-connectors" class="collectors-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-subpanel">
             <i data-lucide="store" class="w-3.5 h-3.5"></i> 5. 보안/클라우드 커넥터
           </button>
+          <button onclick="selectApp('parsing_rules')" id="collectors-subtab-parsing" class="collectors-subtab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-amber-300 hover:text-amber-100 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 ml-auto">
+            <i data-lucide="file-code-2" class="w-3.5 h-3.5 text-amber-400"></i> 6. 필드 파싱 규칙 관리 (28종 탑재) &rarr;
+          </button>
         </div>
 
         <!-- =================================================================== -->
@@ -2405,6 +2420,178 @@ async def get_enterprise_dashboard():
         <!-- Installed Apps Cards Container -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="installed-apps-grid">
           <!-- Rendered dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- =================================================================================== -->
+      <!-- 6. Field Parsing Rules & Profiles Main View (#view-app-parsing_rules)                -->
+      <!-- =================================================================================== -->
+      <div id="view-app-parsing_rules" class="app-view flex-1 flex flex-col p-6 space-y-5 hidden">
+        <!-- Parsing Rules Header -->
+        <div class="flex items-center justify-between bg-panelbg p-5 rounded-xl border border-bordercolor shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <i data-lucide="file-code-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="font-bold text-sm text-white">필드 파싱 규칙 관리 (Field Parsing Rules &amp; Profiles Engine)</h2>
+                <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">28종 벤더 프리셋 탑재</span>
+                <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">SPLUNK CIM &amp; ECS 호환</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Palo Alto, Fortinet, Cisco, Windows, Suricata, Zeek 등 28종 표준 파서를 관리하고 실시간 시뮬레이터로 로그 파싱 결과를 검증합니다.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="selectApp('collectors'); switchCollectorsSubTab('syslog');" class="px-3.5 py-2 rounded-lg bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition flex items-center gap-1.5 font-medium">
+              <i data-lucide="radio" class="w-4 h-4 text-indigo-400"></i>
+              <span>수집기 관리 (Syslog 포트 연결)</span>
+            </button>
+            <button onclick="openNewParsingRuleForm()" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-lg shadow-amber-600/20">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>새 파싱 규칙 등록 (+ Add Rule)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs & Search/Filter Controls -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-bordercolor pb-2 gap-3">
+          <div class="flex items-center gap-2 text-xs">
+            <button onclick="switchParsingRulesTab('list')" id="prules-tab-list-btn" class="px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-amber-500 text-amber-300">
+              <i data-lucide="list" class="w-4 h-4"></i>
+              <span>파싱 규칙 카탈로그 (28종 탑재 &amp; 커스텀)</span>
+            </button>
+            <button onclick="switchParsingRulesTab('form')" id="prules-tab-form-btn" class="px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+              <i data-lucide="play-circle" class="w-4 h-4"></i>
+              <span>규칙 등록/수정 &amp; 실시간 시뮬레이터</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2" id="prules-filter-controls">
+            <div class="relative">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500"></i>
+              <input type="text" id="prules-search-filter" oninput="filterParsingRulesList()" placeholder="규칙명, 벤더, ID 검색..." class="bg-slatebg border border-bordercolor rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none w-56 font-mono">
+            </div>
+            <select id="prules-type-filter" onchange="filterParsingRulesList()" class="bg-slatebg border border-bordercolor rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500 focus:outline-none font-mono">
+              <option value="all">전체 유형 (All Types)</option>
+              <option value="syslog_standard">Syslog Standard</option>
+              <option value="key_value">Key-Value (=)</option>
+              <option value="regex">Regex Named Groups</option>
+              <option value="json">JSON Structured</option>
+              <option value="delimiter">Delimiter (CSV/Pipe)</option>
+              <option value="cef">CEF Standard</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TAB 1: Rules List View -->
+        <div id="prules-view-list" class="space-y-3">
+          <div id="prules-table-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="col-span-2 text-center py-12 text-slate-400">파싱 규칙 로드 중...</div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Add/Edit & Simulator View -->
+        <div id="prules-view-form" class="space-y-4 hidden bg-panelbg p-6 rounded-xl border border-bordercolor">
+          <form onsubmit="event.preventDefault(); saveParsingRule(event); return false;" class="space-y-4">
+            <input type="hidden" id="prule-is-editing" value="false">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">규칙 ID (Rule ID)</label>
+                <input type="text" id="prule-id" required placeholder="rule-custom-firewall" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-slate-300 font-bold mb-1">규칙 명칭 (Name)</label>
+                <input type="text" id="prule-name" required placeholder="차세대 방화벽 전용 Key-Value 파서" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">파서 유형 (Parser Type)</label>
+                <select id="prule-type" onchange="handleParserTypeChange()" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none">
+                  <option value="syslog_standard">syslog_standard (RFC 3164/5424 + 보안 이벤트)</option>
+                  <option value="key_value">key_value (Key=Value 또는 Key="Value")</option>
+                  <option value="regex">regex (정규식 Named Capture Groups)</option>
+                  <option value="json">json (JSON 구조화 페이로드)</option>
+                  <option value="cef">cef (Common Event Format 규격)</option>
+                  <option value="delimiter">delimiter (구분자 분리: CSV, Pipe 등)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-bold mb-1" id="prule-delim-label">구분자 (Delimiter)</label>
+                <input type="text" id="prule-delimiter" value=" " placeholder="공백, 쉼표, 파이프(|)" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-300 font-bold mb-1" id="prule-kvdelim-label">KV 구분자 (Key-Value Delim)</label>
+                <input type="text" id="prule-kv-delimiter" value="=" placeholder="=" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div id="prule-pattern-container">
+              <label class="block text-slate-300 font-bold mb-1" id="prule-pattern-label">정규표현식 패턴 또는 헤더 목록</label>
+              <textarea id="prule-pattern" rows="2" placeholder="^(?P<client_ip>\S+) \S+ (?P<remote_user>\S+) ..." class="w-full bg-slatebg border border-bordercolor rounded p-2.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
+              <p class="text-[10px] text-slate-400 mt-0.5">정규식 파서의 경우 (?P&lt;field_name&gt;...) 형식의 Named Groups를 지원합니다.</p>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">필드 매핑 (Field Mappings: 추출 필드 ➔ 표준/보안 필드)</label>
+              <textarea id="prule-mappings" rows="3" placeholder="src: security.source_ip&#10;dst: security.destination_ip&#10;action: security.action" class="w-full bg-slatebg border border-bordercolor rounded p-2.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
+              <p class="text-[10px] text-slate-400 mt-0.5">한 줄에 하나씩 `추출필드: 대상필드` (예: `src: security.source_ip`, `user: security.user_name`)로 입력합니다.</p>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">설명 (Description)</label>
+              <input type="text" id="prule-desc" placeholder="파서 설명 및 타깃 로그 장비" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none">
+            </div>
+
+            <!-- Live Test & Simulator Box -->
+            <div class="p-5 bg-slatebg/70 rounded-xl border border-amber-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-amber-300 flex items-center gap-1.5 text-xs">
+                  <i data-lucide="play-circle" class="w-4 h-4 text-amber-400"></i> 실시간 파싱 규칙 시뮬레이터 (Live Test)
+                </span>
+                <button type="button" onclick="testParsingRuleSimulator()" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition flex items-center gap-1.5 text-xs shadow-md shadow-amber-600/30">
+                  <i data-lucide="zap" class="w-3.5 h-3.5"></i> 파싱 테스트 실행
+                </button>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 text-[11px] mb-1">테스트 샘플 로그 텍스트:</label>
+                <textarea id="prule-sample-log" rows="2" placeholder="테스트할 원본 로그를 입력하세요..." class="w-full bg-slatebg border border-bordercolor rounded p-2.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
+              </div>
+
+              <!-- Test Result Output Box -->
+              <div id="prule-test-result-box" class="hidden p-4 bg-slate-900 rounded-lg border border-bordercolor text-xs space-y-3">
+                <div class="flex items-center justify-between border-b border-bordercolor pb-2">
+                  <span class="font-bold text-emerald-400 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4"></i> 파싱 성공 결과</span>
+                  <span id="prule-test-status" class="text-[10px] font-mono text-slate-400"></span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-[11px]">
+                  <div>
+                    <span class="text-slate-400 block mb-1 font-semibold">추출된 원시 필드 (Extracted Attributes):</span>
+                    <pre id="prule-test-extracted" class="bg-black/40 p-3 rounded-lg text-emerald-300 max-h-52 overflow-y-auto scrollbar-thin"></pre>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block mb-1 font-semibold">매핑된 보안 필드 (Mapped Security Fields):</span>
+                    <pre id="prule-test-mapped" class="bg-black/40 p-3 rounded-lg text-indigo-300 max-h-52 overflow-y-auto scrollbar-thin"></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div class="flex items-center justify-between pt-3 border-t border-bordercolor">
+              <button type="button" onclick="switchParsingRulesTab('list')" class="px-4 py-2 rounded-lg bg-subpanel text-slate-300 hover:bg-slate-800 transition font-medium">
+                &larr; 목록으로 돌아가기
+              </button>
+              <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/30">
+                <i data-lucide="check" class="w-4 h-4"></i> 파싱 규칙 저장
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -3113,159 +3300,9 @@ async def get_enterprise_dashboard():
   </div>
 
   <!-- =================================================================================== -->
-  <!-- 3-B. Field Parsing Rules Management Modal (#modal-parsing-rules)                      -->
+  <!-- 3-B. Field Parsing Rules Management (메인 화면 #view-app-parsing_rules 로 전환됨)   -->
   <!-- =================================================================================== -->
-  <div id="modal-parsing-rules" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-panelbg border border-amber-500/40 rounded-xl w-full max-w-5xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden">
-      <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-bordercolor flex items-center justify-between bg-subpanel/90 shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-            <i data-lucide="file-code-2" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 class="font-bold text-sm text-white uppercase tracking-wider">필드 파싱 규칙 관리 (Field Parsing Rules &amp; Profiles)</h3>
-              <span class="px-2 py-0.5 rounded font-mono text-[9px] bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">PARSER ENGINE</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-0.5">수집 포트별로 적용할 필드 파싱 규칙(표준 Syslog, Regex, Key-Value, JSON, CEF 등)을 정의하고 실시간으로 시뮬레이션합니다.</p>
-          </div>
-        </div>
-        <button onclick="closeParsingRulesModal()" class="text-slate-400 hover:text-white transition p-1.5 rounded-lg hover:bg-slate-800">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <!-- Navigation Tabs -->
-      <div class="flex items-center gap-2 px-6 pt-3 border-b border-bordercolor bg-subpanel/40 text-xs shrink-0">
-        <button onclick="switchParsingRulesTab('list')" id="prules-tab-list-btn" class="px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-amber-500 text-amber-300">
-          <i data-lucide="list" class="w-3.5 h-3.5"></i> 파싱 규칙 목록
-        </button>
-        <button onclick="switchParsingRulesTab('form')" id="prules-tab-form-btn" class="px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
-          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> 새 파싱 규칙 등록 &amp; 실시간 시뮬레이터
-        </button>
-      </div>
-
-      <!-- Tab Content Area -->
-      <div class="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
-        <!-- 1. Rules List View -->
-        <div id="prules-view-list" class="space-y-3">
-          <div class="flex items-center justify-between pb-1">
-            <span class="text-slate-400 text-xs">등록된 파싱 프로파일을 확인하고, 수집기 포트(기본 1514 및 추가 포트)와 연결할 수 있습니다.</span>
-            <button onclick="openNewParsingRuleForm()" class="px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> 새 규칙 등록
-            </button>
-          </div>
-
-          <div id="prules-table-container" class="space-y-2.5">
-            <div class="text-center py-12 text-slate-400">파싱 규칙 로드 중...</div>
-          </div>
-        </div>
-
-        <!-- 2. Add/Edit & Simulator View -->
-        <div id="prules-view-form" class="space-y-4 hidden">
-          <form onsubmit="event.preventDefault(); saveParsingRule(event); return false;" class="space-y-4">
-            <input type="hidden" id="prule-is-editing" value="false">
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label class="block text-slate-300 font-bold mb-1">규칙 ID (Rule ID)</label>
-                <input type="text" id="prule-id" required placeholder="rule-custom-firewall" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-slate-300 font-bold mb-1">규칙 명칭 (Name)</label>
-                <input type="text" id="prule-name" required placeholder="차세대 방화벽 전용 Key-Value 파서" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white text-xs focus:border-amber-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label class="block text-slate-300 font-bold mb-1">파서 유형 (Parser Type)</label>
-                <select id="prule-type" onchange="handleParserTypeChange()" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white text-xs focus:border-amber-500 focus:outline-none">
-                  <option value="syslog_standard">syslog_standard (RFC 3164/5424 + 보안 이벤트)</option>
-                  <option value="key_value">key_value (Key=Value 또는 Key="Value")</option>
-                  <option value="regex">regex (정규식 Named Capture Groups)</option>
-                  <option value="json">json (JSON 구조화 페이로드)</option>
-                  <option value="cef">cef (Common Event Format 규격)</option>
-                  <option value="delimiter">delimiter (구분자 분리: CSV, Pipe 등)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-slate-300 font-bold mb-1" id="prule-delim-label">구분자 (Delimiter)</label>
-                <input type="text" id="prule-delimiter" value=" " placeholder="공백, 쉼표, 파이프(|)" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="block text-slate-300 font-bold mb-1" id="prule-kvdelim-label">KV 구분자 (Key-Value Delim)</label>
-                <input type="text" id="prule-kv-delimiter" value="=" placeholder="=" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div id="prule-pattern-container">
-              <label class="block text-slate-300 font-bold mb-1" id="prule-pattern-label">정규표현식 패턴 또는 헤더 목록</label>
-              <textarea id="prule-pattern" rows="2" placeholder="^(?P<client_ip>\S+) \S+ (?P<remote_user>\S+) ..." class="w-full bg-slatebg border border-bordercolor rounded p-2.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
-              <p class="text-[10px] text-slate-400 mt-0.5">정규식 파서의 경우 (?P&lt;field_name&gt;...) 형식의 Named Groups를 지원합니다.</p>
-            </div>
-
-            <div>
-              <label class="block text-slate-300 font-bold mb-1">필드 매핑 (Field Mappings: 추출 필드 ➔ 표준/보안 필드)</label>
-              <textarea id="prule-mappings" rows="3" placeholder="src: security.source_ip&#10;dst: security.destination_ip&#10;action: security.action" class="w-full bg-slatebg border border-bordercolor rounded p-2.5 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
-              <p class="text-[10px] text-slate-400 mt-0.5">한 줄에 하나씩 `추출필드: 대상필드` (예: `src: security.source_ip`, `user: security.user_name`)로 입력합니다.</p>
-            </div>
-
-            <div>
-              <label class="block text-slate-300 font-bold mb-1">설명 (Description)</label>
-              <input type="text" id="prule-desc" placeholder="파서 설명 및 타깃 로그 장비" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-1.5 text-white text-xs focus:border-amber-500 focus:outline-none">
-            </div>
-
-            <!-- Live Test & Simulator Box -->
-            <div class="p-4 bg-slatebg/70 rounded-xl border border-amber-500/30 space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-amber-300 flex items-center gap-1.5">
-                  <i data-lucide="play-circle" class="w-4 h-4 text-amber-400"></i> 실시간 파싱 규칙 시뮬레이터 (Live Test)
-                </span>
-                <button type="button" onclick="testParsingRuleSimulator()" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded transition flex items-center gap-1 text-xs shadow">
-                  <i data-lucide="zap" class="w-3.5 h-3.5"></i> 파싱 테스트 실행
-                </button>
-              </div>
-
-              <div>
-                <label class="block text-slate-400 text-[11px] mb-1">테스트 샘플 로그 텍스트:</label>
-                <textarea id="prule-sample-log" rows="2" placeholder="테스트할 원본 로그를 입력하세요..." class="w-full bg-slatebg border border-bordercolor rounded p-2 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
-              </div>
-
-              <!-- Test Result Output Box -->
-              <div id="prule-test-result-box" class="hidden p-3 bg-slate-900 rounded-lg border border-bordercolor text-xs space-y-2">
-                <div class="flex items-center justify-between border-b border-bordercolor pb-1.5">
-                  <span class="font-bold text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> 파싱 성공 결과</span>
-                  <span id="prule-test-status" class="text-[10px] font-mono text-slate-400"></span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
-                  <div>
-                    <span class="text-slate-400 block mb-1">추출된 원시 필드 (Extracted Attributes):</span>
-                    <pre id="prule-test-extracted" class="bg-black/40 p-2 rounded text-emerald-300 max-h-40 overflow-y-auto scrollbar-thin"></pre>
-                  </div>
-                  <div>
-                    <span class="text-slate-400 block mb-1">매핑된 보안 필드 (Mapped Security Fields):</span>
-                    <pre id="prule-test-mapped" class="bg-black/40 p-2 rounded text-indigo-300 max-h-40 overflow-y-auto scrollbar-thin"></pre>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Form Action Buttons -->
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-bordercolor">
-              <button type="button" onclick="switchParsingRulesTab('list')" class="px-4 py-1.5 rounded bg-subpanel text-slate-300 hover:bg-slate-800 transition">
-                취소
-              </button>
-              <button type="submit" class="px-5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 shadow">
-                <i data-lucide="check" class="w-3.5 h-3.5"></i> 파싱 규칙 저장
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="modal-parsing-rules" class="hidden"></div>
 
   <!-- =================================================================================== -->
   <!-- 3-C. Add / Edit Syslog Port Modal (#modal-add-syslog-port)                           -->
@@ -3622,7 +3659,7 @@ async def get_enterprise_dashboard():
       if (!navContainer || !manageAppsBtn) return;
 
       installedApps.forEach(app => {
-        if (['search', 'siem', 'sre', 'collectors', 'manage_apps'].includes(app.id)) return;
+        if (['search', 'siem', 'sre', 'collectors', 'manage_apps', 'parsing_rules'].includes(app.id)) return;
 
         let dynamicBtn = document.getElementById(`app-nav-${app.id}`);
         if (app.enabled) {
@@ -3667,7 +3704,8 @@ async def get_enterprise_dashboard():
         'siem': 'Enterprise Security (SIEM)',
         'sre': 'Autonomous SRE Observability',
         'collectors': 'Data Collectors & Ingestion Manager',
-        'manage_apps': '앱 관리 및 설치 (Manage Apps)'
+        'manage_apps': '앱 관리 및 설치 (Manage Apps)',
+        'parsing_rules': '필드 파싱 규칙 관리 (Field Parsing Rules & Profiles)'
       };
       const foundApp = installedApps.find(a => a.id === appId);
       document.getElementById('current-app-title').textContent = (foundApp ? foundApp.name : (titles[appId] || appId));
@@ -3684,7 +3722,7 @@ async def get_enterprise_dashboard():
       }
 
       // Switch Views
-      ['search', 'siem', 'sre', 'collectors', 'manage_apps'].forEach(view => {
+      ['search', 'siem', 'sre', 'collectors', 'manage_apps', 'parsing_rules'].forEach(view => {
         const viewEl = document.getElementById(`view-app-${view}`);
         if (viewEl) {
           if (view === appId) {
@@ -3706,6 +3744,9 @@ async def get_enterprise_dashboard():
         fetchCollectorsAllStatus();
       } else if (appId === 'manage_apps') {
         renderManageAppsGrid();
+      } else if (appId === 'parsing_rules') {
+        fetchParsingRulesList();
+        switchParsingRulesTab('list');
       }
 
       lucide.createIcons();
@@ -5058,15 +5099,11 @@ async def get_enterprise_dashboard():
     // Field Parsing Rules Management & Simulator Controllers
     // -------------------------------------------------------------
     function openParsingRulesModal() {
-      fetchParsingRulesList();
-      switchParsingRulesTab('list');
-      const modal = document.getElementById('modal-parsing-rules');
-      if (modal) modal.classList.remove('hidden');
+      selectApp('parsing_rules');
     }
 
     function closeParsingRulesModal() {
-      const modal = document.getElementById('modal-parsing-rules');
-      if (modal) modal.classList.add('hidden');
+      selectApp('search');
     }
 
     function switchParsingRulesTab(tab) {
@@ -5074,20 +5111,101 @@ async def get_enterprise_dashboard():
       const formBtn = document.getElementById('prules-tab-form-btn');
       const listView = document.getElementById('prules-view-list');
       const formView = document.getElementById('prules-view-form');
+      const filterControls = document.getElementById('prules-filter-controls');
 
       if (tab === 'list') {
         if (listBtn) { listBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-amber-500 text-amber-300'; }
         if (formBtn) { formBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200'; }
         if (listView) listView.classList.remove('hidden');
         if (formView) formView.classList.add('hidden');
+        if (filterControls) filterControls.classList.remove('hidden');
         fetchParsingRulesList();
       } else {
         if (listBtn) { listBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200'; }
         if (formBtn) { formBtn.className = 'px-4 py-2 font-bold transition flex items-center gap-2 border-b-2 border-amber-500 text-amber-300'; }
         if (listView) listView.classList.add('hidden');
         if (formView) formView.classList.remove('hidden');
+        if (filterControls) filterControls.classList.add('hidden');
       }
       lucide.createIcons();
+    }
+
+    function renderParsingRules(rules) {
+      const container = document.getElementById('prules-table-container');
+      if (!container) return;
+
+      if (!rules || rules.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">일치하는 파싱 규칙이 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = rules.map(r => {
+        const isBuiltin = r.is_builtin;
+        const mappingsCount = Object.keys(r.field_mappings || {}).length;
+
+        let typeColor = 'bg-slate-800 text-slate-300 border-slate-700';
+        if (r.parser_type === 'syslog_standard') typeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        if (r.parser_type === 'key_value') typeColor = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+        if (r.parser_type === 'regex') typeColor = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+        if (r.parser_type === 'json') typeColor = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
+        if (r.parser_type === 'cef') typeColor = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+        if (r.parser_type === 'delimiter') typeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+
+        return `
+          <div class="p-4 bg-slatebg/80 rounded-xl border border-bordercolor flex items-start justify-between gap-4 hover:border-amber-500/40 transition">
+            <div class="space-y-1.5 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-white text-xs">${r.name}</span>
+                <span class="font-mono text-[10px] text-slate-400">ID: ${r.id}</span>
+                <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold border ${typeColor}">${r.parser_type.toUpperCase()}</span>
+                ${isBuiltin ? '<span class="px-1.5 py-0.2 rounded font-mono text-[9px] bg-slate-800 text-slate-400 border border-slate-700">기본규칙</span>' : ''}
+              </div>
+              <p class="text-[11px] text-slate-300">${r.description || '필드 파싱 프로파일'}</p>
+              <div class="flex items-center gap-3 text-[10px] font-mono text-slate-400 pt-1 flex-wrap">
+                <span>매핑 필드: <strong class="text-emerald-400">${mappingsCount}개</strong></span>
+                ${r.pattern ? `<span>&bull;</span> <span class="truncate max-w-md">패턴: <code class="text-amber-300">${r.pattern.slice(0, 50)}...</code></span>` : ''}
+                ${r.sample_log ? `<span>&bull;</span> <span class="truncate max-w-sm text-slate-500">샘플: <code>${r.sample_log.slice(0, 40)}...</code></span>` : ''}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="openSimulatorWithRule('${r.id}')" class="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition">
+                <i data-lucide="play-circle" class="w-3.5 h-3.5"></i> 테스트
+              </button>
+              <button onclick="openEditParsingRule('${r.id}')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
+                수정
+              </button>
+              ${!isBuiltin ? `
+                <button onclick="deleteParsingRule('${r.id}')" class="px-2 py-1 rounded bg-subpanel hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 border border-bordercolor text-xs transition" title="삭제">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function filterParsingRulesList() {
+      const searchEl = document.getElementById('prules-search-filter');
+      const q = (searchEl ? searchEl.value : '').toLowerCase().trim();
+      const typeEl = document.getElementById('prules-type-filter');
+      const typeFilter = typeEl ? typeEl.value : 'all';
+
+      let filtered = currentParsingRules || [];
+      if (typeFilter !== 'all') {
+        filtered = filtered.filter(r => r.parser_type === typeFilter);
+      }
+      if (q) {
+        filtered = filtered.filter(r => 
+          (r.name && r.name.toLowerCase().includes(q)) ||
+          (r.id && r.id.toLowerCase().includes(q)) ||
+          (r.description && r.description.toLowerCase().includes(q)) ||
+          (r.sample_log && r.sample_log.toLowerCase().includes(q))
+        );
+      }
+      renderParsingRules(filtered);
     }
 
     async function fetchParsingRulesList() {
@@ -5110,56 +5228,7 @@ async def get_enterprise_dashboard():
         if (udpRuleSelect) udpRuleSelect.innerHTML = optionsHtml;
         if (tcpRuleSelect) tcpRuleSelect.innerHTML = optionsHtml;
 
-        if (!container) return;
-        if (currentParsingRules.length === 0) {
-          container.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">등록된 파싱 규칙이 없습니다.</div>';
-          return;
-        }
-
-        container.innerHTML = currentParsingRules.map(r => {
-          const isBuiltin = r.is_builtin;
-          const mappingsCount = Object.keys(r.field_mappings || {}).length;
-
-          let typeColor = 'bg-slate-800 text-slate-300 border-slate-700';
-          if (r.parser_type === 'syslog_standard') typeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-          if (r.parser_type === 'key_value') typeColor = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
-          if (r.parser_type === 'regex') typeColor = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-          if (r.parser_type === 'json') typeColor = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
-          if (r.parser_type === 'cef') typeColor = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
-
-          return `
-            <div class="p-4 bg-slatebg/80 rounded-xl border border-bordercolor flex items-start justify-between gap-4 hover:border-amber-500/40 transition">
-              <div class="space-y-1.5 flex-1">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-white text-xs">${r.name}</span>
-                  <span class="font-mono text-[10px] text-slate-400">ID: ${r.id}</span>
-                  <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold border ${typeColor}">${r.parser_type.toUpperCase()}</span>
-                  ${isBuiltin ? '<span class="px-1.5 py-0.2 rounded font-mono text-[9px] bg-slate-800 text-slate-400 border border-slate-700">기본규칙</span>' : ''}
-                </div>
-                <p class="text-[11px] text-slate-300">${r.description || '필드 파싱 프로파일'}</p>
-                <div class="flex items-center gap-3 text-[10px] font-mono text-slate-400 pt-1">
-                  <span>매핑 필드: <strong class="text-emerald-400">${mappingsCount}개</strong></span>
-                  ${r.pattern ? `<span>&bull;</span> <span class="truncate max-w-md">패턴: <code class="text-amber-300">${r.pattern.slice(0, 50)}...</code></span>` : ''}
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2 shrink-0">
-                <button onclick="openSimulatorWithRule('${r.id}')" class="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition">
-                  <i data-lucide="play-circle" class="w-3.5 h-3.5"></i> 테스트
-                </button>
-                <button onclick="openEditParsingRule('${r.id}')" class="px-2.5 py-1 rounded bg-subpanel hover:bg-slate-800 text-slate-300 border border-bordercolor text-xs transition">
-                  수정
-                </button>
-                ${!isBuiltin ? `
-                  <button onclick="deleteParsingRule('${r.id}')" class="px-2 py-1 rounded bg-subpanel hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 border border-bordercolor text-xs transition" title="삭제">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                  </button>
-                ` : ''}
-              </div>
-            </div>
-          `;
-        }).join('');
-        lucide.createIcons();
+        filterParsingRulesList();
       } catch (e) {
         if (container) container.innerHTML = `<div class="p-6 text-center text-rose-400 text-xs">규칙 로드 실패: ${e.message}</div>`;
       }

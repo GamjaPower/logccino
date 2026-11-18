@@ -402,7 +402,7 @@ def test_syslog_distinct_udp_tcp_parsing_rules(client):
 
 
 def test_dashboard_ui_elements(client):
-    """대시보드 UI에 파싱 규칙 모달, Syslog 다중 포트 및 설정 메뉴가 렌더링되는지 검증"""
+    """대시보드 UI에 파싱 규칙 메인 뷰, 사이드바 버튼, Syslog 다중 포트 및 설정 메뉴가 렌더링되는지 검증"""
     res = client.get("/")
     assert res.status_code == 200
     html = res.text
@@ -411,7 +411,16 @@ def test_dashboard_ui_elements(client):
     assert "필드 파싱 규칙 관리" in html
     assert "openParsingRulesModal()" in html
 
-    # Modals
+    # Main View & Sidebar Navigation for Parsing Rules
+    assert 'id="view-app-parsing_rules"' in html
+    assert 'id="app-nav-parsing_rules"' in html
+    assert 'id="prules-tab-list-btn"' in html
+    assert 'id="prules-tab-form-btn"' in html
+    assert 'id="prules-search-filter"' in html
+    assert 'id="prules-type-filter"' in html
+    assert 'id="collectors-subtab-parsing"' in html
+
+    # Modals & Elements
     assert 'id="modal-parsing-rules"' in html
     assert 'id="modal-add-syslog-port"' in html
     assert 'id="col-syslog-ports-container"' in html
