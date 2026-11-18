@@ -44,28 +44,50 @@ async def ingest_batch(req: IngestBatchRequest):
 async def ingest_syslog(
     req: SyslogBatchRequest,
     target_index: Optional[str] = "main",
-    port: Optional[int] = Query(1514)
+    port: Optional[int] = Query(1514),
+    protocol: Optional[str] = Query(None)
 ):
     """
     Rust 또는 포트별 Syslog Collector에서 수신된 보안/시스템 로그를 배치로 수신하여
-    포트에 연결된 파싱 규칙(Parser Profile) 메타데이터와 함께 인덱싱
+    포트 및 UDP/TCP 프로토콜별로 연결된 파싱 규칙(Parser Profile) 메타데이터와 함께 인덱싱
     """
     try:
         port_num = port or 1514
         port_cfg = syslog_ports_manager.get_port(port_num)
         idx = (target_index if target_index and target_index != "main" else None) or (port_cfg.target_index if port_cfg else "main")
-        rule = parsing_rule_manager.get_rule(port_cfg.parser_rule_id) if port_cfg else None
 
         records = []
+        udp_count = 0
+        tcp_count = 0
+
         for ev in req.events:
             rec = dict(ev)
             rec["index"] = idx
+
+            # Determine protocol: query param -> event dict 'protocol' -> event dict 'source' -> default UDP
+            proto_val = protocol or rec.get("protocol")
+            if not proto_val:
+                src_val = str(rec.get("source", "")).lower()
+                proto_val = "TCP" if "tcp" in src_val else "UDP"
+            proto_upper = str(proto_val).upper()
+
+            if proto_upper == "UDP":
+                udp_count += 1
+                rule_id = port_cfg.udp_parser_rule_id if port_cfg else "rule-default-syslog"
+            else:
+                tcp_count += 1
+                rule_id = port_cfg.tcp_parser_rule_id if port_cfg else "rule-default-syslog"
+
+            rule = parsing_rule_manager.get_rule(rule_id)
+            if not rule:
+                rule = parsing_rule_manager.get_rule("rule-default-syslog")
 
             if "attributes" not in rec or not isinstance(rec.get("attributes"), dict):
                 rec["attributes"] = {}
 
             rec["attributes"]["index"] = rec["index"]
             rec["attributes"]["collector_port"] = port_num
+            rec["attributes"]["protocol"] = proto_upper
             if rule:
                 rec["attributes"]["parser_rule_id"] = rule.id
                 rec["attributes"]["parser_rule_name"] = rule.name
@@ -100,6 +122,10 @@ async def ingest_syslog(
             port_cfg.received_total += len(records)
             port_cfg.parsed_total += len(records)
             port_cfg.forwarded_total += result.get("success", len(records))
+            port_cfg.udp_received_total += udp_count
+            port_cfg.tcp_received_total += tcp_count
+            port_cfg.udp_parsed_total += udp_count
+            port_cfg.tcp_parsed_total += tcp_count
 
         return {
             "status": "ok",
@@ -107,7 +133,8 @@ async def ingest_syslog(
             "failed": result.get("failed", 0),
             "target_index": idx,
             "port": port_num,
-            "parser_rule": rule.name if rule else "default"
+            "udp_events": udp_count,
+            "tcp_events": tcp_count
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

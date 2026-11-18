@@ -212,6 +212,84 @@ def test_mcp_ports_and_parsing_rules_tools():
     assert test_res["mapped_fields"]["source_ip"] == "10.0.0.5"
 
 
+def test_syslog_distinct_udp_tcp_parsing_rules(client):
+    """UDP/TCP 프로토콜별 독립적인 필드 파싱 규칙 연결 및 수신/파싱 검증"""
+    import asyncio
+
+    # 1. 포트 5142 등록: UDP는 Firewall KV, TCP는 JSON Event
+    port_payload = {
+        "port": 5142,
+        "name": "하이브리드 보안 장비 수신 포트",
+        "description": "UDP=방화벽KV, TCP=JSON전용",
+        "udp_enabled": True,
+        "udp_parser_rule_id": "rule-firewall-kv",
+        "tcp_enabled": True,
+        "tcp_parser_rule_id": "rule-json-event",
+        "target_index": "main",
+        "enabled": True
+    }
+    res = client.post("/api/v1/collectors/syslog/ports", json=port_payload)
+    assert res.status_code == 200
+    cfg = res.json()
+    assert cfg["port"] == 5142
+    assert cfg["udp_enabled"] is True
+    assert cfg["udp_parser_rule_id"] == "rule-firewall-kv"
+    assert cfg["tcp_enabled"] is True
+    assert cfg["tcp_parser_rule_id"] == "rule-json-event"
+
+    # 2. 포트 목록에서 UDP와 TCP 파싱 규칙 정보가 각각 올바르게 반환되는지 확인
+    res_list = client.get("/api/v1/collectors/syslog/ports")
+    assert res_list.status_code == 200
+    p5142 = next(p for p in res_list.json() if p["port"] == 5142)
+    assert p5142["udp_parser_rule"]["id"] == "rule-firewall-kv"
+    assert p5142["udp_parser_rule"]["parser_type"] == "key_value"
+    assert p5142["tcp_parser_rule"]["id"] == "rule-json-event"
+    assert p5142["tcp_parser_rule"]["parser_type"] == "json"
+
+    # 3. Ingest 엔드포인트를 통해 UDP와 TCP 각각 유입 시 프로토콜별 파싱 규칙이 개별 적용되는지 검증
+    # 3-A. UDP 이벤트 전송
+    udp_batch = {
+        "events": [
+            {
+                "message": "src=198.51.100.99 dst=10.0.0.1 spt=52120 dpt=22 action=deny proto=TCP",
+                "source": "syslog-udp",
+                "protocol": "UDP"
+            }
+        ]
+    }
+    res_udp = client.post("/api/v1/ingest/syslog?port=5142", json=udp_batch)
+    assert res_udp.status_code == 200
+    assert res_udp.json()["udp_events"] == 1
+
+    # 3-B. TCP 이벤트 전송
+    tcp_batch = {
+        "events": [
+            {
+                "message": '{"src_ip": "10.0.4.15", "dest_ip": "10.0.1.20", "user": "admin", "action": "tcp_login_success"}',
+                "source": "syslog-tcp",
+                "protocol": "TCP"
+            }
+        ]
+    }
+    res_tcp = client.post("/api/v1/ingest/syslog?port=5142", json=tcp_batch)
+    assert res_tcp.status_code == 200
+    assert res_tcp.json()["tcp_events"] == 1
+
+    # 4. Runtime process_received_message 직접 호출 검증
+    async def run_runtime_test():
+        await syslog_ports_manager.process_received_message(5142, "UDP", "src=172.16.0.5 action=drop")
+        await syslog_ports_manager.process_received_message(5142, "TCP", '{"src_ip": "172.16.0.9", "action": "tcp_block"}')
+
+    asyncio.run(run_runtime_test())
+
+    updated_p = syslog_ports_manager.get_port(5142)
+    assert updated_p.udp_received_total >= 2
+    assert updated_p.tcp_received_total >= 2
+
+    # 5. 정리 (삭제)
+    client.delete("/api/v1/collectors/syslog/ports/5142")
+
+
 def test_dashboard_ui_elements(client):
     """대시보드 UI에 파싱 규칙 모달, Syslog 다중 포트 및 설정 메뉴가 렌더링되는지 검증"""
     res = client.get("/")

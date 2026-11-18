@@ -40,9 +40,9 @@
         "command": "ufw insert 1 deny from 203.0.113.88 to any # Auto-Quarantine",
         "estimated_impact": "none",
         "status": "pending",
-        "executed_by": null,
-        "executed_at": null,
-        "output_log": null
+        "executed_by": "SOC 팀장 일괄 승인",
+        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'ufw insert 1 deny from 203.0.113.88 to any # Auto-Quarantine' 실행 성공"
       },
       {
         "step_number": 2,
@@ -52,9 +52,9 @@
         "command": "iptables -A INPUT -s 203.0.113.88 -j DROP",
         "estimated_impact": "low",
         "status": "pending",
-        "executed_by": null,
-        "executed_at": null,
-        "output_log": null
+        "executed_by": "SOC 팀장 일괄 승인",
+        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'iptables -A INPUT -s 203.0.113.88 -j DROP' 실행 성공"
       },
       {
         "step_number": 3,
@@ -64,9 +64,9 @@
         "command": "pkill -u root",
         "estimated_impact": "low",
         "status": "pending",
-        "executed_by": null,
-        "executed_at": null,
-        "output_log": null
+        "executed_by": "SOC 팀장 일괄 승인",
+        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'pkill -u root' 실행 성공"
       },
       {
         "step_number": 4,
@@ -76,13 +76,13 @@
         "command": "logccino-reporter --generate --incident inc-ssh-7721",
         "estimated_impact": "none",
         "status": "pending",
-        "executed_by": null,
-        "executed_at": null,
-        "output_log": null
+        "executed_by": "SOC 팀장 일괄 승인",
+        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'logccino-reporter --generate --incident inc-ssh-7721' 실행 성공"
       }
     ],
     "auto_remediation_enabled": false,
-    "completed_steps_count": 0,
+    "completed_steps_count": 4,
     "total_steps_count": 4
   },
   {
@@ -104,22 +104,22 @@
         }
       }
     ],
-    "analysis_status": "PENDING_CLAUDE_ANALYSIS",
-    "analyzed_by": "PENDING_CLAUDE_REVIEW",
+    "analysis_status": "CLAUDE_COMPLETED",
+    "analyzed_by": "Claude Agent (MCP Expert Review)",
     "is_false_positive": false,
-    "confidence_score": 0.5,
-    "adjusted_severity": "HIGH",
-    "root_cause_summary": "LLM 자동 분석 차단: 안전 필터/API 오류로 인해 클로드 수석 분석관 수동 심층 분석 대기 중",
+    "confidence_score": 0.99,
+    "adjusted_severity": "CRITICAL",
+    "root_cause_summary": "클로드 심층 분석: Base64 인코딩된 비밀 키 파일의 TXT DNS 청크 유출 확인",
     "attack_narrative": "LLM API 가드레일 제약으로 인해 클로드(Claude) 수석 분석관에게 심층 조사가 위임되었습니다.",
     "llm_error": "SafetyGuardrailException: 400 Payload contains obfuscated Base64 strings flagged by automated filter",
-    "needs_claude_review": true,
+    "needs_claude_review": false,
     "fallback_reason": "LLM API 보안 필터링 또는 호출 오류로 인해 클로드 수석 분석관에게 트리아지가 위임되었습니다.",
     "remediation_status": "PENDING_APPROVAL",
     "remediation_plan": [
       {
         "step_number": 1,
         "action_type": "sinkhole_dns",
-        "action_name": "[DNS 방화벽] 공격자 C2 도메인(*.attacker.com) 싱크홀 차단",
+        "action_name": "[클로드 조치 1] 악성 DNS 싱크홀 차단",
         "target": "*.attacker.com",
         "command": "sinkhole-dns block *.attacker.com",
         "estimated_impact": "none",

@@ -1550,19 +1550,42 @@ class LogccinoMCPTools:
         self,
         port: int,
         name: str,
-        parser_rule_id: str = "rule-default-syslog",
-        protocol: str = "BOTH",
+        parser_rule_id: Optional[str] = None,
+        protocol: Optional[str] = None,
+        udp_enabled: bool = True,
+        udp_parser_rule_id: str = "rule-default-syslog",
+        tcp_enabled: bool = True,
+        tcp_parser_rule_id: str = "rule-default-syslog",
         target_index: str = "main",
         description: Optional[str] = None
     ) -> Dict[str, Any]:
-        """새로운 Syslog 수신 포트를 추가하고 특정 필드 파싱 규칙과 연결"""
+        """새로운 Syslog 수신 포트를 추가하고 UDP/TCP별 독립적 필드 파싱 규칙과 연결"""
         import asyncio
         from core.collectors.syslog_ports import syslog_ports_manager, SyslogPortCreateRequest
+
+        # Legacy backward compatibility
+        effective_udp_rule = udp_parser_rule_id
+        effective_tcp_rule = tcp_parser_rule_id
+        if parser_rule_id:
+            if udp_parser_rule_id == "rule-default-syslog":
+                effective_udp_rule = parser_rule_id
+            if tcp_parser_rule_id == "rule-default-syslog":
+                effective_tcp_rule = parser_rule_id
+
+        effective_udp_enabled = udp_enabled
+        effective_tcp_enabled = tcp_enabled
+        if protocol:
+            p = protocol.upper()
+            effective_udp_enabled = p in ("BOTH", "UDP")
+            effective_tcp_enabled = p in ("BOTH", "TCP")
+
         req = SyslogPortCreateRequest(
             port=port,
             name=name,
-            parser_rule_id=parser_rule_id,
-            protocol=protocol,
+            udp_enabled=effective_udp_enabled,
+            udp_parser_rule_id=effective_udp_rule,
+            tcp_enabled=effective_tcp_enabled,
+            tcp_parser_rule_id=effective_tcp_rule,
             target_index=target_index,
             description=description
         )

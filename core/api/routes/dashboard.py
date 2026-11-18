@@ -3301,35 +3301,57 @@ async def get_enterprise_dashboard():
           <input type="text" id="add-port-name" required placeholder="Cisco ASA 방화벽 전용 수신 포트" class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
         </div>
 
-        <div>
-          <label class="block text-slate-300 font-bold mb-1">수신 프로토콜 (Protocol)</label>
-          <div class="grid grid-cols-3 gap-2">
-            <label class="flex items-center gap-2 p-2 bg-slatebg rounded border border-bordercolor/60 cursor-pointer hover:border-emerald-500/50">
-              <input type="radio" name="add-port-proto" value="BOTH" checked class="text-emerald-500 focus:ring-0">
-              <span class="font-bold text-white">BOTH (UDP &amp; TCP)</span>
-            </label>
-            <label class="flex items-center gap-2 p-2 bg-slatebg rounded border border-bordercolor/60 cursor-pointer hover:border-emerald-500/50">
-              <input type="radio" name="add-port-proto" value="UDP" class="text-emerald-500 focus:ring-0">
-              <span class="font-bold text-white">UDP 전용</span>
-            </label>
-            <label class="flex items-center gap-2 p-2 bg-slatebg rounded border border-bordercolor/60 cursor-pointer hover:border-emerald-500/50">
-              <input type="radio" name="add-port-proto" value="TCP" class="text-emerald-500 focus:ring-0">
-              <span class="font-bold text-white">TCP 전용</span>
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="text-slate-300 font-bold">연결할 필드 파싱 규칙 (Linked Parsing Rule)</label>
+        <!-- Protocol & Parsing Rules Configuration (UDP and TCP Separate) -->
+        <div class="space-y-3 p-3 bg-slatebg/70 rounded-lg border border-bordercolor">
+          <div class="flex items-center justify-between pb-1.5 border-b border-bordercolor/60">
+            <span class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+              <i data-lucide="split" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>프로토콜별(UDP / TCP) 파싱 규칙 개별 연결</span>
+            </span>
             <button type="button" onclick="openParsingRulesModal()" class="text-[10px] text-amber-400 hover:underline">
               규칙 관리 및 추가 &rarr;
             </button>
           </div>
-          <select id="add-port-rule-select" required class="w-full bg-slatebg border border-bordercolor rounded px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none">
-            <!-- Populated dynamically -->
-          </select>
-          <p class="text-[10px] text-slate-400 mt-0.5">이 포트로 수신된 모든 Syslog 패킷은 선택한 규칙에 따라 필드가 자동 파싱됩니다.</p>
+
+          <!-- UDP Configuration Section -->
+          <div class="space-y-1.5 p-2.5 rounded bg-subpanel/50 border border-bordercolor/40">
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="add-port-udp-enable" checked onchange="togglePortProtoField('udp')" class="rounded border-bordercolor text-emerald-500 focus:ring-0">
+                <span class="font-bold text-emerald-400 text-xs flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">UDP</span>
+                  <span>UDP 프로토콜 수신 활성화</span>
+                </span>
+              </label>
+              <span class="text-[10px] text-slate-400 font-mono">비연결형 고속 패킷</span>
+            </div>
+            <div id="add-port-udp-rule-wrapper" class="pt-1.5">
+              <label class="block text-[10px] text-slate-300 font-medium mb-1">UDP 수신 로그 파싱 규칙 (UDP Parser Rule)</label>
+              <select id="add-port-udp-rule-select" required class="w-full bg-slatebg border border-bordercolor rounded px-2.5 py-1.5 text-white text-xs focus:border-emerald-500 focus:outline-none font-mono">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <!-- TCP Configuration Section -->
+          <div class="space-y-1.5 p-2.5 rounded bg-subpanel/50 border border-bordercolor/40">
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="add-port-tcp-enable" checked onchange="togglePortProtoField('tcp')" class="rounded border-bordercolor text-indigo-500 focus:ring-0">
+                <span class="font-bold text-indigo-400 text-xs flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono border border-indigo-500/30">TCP</span>
+                  <span>TCP 프로토콜 수신 활성화</span>
+                </span>
+              </label>
+              <span class="text-[10px] text-slate-400 font-mono">연결 지향 신뢰형 스트림</span>
+            </div>
+            <div id="add-port-tcp-rule-wrapper" class="pt-1.5">
+              <label class="block text-[10px] text-slate-300 font-medium mb-1">TCP 수신 로그 파싱 규칙 (TCP Parser Rule)</label>
+              <select id="add-port-tcp-rule-select" required class="w-full bg-slatebg border border-bordercolor rounded px-2.5 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none font-mono">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -4845,41 +4867,69 @@ async def get_enterprise_dashboard():
           const isDefault = p.port === 1514;
           const isActive = p.status === 'active' || p.status.includes('active');
           const isErr = p.status === 'error';
-          const rule = p.parser_rule || {};
+          const udpRule = p.udp_parser_rule || {};
+          const tcpRule = p.tcp_parser_rule || {};
 
           let badgeClass = 'bg-slate-800 text-slate-400 border border-slate-700';
           if (isActive) badgeClass = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
           if (isErr) badgeClass = 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
 
+          const protoLabels = [];
+          if (p.udp_enabled) protoLabels.push('UDP');
+          if (p.tcp_enabled) protoLabels.push('TCP');
+          const protoStr = protoLabels.length > 0 ? protoLabels.join('/') : 'NONE';
+
           return `
-            <div class="p-3.5 bg-slatebg/80 rounded-xl border border-bordercolor flex items-center justify-between hover:border-bordercolor/90 transition shadow-sm">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg ${isDefault ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'} flex flex-col items-center justify-center">
+            <div class="p-3.5 bg-slatebg/80 rounded-xl border border-bordercolor flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-bordercolor/90 transition shadow-sm">
+              <div class="flex items-start gap-3 flex-1 min-w-0">
+                <div class="w-12 h-12 rounded-lg ${isDefault ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'} flex flex-col items-center justify-center shrink-0 mt-0.5">
                   <span class="text-xs font-mono font-bold">${p.port}</span>
-                  <span class="text-[8px] uppercase tracking-tighter">${p.protocol}</span>
+                  <span class="text-[8px] uppercase tracking-tighter">${protoStr}</span>
                 </div>
-                <div>
-                  <div class="flex items-center gap-2">
+                <div class="space-y-1.5 flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-bold text-white text-xs">${p.name}</span>
                     ${isDefault ? '<span class="px-1.5 py-0.2 rounded font-mono text-[9px] bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">기본포트</span>' : ''}
                     <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold ${badgeClass}">${p.status.toUpperCase()}</span>
+                    <span class="text-[10px] text-slate-400">&bull; 인덱스: <strong class="text-slate-300 font-mono">${p.target_index || 'main'}</strong></span>
                   </div>
-                  <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                    <span class="flex items-center gap-1">
-                      <i data-lucide="split" class="w-3 h-3 text-amber-400"></i>
-                      <span>파싱 규칙:</span>
-                      <strong class="text-amber-300 font-mono">${rule.name || p.parser_rule_id}</strong>
-                      <span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] font-mono">${rule.parser_type || 'standard'}</span>
-                    </span>
-                    <span>&bull;</span>
-                    <span>인덱스: <strong class="text-slate-300 font-mono">${p.target_index || 'main'}</strong></span>
+
+                  <!-- UDP and TCP Distinct Parsing Rules Breakdown -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                    <!-- UDP Status & Rule -->
+                    <div class="p-2 rounded bg-subpanel/40 border border-bordercolor/40 flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="px-1.5 py-0.2 rounded font-mono text-[9px] font-bold ${p.udp_enabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-500 border border-slate-700'}">UDP</span>
+                        <div class="truncate">
+                          <span class="text-slate-300 font-medium">${p.udp_enabled ? (udpRule.name || p.udp_parser_rule_id) : '<span class="text-slate-500">비활성화됨</span>'}</span>
+                          ${p.udp_enabled ? `<span class="ml-1 px-1 py-0.1 rounded bg-slate-800 text-slate-400 text-[9px] font-mono">${udpRule.parser_type || 'standard'}</span>` : ''}
+                        </div>
+                      </div>
+                      <div class="text-[10px] font-mono text-slate-400 shrink-0">
+                        ${p.udp_enabled ? `<span>수신 ${(p.udp_received_total || 0).toLocaleString()}건</span>` : ''}
+                      </div>
+                    </div>
+
+                    <!-- TCP Status & Rule -->
+                    <div class="p-2 rounded bg-subpanel/40 border border-bordercolor/40 flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="px-1.5 py-0.2 rounded font-mono text-[9px] font-bold ${p.tcp_enabled ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-slate-800 text-slate-500 border border-slate-700'}">TCP</span>
+                        <div class="truncate">
+                          <span class="text-slate-300 font-medium">${p.tcp_enabled ? (tcpRule.name || p.tcp_parser_rule_id) : '<span class="text-slate-500">비활성화됨</span>'}</span>
+                          ${p.tcp_enabled ? `<span class="ml-1 px-1 py-0.1 rounded bg-slate-800 text-slate-400 text-[9px] font-mono">${tcpRule.parser_type || 'standard'}</span>` : ''}
+                        </div>
+                      </div>
+                      <div class="text-[10px] font-mono text-slate-400 shrink-0">
+                        ${p.tcp_enabled ? `<span>수신 ${(p.tcp_received_total || 0).toLocaleString()}건</span>` : ''}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div class="flex items-center gap-4">
+              <div class="flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 pt-2 md:pt-0 border-bordercolor/60 shrink-0">
                 <div class="text-right text-[11px] font-mono">
-                  <div class="text-slate-200">수신: <strong>${(p.received_total || 0).toLocaleString()}</strong>건</div>
+                  <div class="text-slate-200">총 수신: <strong>${(p.received_total || 0).toLocaleString()}</strong>건</div>
                   <div class="text-emerald-400 text-[10px]">파싱/적재: <strong>${(p.forwarded_total || 0).toLocaleString()}</strong>건</div>
                 </div>
 
@@ -4903,6 +4953,18 @@ async def get_enterprise_dashboard():
       }
     }
 
+    function togglePortProtoField(proto) {
+      if (proto === 'udp') {
+        const chk = document.getElementById('add-port-udp-enable');
+        const sel = document.getElementById('add-port-udp-rule-select');
+        if (chk && sel) sel.disabled = !chk.checked;
+      } else if (proto === 'tcp') {
+        const chk = document.getElementById('add-port-tcp-enable');
+        const sel = document.getElementById('add-port-tcp-rule-select');
+        if (chk && sel) sel.disabled = !chk.checked;
+      }
+    }
+
     function openAddSyslogPortModal() {
       fetchParsingRulesList();
       const modal = document.getElementById('modal-add-syslog-port');
@@ -4918,11 +4980,23 @@ async def get_enterprise_dashboard():
       if (e && e.preventDefault) e.preventDefault();
       const port = parseInt(document.getElementById('add-port-number').value);
       const name = document.getElementById('add-port-name').value.trim();
-      const protoEl = document.querySelector('input[name="add-port-proto"]:checked');
-      const protocol = protoEl ? protoEl.value : 'BOTH';
-      const parser_rule_id = document.getElementById('add-port-rule-select').value;
+      const udpChk = document.getElementById('add-port-udp-enable');
+      const udp_enabled = udpChk ? udpChk.checked : true;
+      const udpSel = document.getElementById('add-port-udp-rule-select');
+      const udp_parser_rule_id = udpSel ? udpSel.value : 'rule-default-syslog';
+
+      const tcpChk = document.getElementById('add-port-tcp-enable');
+      const tcp_enabled = tcpChk ? tcpChk.checked : true;
+      const tcpSel = document.getElementById('add-port-tcp-rule-select');
+      const tcp_parser_rule_id = tcpSel ? tcpSel.value : 'rule-default-syslog';
+
       const target_index = document.getElementById('add-port-target-index').value.trim() || 'main';
       const description = document.getElementById('add-port-desc').value.trim();
+
+      if (!udp_enabled && !tcp_enabled) {
+        alert("UDP 또는 TCP 중 적어도 하나의 프로토콜을 활성화해야 합니다.");
+        return;
+      }
 
       try {
         const res = await fetch('/api/v1/collectors/syslog/ports', {
@@ -4931,8 +5005,10 @@ async def get_enterprise_dashboard():
           body: JSON.stringify({
             port: port,
             name: name,
-            protocol: protocol,
-            parser_rule_id: parser_rule_id,
+            udp_enabled: udp_enabled,
+            udp_parser_rule_id: udp_parser_rule_id,
+            tcp_enabled: tcp_enabled,
+            tcp_parser_rule_id: tcp_parser_rule_id,
             target_index: target_index,
             description: description,
             enabled: true
@@ -4942,7 +5018,7 @@ async def get_enterprise_dashboard():
         if (res.ok) {
           closeAddSyslogPortModal();
           fetchSyslogPortsList();
-          alert(`✓ Syslog 포트 ${port} (${protocol})가 등록되고 파싱 규칙 '${parser_rule_id}'이 연결되었습니다.`);
+          alert(`✓ Syslog 포트 ${port}가 등록되었습니다.\n(UDP: ${udp_enabled ? udp_parser_rule_id : '비활성'}, TCP: ${tcp_enabled ? tcp_parser_rule_id : '비활성'})`);
         } else {
           const err = await res.json();
           alert("포트 등록 실패: " + (err.detail || "알 수 없는 오류"));
@@ -5017,18 +5093,22 @@ async def get_enterprise_dashboard():
     async function fetchParsingRulesList() {
       const container = document.getElementById('prules-table-container');
       const ruleSelect = document.getElementById('add-port-rule-select');
+      const udpRuleSelect = document.getElementById('add-port-udp-rule-select');
+      const tcpRuleSelect = document.getElementById('add-port-tcp-rule-select');
 
       try {
         const res = await fetch('/api/v1/parsing-rules');
         if (!res.ok) return;
         currentParsingRules = await res.json();
 
-        // Populate dropdown in Add Port modal
-        if (ruleSelect) {
-          ruleSelect.innerHTML = currentParsingRules.map(r => {
-            return `<option value="${r.id}">[${r.parser_type}] ${r.name}</option>`;
-          }).join('');
-        }
+        const optionsHtml = currentParsingRules.map(r => {
+          return `<option value="${r.id}">[${r.parser_type}] ${r.name}</option>`;
+        }).join('');
+
+        // Populate dropdowns in Add Port modal
+        if (ruleSelect) ruleSelect.innerHTML = optionsHtml;
+        if (udpRuleSelect) udpRuleSelect.innerHTML = optionsHtml;
+        if (tcpRuleSelect) tcpRuleSelect.innerHTML = optionsHtml;
 
         if (!container) return;
         if (currentParsingRules.length === 0) {
