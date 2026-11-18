@@ -41,7 +41,7 @@
         "estimated_impact": "none",
         "status": "pending",
         "executed_by": "SOC 팀장 일괄 승인",
-        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "executed_at": "2026-11-18T02:19:26.729572+00:00",
         "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'ufw insert 1 deny from 203.0.113.88 to any # Auto-Quarantine' 실행 성공"
       },
       {
@@ -53,7 +53,7 @@
         "estimated_impact": "low",
         "status": "pending",
         "executed_by": "SOC 팀장 일괄 승인",
-        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "executed_at": "2026-11-18T02:19:26.729572+00:00",
         "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'iptables -A INPUT -s 203.0.113.88 -j DROP' 실행 성공"
       },
       {
@@ -65,7 +65,7 @@
         "estimated_impact": "low",
         "status": "pending",
         "executed_by": "SOC 팀장 일괄 승인",
-        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "executed_at": "2026-11-18T02:19:26.729572+00:00",
         "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'pkill -u root' 실행 성공"
       },
       {
@@ -77,7 +77,7 @@
         "estimated_impact": "none",
         "status": "pending",
         "executed_by": "SOC 팀장 일괄 승인",
-        "executed_at": "2026-11-18T01:31:48.390129+00:00",
+        "executed_at": "2026-11-18T02:19:26.729572+00:00",
         "output_log": "[SOC 팀장 일괄 승인 일괄 승인] 명령 'logccino-reporter --generate --incident inc-ssh-7721' 실행 성공"
       }
     ],

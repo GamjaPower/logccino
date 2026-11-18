@@ -25,7 +25,7 @@ def test_parsing_rules_crud_and_builtins(client):
     res = client.get("/api/v1/parsing-rules")
     assert res.status_code == 200
     rules = res.json()
-    assert len(rules) >= 6
+    assert len(rules) >= 28
 
     default_syslog = next((r for r in rules if r["id"] == "rule-default-syslog"), None)
     assert default_syslog is not None
@@ -128,6 +128,117 @@ def test_parsing_rules_simulator_all_types(client):
     assert data_cef["mapped_fields"]["action"] == "drop"
 
 
+def test_vendor_preset_parsing_rules(client):
+    """Splunk 및 Filebeat 주요 벤더별(Palo Alto, Fortinet, Cisco, Windows, Suricata 등) 사전 정의 파싱 규칙 시뮬레이션 검증"""
+    # 1. Palo Alto Networks Traffic
+    res_pa_traffic = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": "1,2026/11/18 10:14:20,001201000456,TRAFFIC,drop,1,2026/11/18 10:14:19,203.0.113.88,10.0.1.5,0.0.0.0,0.0.0.0,DMZ-Rule,attacker,,web-browsing,vsys1,untrust,trust,ethernet1/1,ethernet1/2,alert-syslog,,123456,1,58291,80,0,0,0x0,tcp,deny,100,50,50,2,2026/11/18 10:14:19,5,any",
+        "rule_id": "rule-panw-traffic"
+    })
+    assert res_pa_traffic.status_code == 200
+    d_pa_traffic = res_pa_traffic.json()
+    assert d_pa_traffic["success"] is True
+    assert d_pa_traffic["mapped_fields"]["source_ip"] == "203.0.113.88"
+    assert d_pa_traffic["mapped_fields"]["destination_ip"] == "10.0.1.5"
+    assert d_pa_traffic["mapped_fields"]["action"] == "deny"
+    assert d_pa_traffic["mapped_fields"]["user_name"] == "attacker"
+
+    # 2. Palo Alto Networks Threat
+    res_pa_threat = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": '1,2026/11/18 10:14:20,001201000456,THREAT,vulnerability,1,2026/11/18 10:14:19,203.0.113.88,10.0.1.5,0.0.0.0,0.0.0.0,DMZ-Rule,attacker,,web-browsing,vsys1,untrust,trust,ethernet1/1,ethernet1/2,alert-syslog,,123456,1,58291,80,0,0,0x0,tcp,alert,"HTTP: SQL Injection Attempt",30001,critical,client-to-server',
+        "rule_id": "rule-panw-threat"
+    })
+    assert res_pa_threat.status_code == 200
+    d_pa_threat = res_pa_threat.json()
+    assert d_pa_threat["success"] is True
+    assert d_pa_threat["mapped_fields"]["threat_name"] == "HTTP: SQL Injection Attempt"
+    assert d_pa_threat["mapped_fields"]["severity"] == "critical"
+
+    # 3. Fortinet FortiGate
+    res_fgt = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": 'date=2026-11-18 time=10:14:22 devname="FGT-60E" devid="FGT60E12345678" type="traffic" srcip=198.51.100.22 srcport=54123 dstip=10.0.2.15 dstport=443 proto=6 action="deny" policyid=4 user="guest" msg="Traffic violation"',
+        "rule_id": "rule-fortigate-traffic"
+    })
+    assert res_fgt.status_code == 200
+    d_fgt = res_fgt.json()
+    assert d_fgt["success"] is True
+    assert d_fgt["mapped_fields"]["source_ip"] == "198.51.100.22"
+    assert d_fgt["mapped_fields"]["destination_ip"] == "10.0.2.15"
+    assert d_fgt["mapped_fields"]["action"] == "deny"
+    assert d_fgt["mapped_fields"]["user_name"] == "guest"
+
+    # 4. Cisco ASA
+    res_cisco = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": '<164>Nov 18 10:14:20 asa5520 %ASA-4-106023: Deny tcp src outside:198.51.100.99/54321 dst inside:10.0.1.10/22 by access-group "acl_outside" [0x0, 0x0]',
+        "rule_id": "rule-cisco-asa"
+    })
+    assert res_cisco.status_code == 200
+    d_cisco = res_cisco.json()
+    assert d_cisco["success"] is True
+    assert d_cisco["mapped_fields"]["source_ip"] == "198.51.100.99"
+    assert d_cisco["mapped_fields"]["destination_ip"] == "10.0.1.10"
+    assert d_cisco["mapped_fields"]["action"] == "Deny"
+    assert d_cisco["mapped_fields"]["policy_id"] == "acl_outside"
+
+    # 5. Suricata EVE JSON
+    res_suri = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": '{"timestamp": "2026-11-18T10:14:25Z", "src_ip": "198.51.100.55", "src_port": 51234, "dest_ip": "10.0.1.10", "dest_port": 80, "proto": "TCP", "alert": {"action": "blocked", "signature": "ET SCAN Potential SSH Scan", "severity": 1}}',
+        "rule_id": "rule-suricata-eve"
+    })
+    assert res_suri.status_code == 200
+    d_suri = res_suri.json()
+    assert d_suri["success"] is True
+    assert d_suri["mapped_fields"]["source_ip"] == "198.51.100.55"
+    assert d_suri["mapped_fields"]["threat_name"] == "ET SCAN Potential SSH Scan"
+    assert d_suri["mapped_fields"]["action"] == "blocked"
+
+    # 6. Windows Security Event Log (EventID 4625)
+    res_win = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": '{"EventID": 4625, "TargetUserName": "Administrator", "IpAddress": "198.51.100.88", "IpPort": "58123", "FailureReason": "Unknown user name or bad password"}',
+        "rule_id": "rule-windows-security-event"
+    })
+    assert res_win.status_code == 200
+    d_win = res_win.json()
+    assert d_win["success"] is True
+    assert d_win["mapped_fields"]["user_name"] == "Administrator"
+    assert d_win["mapped_fields"]["source_ip"] == "198.51.100.88"
+    assert d_win["mapped_fields"]["threat_name"] == "Unknown user name or bad password"
+
+    # 7. Snort Fast Alert
+    res_snort = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": "[**] [1:2001219:1] ET SCAN Potential Nmap SYN Scan [**] [Priority: 2] {TCP} 198.51.100.77:54321 -> 10.0.1.5:80",
+        "rule_id": "rule-snort-fast"
+    })
+    assert res_snort.status_code == 200
+    d_snort = res_snort.json()
+    assert d_snort["success"] is True
+    assert d_snort["mapped_fields"]["threat_name"] == "ET SCAN Potential Nmap SYN Scan"
+    assert d_snort["mapped_fields"]["source_ip"] == "198.51.100.77"
+    assert d_snort["mapped_fields"]["destination_ip"] == "10.0.1.5"
+
+    # 8. CrowdStrike Falcon EDR
+    res_cs = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": '{"event": {"UserName": "victim_user", "DetectName": "SuspiciousProcessCreation", "SeverityName": "High", "LocalIP": "10.0.1.50", "CommandLine": "powershell.exe -enc SQBFAFgA"}}',
+        "rule_id": "rule-crowdstrike-falcon"
+    })
+    assert res_cs.status_code == 200
+    d_cs = res_cs.json()
+    assert d_cs["success"] is True
+    assert d_cs["mapped_fields"]["user_name"] == "victim_user"
+    assert d_cs["mapped_fields"]["threat_name"] == "SuspiciousProcessCreation"
+    assert d_cs["mapped_fields"]["source_ip"] == "10.0.1.50"
+
+    # 9. Bind9 DNS
+    res_dns = client.post("/api/v1/parsing-rules/test", json={
+        "sample_text": "18-Nov-2026 10:14:22.123 queries: info: client @0x7f1234 192.168.1.100#51234 (malicious-c2-domain.com): query: malicious-c2-domain.com IN A +E(0)K (192.168.1.1)",
+        "rule_id": "rule-bind9-dns"
+    })
+    assert res_dns.status_code == 200
+    d_dns = res_dns.json()
+    assert d_dns["success"] is True
+    assert d_dns["mapped_fields"]["source_ip"] == "192.168.1.100"
+
+
 def test_syslog_default_port_and_multi_port_management(client):
     """기본 포트 1514 및 포트 추가/파싱 규칙 연결 검증"""
     # 1. Check default port 1514 exists
@@ -201,7 +312,7 @@ def test_mcp_ports_and_parsing_rules_tools():
 
     # 2. MCP get_parsing_rules
     rules = mcp_tools.get_parsing_rules()
-    assert len(rules) >= 6
+    assert len(rules) >= 28
 
     # 3. MCP test_parsing_rule
     test_res = mcp_tools.test_parsing_rule(
