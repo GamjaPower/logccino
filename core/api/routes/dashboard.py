@@ -3011,42 +3011,444 @@ async def get_enterprise_dashboard():
           <div class="bg-panelbg border border-bordercolor rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col">
             <!-- Navigation Tabs -->
             <div class="flex items-center border-b border-bordercolor bg-[#0f172a] px-6 text-xs font-semibold shrink-0 overflow-x-auto scrollbar-thin">
-              <button type="button" onclick="switchClaudeGuideTab('search')" id="tab-cguide-search" class="cguide-tab-btn px-4 py-3 border-b-2 border-purple-500 text-purple-300 font-bold flex items-center gap-1.5 transition">
-                <i data-lucide="search" class="w-3.5 h-3.5"></i> 1. 기본 검색 &amp; Join
+              <button type="button" onclick="switchClaudeGuideTab('ingest')" id="tab-cguide-ingest" class="cguide-tab-btn px-4 py-3 border-b-2 border-purple-500 text-purple-300 font-bold flex items-center gap-1.5 transition whitespace-nowrap">
+                <i data-lucide="database" class="w-3.5 h-3.5"></i> 1. 데이터 수집 자동화
               </button>
-              <button type="button" onclick="switchClaudeGuideTab('scheduler')" id="tab-cguide-scheduler" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-                <i data-lucide="clock" class="w-3.5 h-3.5"></i> 2. 스케줄러 &amp; 알람 등록
+              <button type="button" onclick="switchClaudeGuideTab('scheduler')" id="tab-cguide-scheduler" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition whitespace-nowrap">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> 2. 탐지 자동화 &amp; 스케줄러
               </button>
-              <button type="button" onclick="switchClaudeGuideTab('scenarios')" id="tab-cguide-scenarios" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> 3. SIEM 시나리오 발굴 &amp; 생성
+              <button type="button" onclick="switchClaudeGuideTab('scenarios')" id="tab-cguide-scenarios" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition whitespace-nowrap">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 3. ESCU 룰셋 자동 업데이트
               </button>
-              <button type="button" onclick="switchClaudeGuideTab('analysis')" id="tab-cguide-analysis" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-                <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 4. 탐지 데이터 &amp; LLM 자율 분석
+              <button type="button" onclick="switchClaudeGuideTab('analysis')" id="tab-cguide-analysis" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition whitespace-nowrap">
+                <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 4. LLM 자율 분석 &amp; 트리아지
               </button>
-              <button type="button" onclick="switchClaudeGuideTab('soar')" id="tab-cguide-soar" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+              <button type="button" onclick="switchClaudeGuideTab('soar')" id="tab-cguide-soar" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition whitespace-nowrap">
                 <i data-lucide="zap" class="w-3.5 h-3.5"></i> 5. SOAR 해결 &amp; 자동화 정책
+              </button>
+              <button type="button" onclick="switchClaudeGuideTab('search')" id="tab-cguide-search" class="cguide-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition whitespace-nowrap">
+                <i data-lucide="search" class="w-3.5 h-3.5"></i> 6. PPL 검색 &amp; Join
               </button>
             </div>
 
             <!-- Body Content -->
             <div class="p-6 text-xs text-slate-300 space-y-6 flex-1 overflow-y-auto">
-              <!-- TAB 1: 기본 검색 & Join -->
-              <div id="cguide-view-search" class="cguide-view space-y-4">
+
+              <!-- =================================================================================== -->
+              <!-- TAB 1: 데이터 수집 자동화 (Automated Ingestion)                                      -->
+              <!-- =================================================================================== -->
+              <div id="cguide-view-ingest" class="cguide-view space-y-5">
                 <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
                   <h4 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> PPL 및 Cross-Index Join 검색 방법
+                    <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i> 엔터프라이즈 멀티 소스 무인 데이터 수집 자동화 (Zero-Touch Ingestion)
                   </h4>
                   <p class="text-slate-300 leading-relaxed">
-                    클로드는 MCP 도구 <code>search_ppl</code>, <code>execute_joined_query</code>, <code>search_natural</code>을 통해 OpenSearch 클러스터에 적재된 모든 원천 로그를 Splunk 파이프라인 문법으로 직접 조회합니다.
+                    Logccino는 초당 100,000+ EPS를 처리하는 고성능 Rust Syslog 인제스터, Telegraf SNMP/Metrics 및 Python DB 수집기를 통합하여,
+                    사람의 수동 설정 없이 <strong>이종 로그 자동 감지, 비정형 파서 합성, 28종 표준 필드 매핑 및 실시간 PII 비식별화</strong>를 자율 수행합니다.
+                  </p>
+                </div>
+
+                <!-- Pipeline Architecture Diagram -->
+                <div class="p-4 bg-black/40 rounded-xl border border-slate-800 space-y-3 font-mono text-[11px]">
+                  <div class="text-slate-400 font-sans font-bold text-xs flex items-center gap-2">
+                    <i data-lucide="workflow" class="w-3.5 h-3.5 text-purple-400"></i> 자율형 인제스트 엔드-투-엔드 파이프라인
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-center">
+                    <div class="p-2.5 bg-slate-900/90 border border-slate-700 rounded-lg">
+                      <div class="text-purple-300 font-bold">1. Multi-Source</div>
+                      <div class="text-slate-400 text-[10px] mt-1">Linux / Win / FW / DB / SNMP</div>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 border border-purple-500/40 rounded-lg">
+                      <div class="text-indigo-300 font-bold">2. Rust Ingester</div>
+                      <div class="text-slate-400 text-[10px] mt-1">UDP/TCP :1514 (RFC5424)</div>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 border border-emerald-500/40 rounded-lg">
+                      <div class="text-emerald-300 font-bold">3. Auto Parser</div>
+                      <div class="text-slate-400 text-[10px] mt-1">AI 동적 정규식 / 28종 ECS</div>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 border border-amber-500/40 rounded-lg">
+                      <div class="text-amber-300 font-bold">4. PII &amp; Integrity</div>
+                      <div class="text-slate-400 text-[10px] mt-1">실시간 마스킹 &amp; SHA-256</div>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 border border-blue-500/40 rounded-lg">
+                      <div class="text-blue-300 font-bold">5. OpenSearch</div>
+                      <div class="text-slate-400 text-[10px] mt-1">logccino-logs-* 적재</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3 Pillars of Automated Ingestion -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1.5">
+                    <div class="font-bold text-white flex items-center gap-1.5">
+                      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i> 1. AI 비정형 로그 파서 합성
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      정규식이나 Grok 패턴을 수동 작성할 필요 없이, 샘플 로그 3~5건을 제시하면 클로드가 최적화된 정규식과 ECS 28종 필드 매핑 규칙을 자율 생성하여 파이프라인에 주입합니다.
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1.5">
+                    <div class="font-bold text-white flex items-center gap-1.5">
+                      <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i> 2. 28종 표준 필드 자동 정규화
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      Elastic Common Schema(ECS) 및 Splunk CIM 규격을 준수하여 <code>src_ip</code>, <code>dst_port</code>, <code>security.action</code>, <code>http_status</code> 등 28개 핵심 필드로 자동 변환되어 단일 파이프라인에서 즉시 검색 가능합니다.
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1.5">
+                    <div class="font-bold text-white flex items-center gap-1.5">
+                      <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i> 3. 실시간 PII 마스킹 &amp; 무결성
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      주민번호, 카드번호, API 토큰 등 민감정보를 수집 단계에서 즉각 비식별화(<code>***</code>)하며, 전송 원본의 위·변조를 방지하기 위해 SHA-256 무결성 해시 체인을 자동 첨부합니다.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Prompt Example -->
+                <div class="space-y-2">
+                  <h5 class="font-bold text-slate-200">클로드에게 수집 자동화 지시하기 (자연어 프롬프트 예시)</h5>
+                  <div class="p-3 bg-black/50 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 space-y-2">
+                    <div class="text-purple-400">"클로드야, 외부 Nginx 프록시에서 포트 1514로 유입되는 접근 로그 샘플 5줄을 보고 클라이언트 IP, HTTP 메서드, 응답 코드(200/404 등), 응답 시간(ms)을 자동으로 파싱하는 ECS 호환 수집 파서 룰을 합성해서 인제스터에 적용해줘."</div>
+                    <div class="text-emerald-400">➔ 클로드가 로그 구조를 분해하여 <code>src_ip</code>, <code>http_method</code>, <code>http_status</code> 정규식을 생성하고 파이프라인 매핑 테이블을 갱신합니다.</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- =================================================================================== -->
+              <!-- TAB 2: 탐지 자동화 & 스케줄러 (Automated Detection)                                  -->
+              <!-- =================================================================================== -->
+              <div id="cguide-view-scheduler" class="cguide-view space-y-5 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i> Splunk savedsearches.conf 완전 호환 탐지 자동화 &amp; 스케줄러 엔진
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    Logccino는 Splunk의 <code>savedsearches.conf</code> 사양을 100% 호환하는 분산 백그라운드 스케줄러를 내장하고 있습니다.
+                    5초부터 300초 주기까지 실시간으로 PPL(Piped Processing Language) 파이프라인을 구동하여 <strong>0.1초 미만의 초고속 이상 징후 탐지</strong>와 <strong>경보 피로(Alert Fatigue) 억제</strong>를 보장합니다.
+                  </p>
+                </div>
+
+                <!-- Core Detection Mechanisms -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <div class="font-bold text-amber-400 flex items-center gap-1.5">
+                      <i data-lucide="cpu" class="w-3.5 h-3.5"></i> PPL 파이프라인 컴파일러 &amp; 해시 조인
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      Splunk 파이프라인 쿼리를 OpenSearch DSL 및 분산 메모리 해시 연산으로 즉시 컴파일합니다.
+                      보안 로그(<code>logccino-logs-*</code>)와 방화벽 차단 이력, 호스트 리소스 메트릭을 단일 쿼리에서 <code>join type=left host</code>로 상관 분석합니다.
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <div class="font-bold text-indigo-400 flex items-center gap-1.5">
+                      <i data-lucide="bell-off" class="w-3.5 h-3.5"></i> 경보 피로 방지 스마트 Throttling
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      동일 호스트/공격자 IP에서 초당 수백 건의 이상 징후가 발생해도, <code>alert_suppress: true</code>와 <code>alert_suppress_period: "10m"</code>을 통해 첫 경보 후 지정 시간 동안 노이즈를 자동 차단하고 통계만 안전하게 누적 집계합니다.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Scheduler MCP Tools Specification -->
+                <div class="space-y-2">
+                  <h5 class="font-bold text-slate-200">스케줄러 관리 MCP 도구 명세</h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
+                    <div class="p-3 bg-black/50 rounded-lg border border-slate-800 space-y-1">
+                      <div class="text-amber-300 font-bold font-sans">핵심 도구 (Tools)</div>
+                      <div>• <code>create_saved_search</code>: 신규 실시간 스케줄러 등록</div>
+                      <div>• <code>update_saved_search</code>: 주기/임계치/수신처 수정</div>
+                      <div>• <code>run_saved_search</code>: 대기 없이 즉시 실행(Run Now)</div>
+                      <div>• <code>list_saved_searches</code>: 전체 스케줄러 상태 조회</div>
+                    </div>
+                    <div class="p-3 bg-black/50 rounded-lg border border-slate-800 space-y-1">
+                      <div class="text-emerald-300 font-bold font-sans">핵심 파라미터 (Parameters)</div>
+                      <div>• <code>dispatch_earliest_time</code>: "-15m", "-1h" (윈도우)</div>
+                      <div>• <code>interval_seconds</code>: 60 (실행 주기 초)</div>
+                      <div>• <code>condition_operator</code>: "gt" | "gte" (비교 연산자)</div>
+                      <div>• <code>condition_threshold</code>: 0.0 (트리거 기준 건수)</div>
+                      <div>• <code>alert_suppress_fields</code>: "host,src_ip" (억제 키)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Practical Detection Query Snippet -->
+                <div class="space-y-2">
+                  <h5 class="font-bold text-slate-200">실전 PPL 탐지 쿼리 예시</h5>
+                  <div class="bg-black/50 p-3 rounded-lg border border-slate-800 font-mono text-emerald-400 space-y-1 text-[11px]">
+                    <div># 1. SSH 무차별 대입(Brute-Force) 및 원격 로그인 실패 급증 탐지 (5분 윈도우)</div>
+                    <div class="text-slate-200">source = logccino-logs-* | where security.action = 'ssh_login_failure' | stats count() as fails by host, src_ip | where fails &gt; 5 | head 20</div>
+                    <div class="pt-2"># 2. 이종 인덱스 간 분산 크로스 해시 조인 (보안 로그 + 방화벽 로그 상관 분석)</div>
+                    <div class="text-slate-200">source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- =================================================================================== -->
+              <!-- TAB 3: ESCU 룰셋 자동 업데이트 (Security Content Updates)                             -->
+              <!-- =================================================================================== -->
+              <div id="cguide-view-scenarios" class="cguide-view space-y-5 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-purple-400"></i> Splunk ESCU &amp; Sigma 룰셋 무인 자동 업데이트 및 MITRE Gap 분석
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    클로드는 Splunk Enterprise Security Content Updates(ESCU) 및 오픈소스 Sigma 보안 룰셋을 완벽하게 호환합니다.
+                    MITRE ATT&amp;CK 14대 엔터프라이즈 전술 매트릭스와 CISA KEV, AlienVault OTX 등 최신 위협 인텔리전스(TI)를 분석하여
+                    <strong>관제 공백(Blind Spot)을 자동 탐지하고, 신규 탐지 룰을 PPL로 합성·검증·배포</strong>합니다.
+                  </p>
+                </div>
+
+                <!-- 4-Stage ESCU Update Lifecycle -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5">
+                  <div class="p-3 bg-slatebg rounded-lg border border-purple-500/30 space-y-1.5">
+                    <span class="text-purple-300 font-bold block flex items-center gap-1">
+                      <span class="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[10px]">1</span> Gap 분석 (Audit)
+                    </span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      <code>get_mitre_attack_coverage()</code>로 14대 전술 커버리지 현황을 조회하고 방어 사각지대 식별
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-indigo-500/30 space-y-1.5">
+                    <span class="text-indigo-300 font-bold block flex items-center gap-1">
+                      <span class="w-4 h-4 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px]">2</span> 룰셋 자동 컴파일
+                    </span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      ESCU / Sigma YAML 룰셋을 Logccino 최적화 PPL 파이프라인 쿼리로 자동 번역 및 파라미터 매핑
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-emerald-500/30 space-y-1.5">
+                    <span class="text-emerald-300 font-bold block flex items-center gap-1">
+                      <span class="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">3</span> 실데이터 모의 검증
+                    </span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      <code>test_run_soc_detection_scenario()</code>를 통해 최근 24시간 실데이터에 모의 실행하여 오탐율 사전 측정
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-blue-500/30 space-y-1.5">
+                    <span class="text-blue-300 font-bold block flex items-center gap-1">
+                      <span class="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center text-[10px]">4</span> 배포 &amp; Git 버전 관리
+                    </span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      <code>register_soc_detection_scenario</code>로 무중단 라이브 배포 및 변경사항 Git 자동 커밋/롤백 보장
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Autonomous ESCU Prompt Example -->
+                <div class="space-y-2">
+                  <h5 class="font-bold text-slate-200">클로드에게 ESCU 룰셋 업데이트 지시하기 (자연어 프롬프트 예시)</h5>
+                  <div class="p-3 bg-black/50 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 space-y-2">
+                    <div class="text-purple-400">"클로드야, 현재 MITRE ATT&amp;CK 커버리지 현황을 감사(Audit)하고, 현재 방어 공백이 있는 'Credential Access' 및 'Privilege Escalation' 영역에 대해 최신 ESCU 룰셋 기반의 신규 관제 시나리오 3개를 합성해서 등록해줘."</div>
+                    <div class="text-emerald-400">➔ 클로드가 <code>get_mitre_attack_coverage</code>로 갭을 도출한 후, <code>register_soc_detection_scenario</code>를 호출하여 T1110, T1548 기법에 대응하는 룰을 자동 배포하고 결과를 보고합니다.</div>
+                  </div>
+                </div>
+
+                <!-- Auto-Tuning & Rollback -->
+                <div class="p-3.5 bg-purple-950/20 rounded-xl border border-purple-500/30 text-slate-300 space-y-1.5">
+                  <div class="font-bold text-purple-300 text-xs flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-3.5 h-3.5"></i> 오탐(False Positive) 자율 튜닝 및 원클릭 롤백 안전장치
+                  </div>
+                  <p class="text-[11px] text-slate-400 leading-relaxed">
+                    운영 중 특정 시나리오에서 정상 개발 장비나 내부 백업 트래픽으로 인한 오탐이 감지되면, 클로드가 <code>tune_soc_detection_scenario</code>를 호출하여 임계치 상향, 화이트리스트 IP 예외 처리(WHERE 절 추가)를 자동으로 수행합니다. 모든 시나리오 변경은 버전 관리되어 필요 시 즉시 이전 상태로 롤백됩니다.
+                  </p>
+                </div>
+              </div>
+
+              <!-- =================================================================================== -->
+              <!-- TAB 4: 탐지 데이터 & LLM 자율 분석 (Autonomous AI Triage)                            -->
+              <!-- =================================================================================== -->
+              <div id="cguide-view-analysis" class="cguide-view space-y-5 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i> .env LLM API 1차 자율 트리아지 및 Claude Fallback 체계
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    스케줄러에서 알람이 발생하는 즉시 0.5초 내에 <code>.env</code>에 설정된 LLM API(OpenAI GPT-4o, Google Gemini, 로컬 vLLM)가 가동되어
+                    <strong>오탐 여부 판정, 사이버 킬체인(Kill Chain) 단계 매핑, 공격자 의도 분석 및 침해 위험도 재산정</strong>을 1차 자율 수행합니다.
+                  </p>
+                </div>
+
+                <!-- Triage Workflow Pipeline -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <div class="font-bold text-indigo-400 flex items-center gap-1.5">
+                      <i data-lucide="search-code" class="w-3.5 h-3.5"></i> 1. 컨텍스트 자동 강화
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      단순 로그 한 줄이 아닌, 탐지 직전 15분간의 상관 로그, 소스 IP의 과거 행위 이력, 인프라 토폴로지를 LLM 컨텍스트로 자동 통합 주입합니다.
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+                      <i data-lucide="brain-circuit" class="w-3.5 h-3.5"></i> 2. 정형화된 JSON 판정
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      AI는 정형 스키마에 따라 <code>is_false_positive</code>(오탐 여부), <code>confidence_score</code>(0.0~1.0), <code>root_cause</code>(원인 요약), <code>adjusted_severity</code>를 산출합니다.
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <div class="font-bold text-rose-400 flex items-center gap-1.5">
+                      <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> 3. Claude 자동 위임 (Fallback)
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      외부 LLM API의 가드레일 오류, 토큰 초과 또는 심각한 보안 제약 발생 시 시스템 중단 없이 <code>PENDING_CLAUDE_ANALYSIS</code> 대기열로 안전하게 자동 이관됩니다.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Claude Fallback MCP Specification -->
+                <div class="p-4 bg-rose-950/20 rounded-xl border border-rose-500/30 space-y-2.5">
+                  <h5 class="font-bold text-rose-300 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> 클로드(Claude) 수석 분석관 자동 위임 대기열 MCP 도구
+                  </h5>
+                  <p class="text-[11px] text-slate-300 leading-relaxed">
+                    클로드는 분석 세션 시작 시 다음 도구들을 사용하여 위임된 인시던트를 조회하고 심층 정밀 조사를 완료합니다:
+                  </p>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px] pt-1">
+                    <div class="p-2.5 bg-black/40 rounded border border-rose-500/20 space-y-1">
+                      <div class="text-rose-300 font-bold font-sans">조회 도구 (Query Tool)</div>
+                      <div>• <code>get_incidents_pending_claude_analysis()</code></div>
+                      <div class="text-slate-400 text-[10px]">가드레일 거부나 API 오류로 위임 대기 중인 전체 인시던트 목록 및 원본 페이로드 반환</div>
+                    </div>
+                    <div class="p-2.5 bg-black/40 rounded border border-rose-500/20 space-y-1">
+                      <div class="text-emerald-300 font-bold font-sans">제출 도구 (Submission Tool)</div>
+                      <div>• <code>submit_claude_incident_analysis(...)</code></div>
+                      <div class="text-slate-400 text-[10px]">is_false_positive, confidence_score, root_cause, remediation_steps를 포함한 분석 결과 제출</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Structured Response Format -->
+                <div class="space-y-2">
+                  <h5 class="font-bold text-slate-200">LLM 자율 트리아지 출력 데이터 규격 (JSON)</h5>
+                  <div class="bg-black/50 p-3 rounded-lg border border-slate-800 font-mono text-[11px] text-emerald-400 space-y-1">
+                    <div>{</div>
+                    <div class="pl-4">"is_false_positive": false,</div>
+                    <div class="pl-4">"confidence_score": 0.98,</div>
+                    <div class="pl-4">"root_cause": "외부 공격자 IP(198.51.100.44)로부터 root 계정에 대한 10초 내 30회 이상의 사전 공격 패턴 확인",</div>
+                    <div class="pl-4">"mitre_tactic": "Credential Access",</div>
+                    <div class="pl-4">"adjusted_severity": "CRITICAL"</div>
+                    <div>}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- =================================================================================== -->
+              <!-- TAB 5: SOAR 해결 & 자동화 정책 (SOAR Remediation)                                   -->
+              <!-- =================================================================================== -->
+              <div id="cguide-view-soar" class="cguide-view space-y-5 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i> SOAR 4단계 조치 계획 가시화, 사람 수동 승인 및 유사 건 자동화
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    AI는 독단적으로 위험한 시스템 변경을 수행하지 않습니다.
+                    전체 조치 과정을 <strong>4단계 표준 SOAR 플레이북(IP 차단 ➔ 호스트 격리 ➔ 세션 무효화 ➔ 사후 보고서)</strong>으로 시각화하여 제시하며,
+                    사람의 사전 검토(Human-in-the-Loop) 또는 검증된 시나리오에 대한 <strong>유사 건 자동 처리 정책(Auto-Remediation Policy)</strong>으로 실행됩니다.
+                  </p>
+                </div>
+
+                <!-- 4-Step Standard SOAR Playbook -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5 font-mono text-[11px]">
+                  <div class="p-3 bg-slatebg rounded-lg border border-red-500/30 space-y-1.5">
+                    <span class="text-red-400 font-bold block font-sans flex items-center gap-1.5">
+                      <i data-lucide="shield-x" class="w-3.5 h-3.5"></i> Step 1. IP 차단
+                    </span>
+                    <div class="text-slate-400 text-[10px]">Impact: None</div>
+                    <p class="text-slate-300 font-sans text-[11px] leading-relaxed">
+                      경계 방화벽(iptables/UFW)에 악성 공격자 IP를 즉시 DROP 규칙으로 24시간 격리 등록
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-amber-500/30 space-y-1.5">
+                    <span class="text-amber-400 font-bold block font-sans flex items-center gap-1.5">
+                      <i data-lucide="network" class="w-3.5 h-3.5"></i> Step 2. 호스트 격리
+                    </span>
+                    <div class="text-slate-400 text-[10px]">Impact: Medium</div>
+                    <p class="text-slate-300 font-sans text-[11px] leading-relaxed">
+                      감염 의심 호스트의 외부 아웃바운드를 차단하고 보안 관제 포트만 허용하는 격리 VLAN 전환
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-indigo-500/30 space-y-1.5">
+                    <span class="text-indigo-400 font-bold block font-sans flex items-center gap-1.5">
+                      <i data-lucide="user-x" class="w-3.5 h-3.5"></i> Step 3. 세션 무효화
+                    </span>
+                    <div class="text-slate-400 text-[10px]">Impact: Low</div>
+                    <p class="text-slate-300 font-sans text-[11px] leading-relaxed">
+                      탈취된 의심 계정의 활성 SSH/웹 세션을 즉각 Kill하고 비밀번호 강제 만료 처리
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-slatebg rounded-lg border border-emerald-500/30 space-y-1.5">
+                    <span class="text-emerald-400 font-bold block font-sans flex items-center gap-1.5">
+                      <i data-lucide="file-check" class="w-3.5 h-3.5"></i> Step 4. 사후 보고서
+                    </span>
+                    <div class="text-slate-400 text-[10px]">Impact: None</div>
+                    <p class="text-slate-300 font-sans text-[11px] leading-relaxed">
+                      MITRE ATT&amp;CK 공격 분석 타임라인 요약 보고서를 생성하고 Slack/Teams 웹훅으로 전파
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Two Operating Modes -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="p-4 bg-slatebg rounded-lg border border-bordercolor space-y-2">
+                    <div class="font-bold text-white flex items-center gap-2">
+                      <i data-lucide="user-check" class="w-4 h-4 text-purple-400"></i> 1. 사람에 의한 수동 승인 (Human-in-the-Loop)
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      분석가는 대시보드에서 각 단계의 실행 스크립트와 영향도를 검토한 후, <code>[단계별 승인]</code> 또는 <code>[전체 일괄 승인]</code> 버튼을 클릭하여 안전하게 실행합니다.
+                    </p>
+                    <div class="font-mono text-[10px] text-slate-400 bg-black/40 p-2 rounded border border-slate-800">
+                      • <code>execute_soar_remediation_step(incident_id, step_number)</code><br>
+                      • <code>execute_all_soar_remediation_steps(incident_id, approved_by)</code>
+                    </div>
+                  </div>
+
+                  <div class="p-4 bg-slatebg rounded-lg border border-emerald-500/30 space-y-2">
+                    <div class="font-bold text-emerald-400 flex items-center gap-2">
+                      <i data-lucide="repeat" class="w-4 h-4 text-emerald-400"></i> 2. 유사 건 자동 처리 정책 (Auto-Remediation Policy)
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                      검증된 정형 공격(예: SSH Brute-Force, 악성 포트 스캔)에 대해 <code>[유사 건 자동 처리]</code> 토글을 활성화하면, 다음 알람 발생 시 사람의 수동 대기 없이 AI가 4단계 조치를 즉시 자동 완료합니다.
+                    </p>
+                    <div class="font-mono text-[10px] text-emerald-400 bg-black/40 p-2 rounded border border-slate-800">
+                      • <code>manage_auto_remediation_policy(scenario_id, enabled=True)</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- =================================================================================== -->
+              <!-- TAB 6: PPL 검색 & Join (Search & MCP Tooling)                                       -->
+              <!-- =================================================================================== -->
+              <div id="cguide-view-search" class="cguide-view space-y-5 hidden">
+                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> PPL 및 Cross-Index Join 검색 &amp; MCP 도구 명세
+                  </h4>
+                  <p class="text-slate-300 leading-relaxed">
+                    클로드는 MCP 도구 <code>search_ppl</code>, <code>execute_joined_query</code>, <code>search_natural</code>을 통해
+                    OpenSearch 클러스터에 적재된 모든 원천 로그를 Splunk 파이프라인 문법으로 직접 조회하고 인덱스 간 크로스 조인을 수행합니다.
                   </p>
                 </div>
 
                 <div class="space-y-3">
                   <h5 class="font-bold text-slate-200">주요 쿼리 예시 및 클로드 프롬프트</h5>
-                  <div class="bg-black/50 p-3 rounded-lg border border-slate-800 font-mono text-emerald-400 space-y-1">
+                  <div class="bg-black/50 p-3 rounded-lg border border-slate-800 font-mono text-emerald-400 space-y-2 text-[11px]">
                     <div># 1. 원천 보안 로그 필터링 및 집계</div>
                     <div class="text-slate-200">source = main | where security.action = 'ssh_login_failure' | stats count() as failures by host, src_ip | sort - failures | head 20</div>
-                    <div class="pt-2"># 2. 이종 인덱스 간 분산 크로스 해시 조인 (Cross-Index Join)</div>
+                    <div class="pt-1"># 2. 이종 인덱스 간 분산 크로스 해시 조인 (Cross-Index Join)</div>
                     <div class="text-slate-200">source = main | stats count() as sec_events by host | join type=left host [ source = logccino-logs-* | stats count() as app_logs by host ]</div>
                   </div>
                   <div class="p-3 bg-purple-950/30 rounded-lg border border-purple-500/20 text-purple-300 text-[11px]">
@@ -3055,105 +3457,6 @@ async def get_enterprise_dashboard():
                 </div>
               </div>
 
-              <!-- TAB 2: 스케줄러 & 알람 등록 -->
-              <div id="cguide-view-scheduler" class="cguide-view space-y-4 hidden">
-                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i> Splunk savedsearches.conf 완전 호환 스케줄러 등록
-                  </h4>
-                  <p class="text-slate-300 leading-relaxed">
-                    클로드는 <code>create_saved_search</code>, <code>update_saved_search</code>, <code>run_saved_search</code> MCP 도구를 사용하여 백그라운드 실시간 감시 스케줄러를 등록하고 즉시 검증할 수 있습니다.
-                  </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
-                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
-                    <span class="font-bold text-amber-400 block font-sans">핵심 파라미터 규격</span>
-                    <div>• dispatch_earliest_time: "-15m" (검색 윈도우)</div>
-                    <div>• interval_seconds: 60 (실행 주기 초)</div>
-                    <div>• alert_type: "number_of_results"</div>
-                    <div>• condition_operator: "gt" | "gte"</div>
-                    <div>• condition_threshold: 0.0</div>
-                  </div>
-                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-1">
-                    <span class="font-bold text-indigo-400 block font-sans">경보 피로(Alert Fatigue) 방지 억제</span>
-                    <div>• alert_suppress: true (중복 억제 활성화)</div>
-                    <div>• alert_suppress_period: "5m" | "15m" | "1h"</div>
-                    <div>• alert_suppress_fields: "host,src_ip"</div>
-                    <div>• action_webhook_enabled: true (Slack/Teams)</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- TAB 3: SIEM 시나리오 발굴 & 생성 -->
-              <div id="cguide-view-scenarios" class="cguide-view space-y-4 hidden">
-                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i data-lucide="shield" class="w-4 h-4 text-rose-400"></i> 사람이 수동 입력하지 않는 AI 자율 관제 시나리오 엔지니어링
-                  </h4>
-                  <p class="text-slate-300 leading-relaxed">
-                    사람은 복잡한 쿼리를 직접 작성하지 않습니다. <strong>클로드 스킬(<code>logccino-soc-scenarios</code>)</strong>이 MITRE ATT&amp;CK 14대 엔터프라이즈 전술 매트릭스와 위협 인텔리전스를 분석하여 관제 시나리오를 자율 합성·등록합니다.
-                  </p>
-                </div>
-
-                <div class="space-y-3">
-                  <h5 class="font-bold text-slate-200">클로드에게 시나리오 생성 요청하기 (자연어 프롬프트 예시)</h5>
-                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor/80 space-y-2 font-mono text-slate-300 text-[11px]">
-                    <div class="text-purple-400">"클로드야, MITRE ATT&amp;CK T1059(명령 프롬프트) 기반으로 공격자가 파워쉘로 악성 스크립트를 다운로드하는 행위를 탐지하는 신규 관제 시나리오를 만들고 등록해줘."</div>
-                    <div class="text-emerald-400">➔ 클로드가 <code>register_soc_detection_scenario</code> 도구를 호출하여 쿼리 검증, 임계치(0건 초과), 중복 억제(10분)를 설정하고 SIEM 엔진에 즉시 배포합니다.</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- TAB 4: 탐지 데이터 & LLM 자율 분석 -->
-              <div id="cguide-view-analysis" class="cguide-view space-y-4 hidden">
-                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i> .env LLM API 1차 자율 트리아지 및 Claude Fallback 체계
-                  </h4>
-                  <p class="text-slate-300 leading-relaxed">
-                    스케줄러에서 위협이 감지되면 즉시 <code>.env</code>에 설정된 LLM API(OpenAI/Gemini/vLLM)가 1차 자율 트리아지(오탐 여부, 공격 단계, 위험도, 원인 요약)를 수행합니다.
-                  </p>
-                </div>
-
-                <div class="p-4 bg-rose-950/30 rounded-xl border border-rose-500/30 space-y-2">
-                  <h5 class="font-bold text-rose-300 flex items-center gap-2">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> LLM 보안 제약 또는 API 오류 시 클로드(Claude) 자동 위임
-                  </h5>
-                  <p class="text-[11px] text-slate-300 leading-relaxed">
-                    만약 LLM API에서 가드레일 거부(Content Safety Policy)나 키 오류, 네트워크 장애가 발생하면, 시스템은 결코 에러를 방치하지 않고 <strong class="text-rose-400">PENDING_CLAUDE_ANALYSIS</strong> 상태로 안전하게 보관합니다.
-                    클로드는 <code>get_incidents_pending_claude_analysis()</code>로 이를 확인하고 직접 심층 트리아지를 완료할 수 있습니다.
-                  </p>
-                </div>
-              </div>
-
-              <!-- TAB 5: SOAR 해결 & 자동화 정책 -->
-              <div id="cguide-view-soar" class="cguide-view space-y-4 hidden">
-                <div class="p-4 bg-slatebg rounded-xl border border-bordercolor space-y-2">
-                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> SOAR 해결 계획 가시화, 사람 수동 승인 및 유사 건 자동화
-                  </h4>
-                  <p class="text-slate-300 leading-relaxed">
-                    AI는 해결 시 독단적으로 위험한 조치를 강제하지 않고, <strong>전체 계획을 SOAR 플레이북 단계(IP 차단 ➔ 호스트 격리 ➔ 세션 만료 ➔ 보고서)로 시각화</strong>하여 제시합니다.
-                  </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
-                    <span class="font-bold text-white block">1. 사람에 의한 수동 승인 (Human-in-the-Loop)</span>
-                    <p class="text-[11px] text-slate-400 leading-relaxed">
-                      분석가는 각 단계의 예상 영향도(Impact: None/Low/Medium)와 실제 실행될 리눅스/네트워크 명령을 확인하고 <code>[승인 및 실행]</code> 버튼을 눌러 안전하게 조치합니다.
-                    </p>
-                  </div>
-
-                  <div class="p-3 bg-slatebg rounded-lg border border-bordercolor space-y-2">
-                    <span class="font-bold text-emerald-400 block">2. 유사 건 자동 처리 정책 (Auto-Remediation Policy)</span>
-                    <p class="text-[11px] text-slate-400 leading-relaxed">
-                      검증된 공격 시나리오(예: SSH Brute-Force 등)에 대해 <code>[유사 건 자동 처리]</code> 토글을 켜두면, 다음 알람 발생 시 사람의 개입 없이 AI가 즉시 자동 해결 완료 처리합니다.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -7684,7 +7987,7 @@ async def get_enterprise_dashboard():
         activeBtn.classList.add('border-purple-500', 'text-purple-300', 'font-bold');
       }
 
-      ['search', 'scheduler', 'scenarios', 'analysis', 'soar'].forEach(v => {
+      ['ingest', 'scheduler', 'scenarios', 'analysis', 'soar', 'search'].forEach(v => {
         const el = document.getElementById(`cguide-view-${v}`);
         if (el) {
           if (v === tab) el.classList.remove('hidden');
