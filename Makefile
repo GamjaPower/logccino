@@ -1,7 +1,10 @@
-.PHONY: all preflight up down restart verify test build clean
+.PHONY: all preflight up down restart verify test build release clean
 
 SHELL := /bin/bash
 GO ?= go
+VERSION ?= v1.0.0
+RELEASE_TARGETS ?= linux/amd64 linux/arm64 darwin/arm64 windows/amd64
+RELEASE_CMDS := server dacctl loggen loaddata eval
 
 all: build
 
@@ -74,5 +77,34 @@ verify:
 test:
 	$(GO) test -v ./cmd/... ./internal/...
 
+release:
+	@echo "==> [Release] $(VERSION) 아티팩트 빌드 시작..."
+	@rm -rf dist && mkdir -p dist
+	@for target in $(RELEASE_TARGETS); do \
+		os=$${target%/*}; \
+		arch=$${target#*/}; \
+		ext=""; \
+		if [ "$$os" = "windows" ]; then ext=".exe"; fi; \
+		pkg="logccino_$(VERSION)_$${os}_$${arch}"; \
+		stage="dist/$${pkg}"; \
+		echo "--> 빌드: $${os}/$${arch} ($${pkg})"; \
+		mkdir -p "$${stage}/bin"; \
+		for c in $(RELEASE_CMDS); do \
+			CGO_ENABLED=0 GOOS="$$os" GOARCH="$$arch" $(GO) build -trimpath -ldflags="-s -w" -o "$${stage}/bin/$${c}$${ext}" "./cmd/$${c}" || exit 1; \
+		done; \
+		cp -r prompts "$${stage}/prompts"; \
+		tar --exclude='rules/build' --exclude='splunk/apps/*/local' --exclude='splunk/apps/*/metadata/local.meta' --exclude='*.tmp' -cf - rules splunk | tar -xf - -C "$${stage}"; \
+		cp docker-compose.yml Dockerfile .env.example Makefile README.md CHANGELOG.md "$${stage}/"; \
+		if [ "$$os" = "windows" ]; then \
+			(cd dist && zip -rq "$${pkg}.zip" "$${pkg}") || exit 1; \
+		else \
+			tar -czf "dist/$${pkg}.tar.gz" -C dist "$${pkg}" || exit 1; \
+		fi; \
+		rm -rf "$${stage}"; \
+	done
+	@(cd dist && sha256sum logccino_$(VERSION)_*.tar.gz logccino_$(VERSION)_*.zip > checksums.txt)
+	@echo "==> [Release] 체크섬 생성 완료:"
+	@cat dist/checksums.txt
+
 clean:
-	rm -rf bin/ build/ data/*.db
+	rm -rf bin/ build/ dist/ data/*.db
