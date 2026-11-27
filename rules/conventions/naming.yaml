@@ -1,0 +1,3 @@
+rule_id_pattern: "^DET-[A-Z]+-[0-9]{4}$"
+name_min_length: 5
+saved_search_prefix: "DAC - "

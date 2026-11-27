@@ -1,0 +1,37 @@
+id: DET-WEB-0007
+name: AI Agent Vulnerability Scanner Sensitive Path Probe
+version: 1
+status: production
+owner: detection-eng
+intent: >
+  자동화된 AI 에이전트 스캐너가 민감 경로를 탐색하는 행위를 탐지한다.
+  User-Agent 단독 조건은 정상 모니터링 도구를 오탐하므로 민감 경로 접근을 함께 요구한다.
+severity: medium
+mitre:
+  attack: [T1595.002]
+  atlas: []
+matrices: [attack, logmon]
+data_sources:
+  - index: waf
+    required_fields: [src_ip, http_user_agent, uri_path, status]
+search: |
+  index=waf (uri_path="/.env" OR uri_path="/.git/config" OR uri_path="*wp-config.php*" OR uri_path="/api/v1/debug" OR uri_path="/.aws/credentials")
+  | stats count dc(uri_path) as paths values(uri_path) as uri_path latest(http_user_agent) as http_user_agent by src_ip
+  | where paths>=2
+schedule:
+  cron: "*/5 * * * *"
+  earliest: -15m
+  latest: now
+suppression:
+  fields: [src_ip]
+  period: 1h
+entity_fields: [src_ip]
+false_positives:
+  - 사내 외부 점검 업체 스캐너 IP 대역
+exceptions_ref: exceptions/web_scanners.yaml
+triage_hints:
+  - svc 인덱스에서 같은 src_ip의 2xx 응답 여부로 서비스 도달을 판단
+tests:
+  positive: fixtures/DET-WEB-0007/positive.jsonl
+  negative: fixtures/DET-WEB-0007/negative.jsonl
+expires_at: null

@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DetectionRule",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "version",
+    "status",
+    "owner",
+    "intent",
+    "severity",
+    "data_sources",
+    "search",
+    "schedule",
+    "entity_fields"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^DET-[A-Z]+-[0-9]{4}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 5
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["experimental", "production", "temporary", "deprecated"]
+    },
+    "owner": {
+      "type": "string"
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 10
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"]
+    },
+    "mitre": {
+      "type": "object",
+      "properties": {
+        "attack": { "type": "array", "items": { "type": "string" } },
+        "atlas": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "matrices": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "data_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "required_fields"],
+        "properties": {
+          "index": { "type": "string" },
+          "required_fields": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "search": {
+      "type": "string",
+      "minLength": 5
+    },
+    "schedule": {
+      "type": "object",
+      "required": ["cron", "earliest", "latest"],
+      "properties": {
+        "cron": { "type": "string" },
+        "earliest": { "type": "string" },
+        "latest": { "type": "string" }
+      }
+    },
+    "suppression": {
+      "type": "object",
+      "properties": {
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "period": { "type": "string" }
+      }
+    },
+    "entity_fields": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "false_positives": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "exceptions_ref": {
+      "type": ["string", "null"]
+    },
+    "triage_hints": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tests": {
+      "type": "object",
+      "properties": {
+        "positive": { "type": "string" },
+        "negative": { "type": "string" }
+      }
+    },
+    "expires_at": {
+      "type": ["string", "null"]
+    },
+    "linked_case": {
+      "type": ["string", "null"]
+    }
+  }
+}

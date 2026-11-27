@@ -1,0 +1,3 @@
+{"src_ip": "198.51.100.42", "http_user_agent": "AutoAI-Security-Scanner/1.0", "uri_path": "/.env", "status": 403}
+{"src_ip": "198.51.100.42", "http_user_agent": "AutoAI-Security-Scanner/1.0", "uri_path": "/.git/config", "status": 403}
+{"src_ip": "198.51.100.42", "http_user_agent": "AutoAI-Security-Scanner/1.0", "uri_path": "/wp-config.php", "status": 403}

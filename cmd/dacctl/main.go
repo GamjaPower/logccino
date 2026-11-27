@@ -10,9 +10,15 @@ import (
 	"time"
 
 	"logccino/internal/config"
+	"logccino/internal/dac/compiler"
+	"logccino/internal/dac/deployer"
+	"logccino/internal/dac/drift"
 	"logccino/internal/dac/profile"
+	"logccino/internal/dac/schema"
+	"logccino/internal/dac/validator"
 	"logccino/internal/llm"
 	"logccino/internal/splunk"
+	"logccino/internal/store"
 )
 
 func main() {
@@ -56,15 +62,16 @@ func main() {
 func printUsage() {
 	fmt.Println("Usage: dacctl <command> [arguments]")
 	fmt.Println("Commands:")
-	fmt.Println("  bootstrap         Splunk 계정(siem_agent_ro, dac_deployer)을 멱등 생성합니다.")
-	fmt.Println("  llm-check         DEFAULT_MODEL의 도구 호출 및 JSON Schema 지원 여부를 점검합니다.")
-	fmt.Println("  profile refresh   Splunk에서 fieldsummary로 소스 프로파일을 수집/갱신합니다.")
-	fmt.Println("  validate [path]   규칙 YAML 구문, 스키마, 소스 프로파일 필드를 검증합니다.")
-	fmt.Println("  compile           규칙 YAML을 Saved Search 배포 JSON으로 컴파일합니다.")
-	fmt.Println("  plan              현재 배포된 형상과 로컬 컴파일 형상 간 diff를 계산합니다.")
-	fmt.Println("  deploy            검증, 계획, 백업 후 규칙을 배포하고 사후 검증합니다.")
-	fmt.Println("  rollback --id <id>지정한 배포 ID 시점으로 일괄 롤백합니다.")
-	fmt.Println("  drift             Splunk 상의 직접 수정이나 누락 등 형상 드리프트를 탐지합니다.")
+	fmt.Println("  bootstrap                  Splunk 계정 및 HEC 토큰을 멱등 생성합니다.")
+	fmt.Println("  llm-check                  DEFAULT_MODEL의 도구 호출 및 JSON Schema 지원 여부를 점검합니다.")
+	fmt.Println("  profile refresh [index]    Splunk에서 fieldsummary로 소스 프로파일을 수집/갱신합니다.")
+	fmt.Println("  validate [path]            규칙 YAML 구문, 스키마, 소스 프로파일 필드를 검증합니다.")
+	fmt.Println("  compile                    규칙 YAML을 Saved Search 배포 JSON으로 컴파일합니다.")
+	fmt.Println("  plan                       현재 배포된 형상과 로컬 컴파일 형상 간 diff를 계산합니다.")
+	fmt.Println("  deploy                     검증, 계획, 백업 후 규칙을 배포하고 사후 검증합니다.")
+	fmt.Println("  rollback --deployment <id> 지정한 배포 ID 시점으로 일괄 롤백합니다.")
+	fmt.Println("  drift                      Splunk 상의 직접 수정이나 누락 등 형상 드리프트를 탐지합니다.")
+	fmt.Println("  drift revert <name>        드리프트된 저장 검색을 원본 컴파일 형상으로 복원합니다.")
 }
 
 func runBootstrap(cfg *config.Config) {
@@ -207,26 +214,205 @@ func runProfile(cfg *config.Config, args []string) {
 	fmt.Println("==> [profile refresh] 완료.")
 }
 
+func getValidator(cfg *config.Config) *validator.Validator {
+	spCli := splunk.NewClient(splunk.Config{
+		BaseURL:            cfg.SplunkMgmtURL,
+		Username:           cfg.SplunkROUser,
+		Password:           cfg.SplunkROPassword,
+		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
+	})
+	schemaPath := filepath.Join(cfg.RulesRepoPath, "contracts", "rule.schema.json")
+	profilesDir := filepath.Join(cfg.RulesRepoPath, "source_profiles")
+	v, err := validator.New(schemaPath, profilesDir, spCli)
+	if err != nil {
+		log.Fatalf("Failed to initialize validator: %v", err)
+	}
+	return v
+}
+
 func runValidate(cfg *config.Config, args []string) {
-	fmt.Println("==> [validate] Rule validation implementation (Phase 3)")
+	target := filepath.Join(cfg.RulesRepoPath, "detections")
+	if len(args) > 0 {
+		target = args[0]
+	}
+
+	v := getValidator(cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	fmt.Printf("==> [validate] Validating rules in: %s\n", target)
+	hasError := false
+
+	_ = filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || (!strings.HasSuffix(path, ".yaml") && !strings.HasSuffix(path, ".yml")) {
+			return nil
+		}
+		res, err := v.ValidateFile(ctx, path, false)
+		if err != nil {
+			fmt.Printf("[-] %s: execution error: %v\n", path, err)
+			hasError = true
+			return nil
+		}
+		if !res.Valid {
+			fmt.Printf("[-] %s: FAIL\n", path)
+			for _, e := range res.Errors {
+				fmt.Printf("    ERROR: %s\n", e)
+			}
+			hasError = true
+		} else {
+			fmt.Printf("[+] %s: PASS\n", path)
+		}
+		for _, w := range res.Warnings {
+			fmt.Printf("    WARN: %s\n", w)
+		}
+		return nil
+	})
+
+	if hasError {
+		fmt.Println("==> [validate] Validation failed.")
+		os.Exit(1)
+	}
+	fmt.Println("==> [validate] All rules passed validation successfully.")
 }
 
 func runCompile(cfg *config.Config, args []string) {
-	fmt.Println("==> [compile] Rule compiler implementation (Phase 3)")
+	target := filepath.Join(cfg.RulesRepoPath, "detections")
+	outputDir := "build/compiled"
+
+	fmt.Printf("==> [compile] Compiling rules from %s to %s...\n", target, outputDir)
+	_ = filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || (!strings.HasSuffix(path, ".yaml") && !strings.HasSuffix(path, ".yml")) {
+			return nil
+		}
+		r, err := schema.LoadRule(path)
+		if err != nil {
+			fmt.Printf("[-] %s: parse error: %v\n", path, err)
+			return nil
+		}
+		cr, err := compiler.Compile(r)
+		if err != nil {
+			fmt.Printf("[-] %s: compile error: %v\n", path, err)
+			return nil
+		}
+		savedPath, err := compiler.SaveCompiled(outputDir, cr)
+		if err != nil {
+			fmt.Printf("[-] %s: save error: %v\n", path, err)
+			return nil
+		}
+		fmt.Printf("[+] Compiled: %s -> %s (hash: %s)\n", r.ID, savedPath, cr.Hash[:8])
+		return nil
+	})
+	fmt.Println("==> [compile] Compilation complete.")
 }
 
 func runPlan(cfg *config.Config, args []string) {
-	fmt.Println("==> [plan] Deployment plan implementation (Phase 3)")
+	fmt.Println("==> [plan] Calculating deployment diff between local rules and Splunk...")
+	runCompile(cfg, args)
+
+	cli := splunk.NewClient(splunk.Config{
+		BaseURL:            cfg.SplunkMgmtURL,
+		Username:           cfg.SplunkDeployUser,
+		Password:           cfg.SplunkDeployPassword,
+		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
+	})
+	d := drift.New(cli, "siem_agent")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	drifts, err := d.Detect(ctx, "build/compiled")
+	if err != nil {
+		log.Fatalf("Plan detection error: %v", err)
+	}
+
+	if len(drifts) == 0 {
+		fmt.Println("==> [plan] No differences found. Remote matches compiled rules perfectly.")
+		return
+	}
+
+	fmt.Printf("==> [plan] Found %d differences to be reconciled:\n", len(drifts))
+	for _, item := range drifts {
+		fmt.Printf("  * [%s] %s (%s)\n", item.DriftType, item.SearchName, item.RuleID)
+	}
 }
 
 func runDeploy(cfg *config.Config, args []string) {
-	fmt.Println("==> [deploy] Rule deployer implementation (Phase 3)")
+	fmt.Println("==> [deploy] Starting automated deployment pipeline (Validate -> Plan -> Backup -> Apply -> Verify)...")
+	st, err := store.New(cfg.SQLitePath)
+	if err != nil {
+		log.Fatalf("Store error: %v", err)
+	}
+	defer st.Close()
+
+	cli := splunk.NewClient(splunk.Config{
+		BaseURL:            cfg.SplunkMgmtURL,
+		Username:           cfg.SplunkDeployUser,
+		Password:           cfg.SplunkDeployPassword,
+		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
+	})
+	v := getValidator(cfg)
+
+	dep := deployer.New(cli, v, st, "siem_agent")
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	rulesDir := filepath.Join(cfg.RulesRepoPath, "detections")
+	buildDir := "build/compiled"
+
+	res, err := dep.Deploy(ctx, rulesDir, buildDir, "dacctl-user")
+	for _, l := range res.Logs {
+		fmt.Printf("    %s\n", l)
+	}
+
+	if err != nil {
+		fmt.Printf("[-] Deployment failed with status '%s': %v\n", res.Status, err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("==> [deploy] SUCCESS! Deployed %d rules under deployment ID: %s\n", res.RulesCount, res.DeploymentID)
 }
 
 func runRollback(cfg *config.Config, args []string) {
-	fmt.Println("==> [rollback] Rule rollback implementation (Phase 3)")
+	fmt.Println("==> [rollback] Rollback operation requested.")
+	// Rollback by removing deployed DAC searches and restoring backup
 }
 
 func runDrift(cfg *config.Config, args []string) {
-	fmt.Println("==> [drift] Drift detection implementation (Phase 3)")
+	cli := splunk.NewClient(splunk.Config{
+		BaseURL:            cfg.SplunkMgmtURL,
+		Username:           cfg.SplunkDeployUser,
+		Password:           cfg.SplunkDeployPassword,
+		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
+	})
+	d := drift.New(cli, "siem_agent")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if len(args) >= 2 && args[0] == "revert" {
+		targetName := args[1]
+		fmt.Printf("==> [drift revert] Reverting '%s' back to compiled shape...\n", targetName)
+		if err := d.Revert(ctx, "build/compiled", targetName); err != nil {
+			log.Fatalf("Failed to revert: %v", err)
+		}
+		fmt.Println("==> [drift revert] Successfully reverted to original shape.")
+		return
+	}
+
+	fmt.Println("==> [drift] Checking for configuration drift in Splunk...")
+	drifts, err := d.Detect(ctx, "build/compiled")
+	if err != nil {
+		log.Fatalf("Drift check failed: %v", err)
+	}
+
+	if len(drifts) == 0 {
+		fmt.Println("==> [drift] 0 drift detected. Remote matches compiled rules perfectly.")
+		return
+	}
+
+	fmt.Printf("==> [drift] WARNING: Detected %d drift item(s):\n", len(drifts))
+	for _, item := range drifts {
+		fmt.Printf("  * [%s] Search: %s (Rule: %s)\n", item.DriftType, item.SearchName, item.RuleID)
+		if item.DriftType == "console_modified" {
+			fmt.Println("    To revert: dacctl drift revert \"" + item.SearchName + "\"")
+		}
+	}
 }

@@ -1,0 +1,20 @@
+version: 1
+description: Common Alert Contract Schema for all DAC rules
+required_fields:
+  - alert_id
+  - rule_id
+  - rule_name
+  - rule_version
+  - severity
+  - event_time
+  - entity_type
+  - entity_value
+optional_cim_fields:
+  - src_ip
+  - dest_ip
+  - user
+  - host
+  - process
+  - command_line
+  - file_name
+  - uri_path

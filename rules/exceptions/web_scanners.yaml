@@ -1,0 +1,5 @@
+name: web_scanners
+description: Authorized external security scanning vendor IP ranges
+whitelist_ips:
+  - 192.0.2.1
+  - 192.0.2.2

@@ -1,0 +1,2 @@
+{"src_ip": "10.0.99.10", "http_user_agent": "AutoAI-HealthCheck-Monitor/1.0", "uri_path": "/healthz", "status": 200}
+{"src_ip": "10.0.99.10", "http_user_agent": "AutoAI-HealthCheck-Monitor/1.0", "uri_path": "/metrics", "status": 200}

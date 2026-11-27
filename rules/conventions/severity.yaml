@@ -1,0 +1,7 @@
+allowed_severities:
+  - critical
+  - high
+  - medium
+  - low
+  - info
+default_severity: medium
