@@ -89,8 +89,13 @@ func main() {
 		}
 	}
 
+	// Role-specific LLM client configuration
+	judgeCli := llmCli
+	if cfg.LLMJudgeModel != "" {
+		judgeCli = llmCli.WithModel(cfg.LLMJudgeModel)
+	}
 	col := collector.New(spClient, cfg.RulesRepoPath, filepath.Join("splunk", "apps", "siem_agent", "lookups"))
-	tEngine := judge.New(llmCli, spClient, col, st)
+	tEngine := judge.New(judgeCli, spClient, col, st)
 	rebModel := cfg.LLMRebuttalModel
 	if rebModel == "" {
 		rebModel = cfg.DefaultModel
@@ -100,8 +105,18 @@ func main() {
 	schemaPath := filepath.Join(cfg.RulesRepoPath, "contracts", "rule.schema.json")
 	profilesDir := filepath.Join(cfg.RulesRepoPath, "source_profiles")
 	val, _ := validator.New(schemaPath, profilesDir, spClient)
-	rmEngine := rulemaker.NewEngine(llmCli, val, st, cfg.RulesRepoPath, cfg.RulemakerMaxIterations)
-	asEngine := assist.NewEngine(llmCli, cfg.DefaultModel)
+
+	rmCli := llmCli
+	if cfg.LLMRulemakerModel != "" {
+		rmCli = llmCli.WithModel(cfg.LLMRulemakerModel)
+	}
+	rmEngine := rulemaker.NewEngine(rmCli, val, st, cfg.RulesRepoPath, cfg.RulemakerMaxIterations)
+
+	asModel := cfg.LLMAssistModel
+	if asModel == "" {
+		asModel = cfg.DefaultModel
+	}
+	asEngine := assist.NewEngine(llmCli.WithModel(asModel), asModel)
 	covEngine := coverage.New(cfg.RulesRepoPath, spClient)
 	drEngine := drift.New(spClient, "siem_agent")
 	dep := deployer.New(spClient, val, st, "siem_agent")

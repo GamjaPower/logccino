@@ -101,7 +101,12 @@ Evaluate whether there are reasonable adversarial grounds to contest this %s ver
 		},
 	}
 
-	resp, _, err := a.llmCli.Chat(ctx, messages, nil, schema)
+	cli := a.llmCli
+	if a.model != "" {
+		cli = a.llmCli.WithModel(a.model)
+	}
+
+	resp, _, err := cli.Chat(ctx, messages, nil, schema)
 	if err != nil {
 		return nil, fmt.Errorf("rebuttal LLM call failed: %w", err)
 	}

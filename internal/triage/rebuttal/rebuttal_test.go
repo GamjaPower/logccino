@@ -23,6 +23,14 @@ func (m *mockRebuttalLLM) CheckCapability(ctx context.Context, model string) (ll
 	return llm.Capability{Status: "ready"}, nil
 }
 
+func (m *mockRebuttalLLM) WithModel(model string) llm.Client {
+	return m
+}
+
+func (m *mockRebuttalLLM) GetModel() string {
+	return "mock"
+}
+
 func TestRebuttalAgent(t *testing.T) {
 	est := evidence.NewStore(1)
 	est.Add("search index=waf", "-15m..now", evidence.StatusOk, []map[string]any{{"status": 200}})

@@ -70,6 +70,8 @@ type Capability struct {
 type Client interface {
 	Chat(ctx context.Context, messages []Message, tools []Tool, schema *JSONSchema) (Response, Usage, error)
 	CheckCapability(ctx context.Context, model string) (Capability, error)
+	WithModel(model string) Client
+	GetModel() string
 }
 
 // ----------------------------------------------------------------------------
@@ -249,6 +251,22 @@ func (c *OpenAIClient) Chat(ctx context.Context, messages []Message, tools []Too
 	return out, usage, nil
 }
 
+func (c *OpenAIClient) WithModel(model string) Client {
+	if model == "" {
+		return c
+	}
+	return &OpenAIClient{
+		client:       c.client,
+		defaultModel: model,
+		baseURL:      c.baseURL,
+		apiKey:       c.apiKey,
+	}
+}
+
+func (c *OpenAIClient) GetModel() string {
+	return c.defaultModel
+}
+
 // ----------------------------------------------------------------------------
 // MockClient Implementation (Deterministic for Testing)
 // ----------------------------------------------------------------------------
@@ -300,4 +318,12 @@ func (m *MockClient) Chat(ctx context.Context, messages []Message, tools []Tool,
 		Content:      defaultJSON,
 		FinishReason: "stop",
 	}, Usage{PromptTokens: 50, CompletionTokens: 50, TotalTokens: 100}, nil
+}
+
+func (m *MockClient) WithModel(model string) Client {
+	return m
+}
+
+func (m *MockClient) GetModel() string {
+	return "mock"
 }

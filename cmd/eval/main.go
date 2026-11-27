@@ -81,8 +81,12 @@ func main() {
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 
+	judgeCli := llmCli
+	if cfg.LLMJudgeModel != "" {
+		judgeCli = llmCli.WithModel(cfg.LLMJudgeModel)
+	}
 	col := collector.New(spCli, cfg.RulesRepoPath, filepath.Join("splunk", "apps", "siem_agent", "lookups"))
-	tEngine := judge.New(llmCli, spCli, col, st)
+	tEngine := judge.New(judgeCli, spCli, col, st)
 	rebModel := cfg.LLMRebuttalModel
 	if rebModel == "" {
 		rebModel = cfg.DefaultModel
