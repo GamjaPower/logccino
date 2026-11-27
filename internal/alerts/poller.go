@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -12,10 +13,26 @@ import (
 	"logccino/internal/triage/judge"
 )
 
+var rawKVRegex = regexp.MustCompile(`(\w+)=(?:"([^"]*)"|([^, \t\r\n]+))`)
+
+func extractRawKV(raw string, row map[string]any) {
+	matches := rawKVRegex.FindAllStringSubmatch(raw, -1)
+	for _, m := range matches {
+		k := m[1]
+		val := m[2]
+		if val == "" && len(m) > 3 {
+			val = m[3]
+		}
+		if _, exists := row[k]; !exists {
+			row[k] = val
+		}
+	}
+}
+
 type Poller struct {
-	splunkCli    *splunk.Client
-	store        *store.Store
-	triageEngine *judge.TriageEngine
+	splunkCli     *splunk.Client
+	store         *store.Store
+	triageEngine  *judge.TriageEngine
 	lastIndexTime int64
 }
 
@@ -42,6 +59,10 @@ func (p *Poller) PollOnce(ctx context.Context) (int, error) {
 			if it, err := strconv.ParseInt(itStr, 10, 64); err == nil && it > p.lastIndexTime {
 				p.lastIndexTime = it
 			}
+		}
+
+		if raw, ok := row["_raw"].(string); ok && raw != "" {
+			extractRawKV(raw, row)
 		}
 
 		alertID, _ := row["alert_id"].(string)

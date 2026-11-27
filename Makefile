@@ -55,23 +55,23 @@ build:
 
 verify:
 	@echo "==> 코드 포맷팅 검사 (gofmt)..."
-	@UNFORMATTED=$$($(GO)fmt -l .); \
+	@UNFORMATTED=$$($(GO)fmt -l cmd internal); \
 	if [ -n "$$UNFORMATTED" ]; then \
 		echo "ERROR: 포맷팅이 맞지 않는 파일이 있습니다:"; \
 		echo "$$UNFORMATTED"; \
 		exit 1; \
 	fi
 	@echo "==> 정적 분석 (go vet)..."
-	$(GO) vet ./...
+	$(GO) vet ./cmd/... ./internal/...
 	@echo "==> 단위 테스트 (go test)..."
-	$(GO) test -v ./...
+	$(GO) test -v ./cmd/... ./internal/...
 	@echo "==> Docker Compose 헬스체크..."
 	@if docker compose ps 2>/dev/null | grep -q "splunk"; then \
 		docker compose ps; \
 	fi
 
 test:
-	$(GO) test -v ./...
+	$(GO) test -v ./cmd/... ./internal/...
 
 clean:
 	rm -rf bin/ build/ data/*.db

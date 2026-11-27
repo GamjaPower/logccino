@@ -17,12 +17,12 @@ import (
 )
 
 type LabelEntry struct {
-	EventID        string `json:"event_id"`
-	Scenario       string `json:"scenario"`
-	Index          string `json:"index"`
+	EventID         string `json:"event_id"`
+	Scenario        string `json:"scenario"`
+	Index           string `json:"index"`
 	ExpectedVerdict string `json:"expected_verdict"` // true_positive, false_positive, benign, request_justification, no_issue
-	EntityValue    string `json:"entity_value"`
-	Description    string `json:"description"`
+	EntityValue     string `json:"entity_value"`
+	Description     string `json:"description"`
 }
 
 func encodeUTF16LEBase64(s string) string {

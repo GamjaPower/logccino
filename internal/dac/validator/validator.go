@@ -18,11 +18,11 @@ import (
 )
 
 type ValidationResult struct {
-	RuleID  string   `json:"rule_id"`
-	Valid   bool     `json:"valid"`
-	Errors  []string `json:"errors"`
-	Warnings []string `json:"warnings"`
-	DryRunCount int  `json:"dry_run_count"`
+	RuleID      string   `json:"rule_id"`
+	Valid       bool     `json:"valid"`
+	Errors      []string `json:"errors"`
+	Warnings    []string `json:"warnings"`
+	DryRunCount int      `json:"dry_run_count"`
 }
 
 type Validator struct {

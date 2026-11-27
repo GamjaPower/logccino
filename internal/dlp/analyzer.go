@@ -32,10 +32,10 @@ type CentralPolicy struct {
 }
 
 type Analyzer struct {
-	llmCli      llm.Client
-	splunkCli   *splunk.Client
-	policyPath  string
-	lookupsDir  string
+	llmCli     llm.Client
+	splunkCli  *splunk.Client
+	policyPath string
+	lookupsDir string
 }
 
 func New(cli llm.Client, splCli *splunk.Client, policyPath, lookupsDir string) *Analyzer {

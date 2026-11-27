@@ -16,19 +16,19 @@ type SummaryClaim struct {
 }
 
 type VerdictPayload struct {
-	Verdict           string         `json:"verdict"` // true_positive, benign_true_positive, false_positive, needs_more_info
-	Confidence        float64        `json:"confidence"`
-	SummaryClaims     []SummaryClaim `json:"summary_claims"`
-	UncheckedItems    []string       `json:"unchecked_items"`
-	ProposedActions   []string       `json:"proposed_actions"`
-	TuningSuggestion  string         `json:"tuning_suggestion"`
+	Verdict          string         `json:"verdict"` // true_positive, benign_true_positive, false_positive, needs_more_info
+	Confidence       float64        `json:"confidence"`
+	SummaryClaims    []SummaryClaim `json:"summary_claims"`
+	UncheckedItems   []string       `json:"unchecked_items"`
+	ProposedActions  []string       `json:"proposed_actions"`
+	TuningSuggestion string         `json:"tuning_suggestion"`
 }
 
 type VerificationResult struct {
-	Passed          bool     `json:"passed"`
-	OriginalVerdict string   `json:"original_verdict"`
-	FinalVerdict    string   `json:"final_verdict"`
-	Findings        []string `json:"findings"`
+	Passed          bool           `json:"passed"`
+	OriginalVerdict string         `json:"original_verdict"`
+	FinalVerdict    string         `json:"final_verdict"`
+	Findings        []string       `json:"findings"`
 	VerifiedClaims  []SummaryClaim `json:"verified_claims"`
 }
 

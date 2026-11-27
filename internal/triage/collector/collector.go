@@ -14,8 +14,8 @@ import (
 )
 
 type Collector struct {
-	splunkCli *splunk.Client
-	rulesDir  string
+	splunkCli  *splunk.Client
+	rulesDir   string
 	lookupsDir string
 }
 

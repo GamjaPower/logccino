@@ -6,9 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"gopkg.in/yaml.v3"
-
-	"logccino/internal/dac/schema"
 	"logccino/internal/dac/validator"
 	"logccino/internal/llm"
 )

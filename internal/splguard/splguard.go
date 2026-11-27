@@ -10,20 +10,20 @@ import (
 )
 
 var ForbiddenCommands = map[string]bool{
-	"delete":         true,
-	"collect":        true,
-	"mcollect":       true,
-	"meventcollect":  true,
-	"tscollect":      true,
-	"outputlookup":   true,
-	"outputcsv":      true,
-	"sendemail":      true,
-	"sendalert":      true,
-	"script":         true,
-	"run":            true,
-	"rest":           true,
-	"map":            true,
-	"dump":           true,
+	"delete":        true,
+	"collect":       true,
+	"mcollect":      true,
+	"meventcollect": true,
+	"tscollect":     true,
+	"outputlookup":  true,
+	"outputcsv":     true,
+	"sendemail":     true,
+	"sendalert":     true,
+	"script":        true,
+	"run":           true,
+	"rest":          true,
+	"map":           true,
+	"dump":          true,
 }
 
 var AllowedIndexes = map[string]bool{

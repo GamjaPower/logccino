@@ -1,0 +1,8 @@
+[
+  {"id": "T1595.002", "name": "Active Scanning: Vulnerability Scanning", "tactic": "Reconnaissance"},
+  {"id": "T1059.001", "name": "Command and Scripting Interpreter: PowerShell", "tactic": "Execution"},
+  {"id": "T1027", "name": "Obfuscated Files or Information", "tactic": "Defense Evasion"},
+  {"id": "T1071.001", "name": "Application Layer Protocol: Web Protocols", "tactic": "Command and Control"},
+  {"id": "T1567", "name": "Exfiltration Over Web Service", "tactic": "Exfiltration"},
+  {"id": "T1105", "name": "Ingress Tool Transfer", "tactic": "Command and Control"}
+]

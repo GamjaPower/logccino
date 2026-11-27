@@ -27,10 +27,10 @@ type Item struct {
 }
 
 type Store struct {
-	items  map[string]*Item
-	order  []string
+	items    map[string]*Item
+	order    []string
 	ticketID int
-	mu     sync.RWMutex
+	mu       sync.RWMutex
 }
 
 func NewStore(ticketID int) *Store {
