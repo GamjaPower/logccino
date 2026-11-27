@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"logccino/internal/dac/compiler"
@@ -64,6 +65,9 @@ func (d *Deployer) Deploy(ctx context.Context, rulesDir, buildDir, user string) 
 
 	err := filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || !filepath.HasPrefix(filepath.Ext(path), ".yaml") && !filepath.HasPrefix(filepath.Ext(path), ".yml") {
+			return nil
+		}
+		if !strings.HasPrefix(filepath.Base(path), "DET-") {
 			return nil
 		}
 		r, err := schema.LoadRule(path)

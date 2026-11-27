@@ -79,6 +79,27 @@ Output JSON schema:
   "tuning_suggestion": ""
 }`
 
+	if strings.HasPrefix(ruleID, "DET-DLP") {
+		systemPrompt = `You are an elite Data Loss Prevention (DLP) and Data Exfiltration Triage AI Agent.
+Analyze pre-collected evidence including DLP file transfers, proxy network traffic, domain policies, and user context to evaluate information exfiltration risk.
+Directives:
+1. Cross-reference destination domains against domain_policy and dlp_central_policy:
+   - Prohibited / untrusted conversion sites (e.g. pastebin, unauthorized public converters) are 'true_positive' requiring 'request_user_justification' or 'escalate'.
+   - Official corporate platforms or approved marketing channels (e.g. youtube for marketing, corporate drive) are 'benign_true_positive' or 'false_positive'.
+2. Always cite evidence IDs (e.g. E1, E2, E3...) for every claim in summary_claims.
+Output JSON schema:
+{
+  "verdict": "true_positive" | "benign_true_positive" | "false_positive" | "needs_more_info",
+  "confidence": 0.95,
+  "summary_claims": [
+    {"claim": "Description", "evidence_ids": ["E1"], "basis": "confirmed" | "inferred"}
+  ],
+  "unchecked_items": [],
+  "proposed_actions": ["request_user_justification" | "isolate_endpoint" | "block_domain" | "escalate"],
+  "tuning_suggestion": ""
+}`
+	}
+
 	messages := []llm.Message{
 		{Role: "system", Content: systemPrompt},
 		{Role: "user", Content: userMsg},

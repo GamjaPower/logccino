@@ -1,0 +1,39 @@
+id: DET-DLP-0001
+name: Unapproved External Cloud or Web File Exfiltration
+version: 1
+status: production
+owner: dlp-eng
+intent: >
+  비인가 외부 웹 사이트, 개인 클라우드 저장소, 또는 파일 변환 사이트로 중요 문서가 업로드되는 정보유출 행위를 탐지한다.
+  단순 접근이 아닌 alert 또는 blocked 조치 이벤트, 혹은 대용량 전송을 포괄한다.
+severity: high
+mitre:
+  attack: [T1567, T1567.002]
+  atlas: []
+matrices: [insider, attack]
+data_sources:
+  - index: dlp
+    required_fields: [user, destination_domain, file_name, bytes_out, action]
+search: |
+  index=dlp (action="alert" OR action="blocked" OR bytes_out>=1000000)
+  | stats count latest(file_name) as file_name latest(destination_domain) as destination_domain sum(bytes_out) as total_bytes latest(action) as action by user
+schedule:
+  cron: "0 6 * * *"
+  earliest: -24h
+  latest: now
+suppression:
+  fields: [user]
+  period: 24h
+entity_fields: [user]
+false_positives:
+  - 승인된 사내 마케팅 채널 공식 파일 업로드
+  - 정상적인 기업용 Google Workspace / O365 문서 공유
+exceptions_ref: exceptions/dlp_policy.yaml
+triage_hints:
+  - proxy 인덱스에서 동일 사용자의 아웃바운드 업로드 바이트 및 도메인 접속 기록 확인
+  - domain_policy 룩업에서 목적지 도메인이 prohibited 또는 request_justification 대상인지 확인
+  - asset_inventory 룩업에서 사용자 부서 및 업무 연관성 확인
+tests:
+  positive: fixtures/DET-DLP-0001/positive.jsonl
+  negative: fixtures/DET-DLP-0001/negative.jsonl
+expires_at: null

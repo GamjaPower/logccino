@@ -1,0 +1,36 @@
+id: DET-DLP-0002
+name: Abnormal Outbound Network Volume Exfiltration
+version: 1
+status: production
+owner: dlp-eng
+intent: >
+  사내 프록시를 통해 비정상적으로 대용량(1MB 초과)의 데이터가 외부로 전송되는 이상 유출 트래픽을 탐지한다.
+severity: high
+mitre:
+  attack: [T1048, T1048.003]
+  atlas: []
+matrices: [attack]
+data_sources:
+  - index: proxy
+    required_fields: [user, destination_domain, bytes_out, src_ip]
+search: |
+  index=proxy bytes_out>=1000000
+  | stats count sum(bytes_out) as total_bytes values(destination_domain) as domains latest(src_ip) as src_ip by user
+schedule:
+  cron: "0 6 * * *"
+  earliest: -24h
+  latest: now
+suppression:
+  fields: [user]
+  period: 24h
+entity_fields: [user]
+false_positives:
+  - 업무용 대용량 동영상 또는 설치 패키지 다운로드/업로드
+exceptions_ref: exceptions/dlp_policy.yaml
+triage_hints:
+  - edr 인덱스에서 압축 파일 생성(7z, zip) 또는 파워셸 외부 통신 이력 확인
+  - dlp 인덱스에서 동시간대 파일 전송 알림 여부 대조
+tests:
+  positive: fixtures/DET-DLP-0002/positive.jsonl
+  negative: fixtures/DET-DLP-0002/negative.jsonl
+expires_at: null

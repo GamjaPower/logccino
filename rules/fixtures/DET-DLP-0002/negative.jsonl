@@ -1,0 +1,2 @@
+{"user": "user-corp", "destination_domain": "drive.google.com", "bytes_out": 45000, "src_ip": "10.0.20.10"}
+{"user": "user-admin", "destination_domain": "internal-repo.corp", "bytes_out": 85000, "src_ip": "10.0.20.11"}

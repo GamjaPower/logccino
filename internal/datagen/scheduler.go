@@ -24,6 +24,14 @@ type Scheduler struct {
 	nextRun    time.Time
 	lastResult *GenerationResult
 	lastErr    error
+	postHook   func(ctx context.Context)
+}
+
+// SetPostRunHook registers a callback to run after data generation succeeds (e.g. DLP exfiltration detection scan)
+func (s *Scheduler) SetPostRunHook(hook func(ctx context.Context)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.postHook = hook
 }
 
 // NewScheduler creates a new daily test data scheduler
@@ -142,7 +150,12 @@ func (s *Scheduler) Execute(ctx context.Context) (*GenerationResult, error) {
 	s.lastRun = time.Now()
 	s.lastResult = res
 	s.lastErr = err
+	hook := s.postHook
 	s.mu.Unlock()
+
+	if err == nil && hook != nil {
+		hook(ctx)
+	}
 
 	return res, err
 }

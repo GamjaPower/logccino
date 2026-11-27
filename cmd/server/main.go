@@ -22,6 +22,7 @@ import (
 	"logccino/internal/dac/drift"
 	"logccino/internal/dac/validator"
 	"logccino/internal/datagen"
+	"logccino/internal/dlp"
 	"logccino/internal/llm"
 	"logccino/internal/metrics"
 	"logccino/internal/rulemaker"
@@ -33,21 +34,22 @@ import (
 )
 
 type Server struct {
-	cfg          *config.Config
-	store        *store.Store
-	splunkCli    *splunk.Client
-	llmCli       llm.Client
-	mux          *http.ServeMux
-	llmStatus    string
-	llmModel     string
-	triageEngine *judge.TriageEngine
-	ruleMaker    *rulemaker.Engine
-	assistEngine *assist.AssistEngine
-	covEngine    *coverage.Engine
-	driftEngine  *drift.DriftDetector
-	deployer     *deployer.Deployer
-	poller       *alerts.Poller
-	datagenSched *datagen.Scheduler
+	cfg           *config.Config
+	store         *store.Store
+	splunkCli     *splunk.Client
+	llmCli        llm.Client
+	mux           *http.ServeMux
+	llmStatus     string
+	llmModel      string
+	triageEngine  *judge.TriageEngine
+	ruleMaker     *rulemaker.Engine
+	assistEngine  *assist.AssistEngine
+	covEngine     *coverage.Engine
+	driftEngine   *drift.DriftDetector
+	deployer      *deployer.Deployer
+	poller        *alerts.Poller
+	datagenSched  *datagen.Scheduler
+	exfilDetector *dlp.ExfilDetector
 }
 
 func main() {
@@ -121,27 +123,58 @@ func main() {
 	drEngine := drift.New(spClient, "siem_agent")
 	dep := deployer.New(spClient, val, st, "siem_agent")
 	poller := alerts.NewPoller(spClient, st, tEngine)
+	exfilDetector := dlp.NewDetector(cfg, spClient, cfg.RulesRepoPath)
 
 	sched := datagen.NewScheduler(cfg)
+	// PostRunHook: 일일 데이터 생성 직후 정보유출 탐지 스캔 자동 실행 및 즉시 트리아지 연계
+	sched.SetPostRunHook(func(ctx context.Context) {
+		log.Println("[DailyPipeline] Data generation completed. Executing exfiltration detection scan...")
+		sCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		if sRes, err := exfilDetector.RunScan(sCtx); err != nil {
+			log.Printf("[DailyPipeline] Exfiltration detection scan warning: %v", err)
+		} else {
+			log.Printf("[DailyPipeline] Exfiltration scan finished: %d rules evaluated, %d alerts emitted to soc_alerts", sRes.RulesEvaluated, sRes.AlertsEmitted)
+		}
+		pCtx, pCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer pCancel()
+		if n, err := poller.PollOnce(pCtx); err == nil && n > 0 {
+			log.Printf("[DailyPipeline] Immediate poll processed %d new tickets", n)
+		}
+	})
+
 	sched.Start()
 	defer sched.Stop()
 
+	// 백그라운드에서 탐지 규칙을 Splunk Saved Search로 자동 배포
+	go func() {
+		dCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		rulesDir := filepath.Join(cfg.RulesRepoPath, "detections")
+		if dRes, err := dep.Deploy(dCtx, rulesDir, filepath.Join(cfg.RulesRepoPath, "build"), "system"); err != nil {
+			log.Printf("[Deployer] Initial auto-deploy warning: %v", err)
+		} else {
+			log.Printf("[Deployer] Auto-deployed %d detection rules to Splunk (%v)", dRes.RulesCount, dRes.Deployed)
+		}
+	}()
+
 	srv := &Server{
-		cfg:          cfg,
-		store:        st,
-		splunkCli:    spClient,
-		llmCli:       llmCli,
-		mux:          http.NewServeMux(),
-		llmStatus:    "checking",
-		llmModel:     cfg.DefaultModel,
-		triageEngine: tEngine,
-		ruleMaker:    rmEngine,
-		assistEngine: asEngine,
-		covEngine:    covEngine,
-		driftEngine:  drEngine,
-		deployer:     dep,
-		poller:       poller,
-		datagenSched: sched,
+		cfg:           cfg,
+		store:         st,
+		splunkCli:     spClient,
+		llmCli:        llmCli,
+		mux:           http.NewServeMux(),
+		llmStatus:     "checking",
+		llmModel:      cfg.DefaultModel,
+		triageEngine:  tEngine,
+		ruleMaker:     rmEngine,
+		assistEngine:  asEngine,
+		covEngine:     covEngine,
+		driftEngine:   drEngine,
+		deployer:      dep,
+		poller:        poller,
+		datagenSched:  sched,
+		exfilDetector: exfilDetector,
 	}
 
 	srv.setupRoutes()
@@ -236,6 +269,34 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("GET /api/metrics", s.handleMetricsAPI)
 	s.mux.HandleFunc("GET /api/testdata/status", s.handleTestDataStatus)
 	s.mux.HandleFunc("POST /api/testdata/generate", s.handleTestDataGenerate)
+	s.mux.HandleFunc("POST /api/dlp/scan", s.handleDLPScan)
+}
+
+func (s *Server) handleDLPScan(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if s.exfilDetector == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": "exfiltration detector not initialized"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Minute)
+	defer cancel()
+
+	summary, err := s.exfilDetector.RunScan(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+		return
+	}
+
+	// 신규 알림을 즉시 티켓으로 인제스트
+	if s.poller != nil {
+		pCtx, pCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		_, _ = s.poller.PollOnce(pCtx)
+		pCancel()
+	}
+
+	_ = json.NewEncoder(w).Encode(summary)
 }
 
 func (s *Server) handleTestDataStatus(w http.ResponseWriter, r *http.Request) {
@@ -380,6 +441,44 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 			</div>
 		</div>
 		<div class="card">
+			<div style="display:flex; justify-content:space-between; align-items:center;">
+				<div>
+					<h2 style="margin:0;">🚨 일일 정보유출 탐지 파이프라인 (Daily DLP Exfiltration Pipeline)</h2>
+					<p style="color:#94a3b8; margin:5px 0 0 0;">매일 06:00 (KST) 수집 데이터 기반 중요 문서 유출, 비인가 웹 변환, 대용량 트래픽을 자동 탐지 및 AI 트리아지 분석합니다.</p>
+				</div>
+				<div>
+					<button class="btn" onclick="runPipeline()" id="btn-pipeline">⚡ 일일 데이터 생성 & 정보유출 탐지 실행</button>
+				</div>
+			</div>
+			<div id="pipeline-status" style="margin-top:12px; font-size:14px; color:#cbd5e1;"></div>
+			<script>
+			function runPipeline() {
+				const btn = document.getElementById('btn-pipeline');
+				const st = document.getElementById('pipeline-status');
+				btn.disabled = true;
+				btn.innerText = '생성 및 탐지 실행 중...';
+				st.innerHTML = '<span style="color:#38bdf8;">1단계: 일일 데이터 생성 및 Splunk 인덱싱 중...</span>';
+				fetch('/api/testdata/generate', {method: 'POST'})
+					.then(r => r.json())
+					.then(res => {
+						st.innerHTML = '<span style="color:#38bdf8;">2단계: 정보유출 탐지 룰 실행 및 트리아지 분석 중... (생성 이벤트: ' + (res.total_events || 0) + '건)</span>';
+						return fetch('/api/dlp/scan', {method: 'POST'});
+					})
+					.then(r => r.json())
+					.then(scanRes => {
+						btn.disabled = false;
+						btn.innerText = '⚡ 일일 데이터 생성 & 정보유출 탐지 실행';
+						st.innerHTML = '<span style="color:#10b981;"><b>탐지 완료!</b> 유출 알림 발행: ' + (scanRes.alerts_emitted || 0) + '건. <a href="/tickets" style="color:#38bdf8; text-decoration:underline;">티켓 관제 센터</a>에서 AI 분석 리포트를 확인하세요.</span>';
+					})
+					.catch(err => {
+						btn.disabled = false;
+						btn.innerText = '⚡ 일일 데이터 생성 & 정보유출 탐지 실행';
+						st.innerHTML = '<span style="color:#ef4444;">실행 오류: ' + err + '</span>';
+					});
+			}
+			</script>
+		</div>
+		<div class="card">
 			<h2>시스템 상태 점검</h2>
 			<p>Splunk 관리 REST: <code>%s</code></p>
 			<p>웹 서비스 포트: <code>5090 (외부 공개 바인딩: 0.0.0.0)</code></p>
@@ -396,7 +495,10 @@ func (s *Server) handleTicketsView(w http.ResponseWriter, r *http.Request) {
 		FROM tickets ORDER BY id DESC LIMIT 50
 	`)
 	var sb strings.Builder
+	sb.WriteString("<div style='display:flex; justify-content:space-between; align-items:center;'>")
 	sb.WriteString("<h1>티켓 관제 센터</h1>")
+	sb.WriteString("<button class='btn' onclick='this.innerText=\"스캔 중...\"; fetch(\"/api/dlp/scan\", {method:\"POST\"}).then(()=>location.reload())'>⚡ 정보유출 탐지 즉시 스캔</button>")
+	sb.WriteString("</div>")
 	sb.WriteString("<div class='card'><table><tr><th>ID</th><th>Alert ID</th><th>규칙</th><th>심각도</th><th>엔티티</th><th>상태</th><th>판정</th><th>신뢰도</th><th>생성일시</th></tr>")
 
 	if err == nil {

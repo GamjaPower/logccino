@@ -181,9 +181,11 @@ func (c *OpenAIClient) Chat(ctx context.Context, messages []Message, tools []Too
 	}
 
 	params := openai.ChatCompletionNewParams{
-		Model:           openai.ChatModel(c.defaultModel),
-		Messages:        chatMsgs,
-		ReasoningEffort: shared.ReasoningEffort("none"),
+		Model:    openai.ChatModel(c.defaultModel),
+		Messages: chatMsgs,
+	}
+	if strings.HasPrefix(c.defaultModel, "o1") || strings.HasPrefix(c.defaultModel, "o3") {
+		params.ReasoningEffort = shared.ReasoningEffortLow
 	}
 
 	if len(tools) > 0 {

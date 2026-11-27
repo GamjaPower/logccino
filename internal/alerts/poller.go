@@ -2,10 +2,12 @@ package alerts
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"logccino/internal/splunk"
@@ -16,6 +18,20 @@ import (
 var rawKVRegex = regexp.MustCompile(`(\w+)=(?:"([^"]*)"|([^, \t\r\n]+))`)
 
 func extractRawKV(raw string, row map[string]any) {
+	// JSON 형식 지원
+	trimmed := strings.TrimSpace(raw)
+	if strings.HasPrefix(trimmed, "{") {
+		var jsonMap map[string]any
+		if err := json.Unmarshal([]byte(trimmed), &jsonMap); err == nil {
+			for k, v := range jsonMap {
+				if _, exists := row[k]; !exists {
+					row[k] = v
+				}
+			}
+			return
+		}
+	}
+
 	matches := rawKVRegex.FindAllStringSubmatch(raw, -1)
 	for _, m := range matches {
 		k := m[1]
@@ -27,6 +43,13 @@ func extractRawKV(raw string, row map[string]any) {
 			row[k] = val
 		}
 	}
+}
+
+func getString(row map[string]any, key string) string {
+	if v, ok := row[key]; ok && v != nil {
+		return fmt.Sprintf("%v", v)
+	}
+	return ""
 }
 
 type Poller struct {
@@ -65,12 +88,12 @@ func (p *Poller) PollOnce(ctx context.Context) (int, error) {
 			extractRawKV(raw, row)
 		}
 
-		alertID, _ := row["alert_id"].(string)
-		ruleID, _ := row["rule_id"].(string)
-		ruleName, _ := row["rule_name"].(string)
-		severity, _ := row["severity"].(string)
-		entityType, _ := row["entity_type"].(string)
-		entityValue, _ := row["entity_value"].(string)
+		alertID := getString(row, "alert_id")
+		ruleID := getString(row, "rule_id")
+		ruleName := getString(row, "rule_name")
+		severity := getString(row, "severity")
+		entityType := getString(row, "entity_type")
+		entityValue := getString(row, "entity_value")
 
 		if alertID == "" {
 			continue
@@ -85,14 +108,20 @@ func (p *Poller) PollOnce(ctx context.Context) (int, error) {
 			continue
 		}
 
+		var ticketID int
 		rowsAffected, _ := res.RowsAffected()
 		if rowsAffected == 0 {
-			continue // 이미 처리된 티켓
+			// 이미 존재하는 경우, 아직 판정이 완료되지 않은 미완료(collecting) 티켓인지 확인하여 재시도
+			var status string
+			err := p.store.DB().QueryRow(`SELECT id, status FROM tickets WHERE alert_id = ?`, alertID).Scan(&ticketID, &status)
+			if err != nil || status != "collecting" {
+				continue
+			}
+		} else {
+			ticketID64, _ := res.LastInsertId()
+			ticketID = int(ticketID64)
+			newTickets++
 		}
-
-		ticketID64, _ := res.LastInsertId()
-		ticketID := int(ticketID64)
-		newTickets++
 
 		log.Printf("[Poller] Created new ticket #%d for alert %s (Rule: %s, Entity: %s)\n", ticketID, alertID, ruleID, entityValue)
 
