@@ -11,11 +11,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"logccino/internal/config"
+	"logccino/internal/datagen"
 	"logccino/internal/splunk"
 )
 
@@ -31,11 +34,23 @@ type datasetSpec struct {
 func main() {
 	destDir := flag.String("dir", "testdata/exfiltration", "Directory to store downloaded datasets")
 	targetIdx := flag.String("index", "all", "Target index filter ('all', 'test_dlp', 'test_network', 'test_exfiltration')")
+	dailyFlag := flag.Bool("daily", false, "Run as background scheduler generating test data daily at 06:00 AM")
 	flag.Parse()
 
 	cfg, err := config.Load(".env")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	if *dailyFlag {
+		fmt.Printf("==> Starting Daily Test Data Scheduler (%02d:%02d daily). Press Ctrl+C to stop...\n", cfg.TestDataScheduleHour, cfg.TestDataScheduleMinute)
+		sched := datagen.NewScheduler(cfg)
+		sched.Start()
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		sched.Stop()
+		return
 	}
 
 	cli := splunk.NewClient(splunk.Config{

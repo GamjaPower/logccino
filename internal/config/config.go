@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -53,6 +54,11 @@ type Config struct {
 
 	TriageMaxToolCalls     int
 	RulemakerMaxIterations int
+
+	TestDataScheduleEnabled bool
+	TestDataScheduleHour    int
+	TestDataScheduleMinute  int
+	TestDataTimezone        string
 }
 
 func Load(envPath string) (*Config, error) {
@@ -108,6 +114,11 @@ func Load(envPath string) (*Config, error) {
 
 		TriageMaxToolCalls:     10,
 		RulemakerMaxIterations: 3,
+
+		TestDataScheduleEnabled: getEnv("TESTDATA_SCHEDULE_ENABLED", "true") == "true",
+		TestDataScheduleHour:    getEnvInt("TESTDATA_SCHEDULE_HOUR", 6),
+		TestDataScheduleMinute:  getEnvInt("TESTDATA_SCHEDULE_MINUTE", 0),
+		TestDataTimezone:        getEnv("TESTDATA_TIMEZONE", "Asia/Seoul"),
 	}
 
 	redactFields := getEnv("LLM_REDACT_FIELDS", "user,src_user,email,dest_host,src_host")
@@ -152,6 +163,15 @@ func getEnv(key, defaultVal string) string {
 	return defaultVal
 }
 
+func getEnvInt(key string, defaultVal int) int {
+	if val, ok := os.LookupEnv(key); ok && val != "" {
+		if n, err := strconv.Atoi(val); err == nil {
+			return n
+		}
+	}
+	return defaultVal
+}
+
 func loadEnvFile(path string) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -183,4 +203,5 @@ func (c *Config) PrintSummary() {
 	fmt.Printf("[Config] Listen Addr: %s\n", c.AppListenAddr)
 	fmt.Printf("[Config] LLM Provider: %s (Default Model: %s, API Key: %s)\n", c.LLMProvider, c.DefaultModel, MaskSecret(c.OpenAIAPIKey))
 	fmt.Printf("[Config] SQLite DB: %s\n", c.SQLitePath)
+	fmt.Printf("[Config] TestData Schedule: %02d:%02d daily (Timezone: %s, Enabled: %v)\n", c.TestDataScheduleHour, c.TestDataScheduleMinute, c.TestDataTimezone, c.TestDataScheduleEnabled)
 }

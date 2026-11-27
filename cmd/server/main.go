@@ -21,6 +21,7 @@ import (
 	"logccino/internal/dac/deployer"
 	"logccino/internal/dac/drift"
 	"logccino/internal/dac/validator"
+	"logccino/internal/datagen"
 	"logccino/internal/llm"
 	"logccino/internal/metrics"
 	"logccino/internal/rulemaker"
@@ -45,6 +46,7 @@ type Server struct {
 	driftEngine  *drift.DriftDetector
 	deployer     *deployer.Deployer
 	poller       *alerts.Poller
+	datagenSched *datagen.Scheduler
 }
 
 func main() {
@@ -99,6 +101,10 @@ func main() {
 	dep := deployer.New(spClient, val, st, "siem_agent")
 	poller := alerts.NewPoller(spClient, st, tEngine)
 
+	sched := datagen.NewScheduler(cfg)
+	sched.Start()
+	defer sched.Stop()
+
 	srv := &Server{
 		cfg:          cfg,
 		store:        st,
@@ -114,6 +120,7 @@ func main() {
 		driftEngine:  drEngine,
 		deployer:     dep,
 		poller:       poller,
+		datagenSched: sched,
 	}
 
 	srv.setupRoutes()
@@ -206,6 +213,36 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("GET /api/status", s.handleReadyz)
 	s.mux.HandleFunc("GET /api/tickets", s.handleTicketsAPI)
 	s.mux.HandleFunc("GET /api/metrics", s.handleMetricsAPI)
+	s.mux.HandleFunc("GET /api/testdata/status", s.handleTestDataStatus)
+	s.mux.HandleFunc("POST /api/testdata/generate", s.handleTestDataGenerate)
+}
+
+func (s *Server) handleTestDataStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if s.datagenSched == nil {
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": "scheduler not initialized"})
+		return
+	}
+	_ = json.NewEncoder(w).Encode(s.datagenSched.GetStatus())
+}
+
+func (s *Server) handleTestDataGenerate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if s.datagenSched == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": "scheduler not initialized"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Minute)
+	defer cancel()
+
+	res, err := s.datagenSched.Execute(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+		return
+	}
+	_ = json.NewEncoder(w).Encode(res)
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
