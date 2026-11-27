@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -160,6 +161,7 @@ func (d *Deployer) Deploy(ctx context.Context, rulesDir, buildDir, user string) 
 	}
 
 	// 6. 실패 시 자동 롤백 (Automatic Rollback)
+	commitHash := resolveGitCommit(rulesDir)
 	if rollbackNeeded {
 		res.Logs = append(res.Logs, fmt.Sprintf("Deployment failed (%v). Initiating automatic rollback...", applyError))
 		for _, name := range deployedNames {
@@ -167,26 +169,44 @@ func (d *Deployer) Deploy(ctx context.Context, rulesDir, buildDir, user string) 
 		}
 		res.Status = "rolled_back"
 		res.Error = applyError.Error()
-		d.recordDeployment(depID, len(rules), "rolled_back", string(backupBytes), user, res.Logs)
+		d.recordDeployment(depID, commitHash, len(rules), "rolled_back", string(backupBytes), user, res.Logs)
 		return res, applyError
 	}
 
 	res.Status = "success"
 	res.RulesCount = len(rules)
 	res.Deployed = deployedNames
-	res.Logs = append(res.Logs, fmt.Sprintf("Successfully deployed %d rules.", len(rules)))
+	res.Logs = append(res.Logs, fmt.Sprintf("Successfully deployed %d rules (commit: %s).", len(rules), commitHash))
 
-	d.recordDeployment(depID, len(rules), "success", string(backupBytes), user, res.Logs)
+	d.recordDeployment(depID, commitHash, len(rules), "success", string(backupBytes), user, res.Logs)
 	return res, nil
 }
 
-func (d *Deployer) recordDeployment(id string, count int, status, backup, user string, logs []string) {
+func resolveGitCommit(rulesDir string) string {
+	for _, dir := range []string{rulesDir, filepath.Dir(rulesDir)} {
+		if dir == "" {
+			continue
+		}
+		out, err := exec.Command("git", "-C", dir, "rev-parse", "--short", "HEAD").Output()
+		if err == nil {
+			if sha := strings.TrimSpace(string(out)); sha != "" {
+				return sha
+			}
+		}
+	}
+	return "local-git"
+}
+
+func (d *Deployer) recordDeployment(id, commitHash string, count int, status, backup, user string, logs []string) {
 	if d.store == nil {
 		return
+	}
+	if commitHash == "" {
+		commitHash = "local-git"
 	}
 	logsJSON, _ := json.Marshal(logs)
 	_, _ = d.store.DB().Exec(`
 		INSERT INTO deployments (deployment_id, commit_hash, rules_count, status, backup_json, logs, deployed_by, created_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, id, "local-git", count, status, backup, string(logsJSON), user, time.Now())
+	`, id, commitHash, count, status, backup, string(logsJSON), user, time.Now())
 }

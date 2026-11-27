@@ -7,9 +7,52 @@
   </div>
   <div class="page-actions">
     <a href="/coverage" class="btn btn-secondary">커버리지 매트릭스</a>
+    <button type="button" class="btn btn-secondary" onclick="window.Logccino.syncDACGit(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <span>Git 동기화 &amp; 배포</span>
+    </button>
     <a href="/rulemaker" class="btn btn-primary">+ AI 규칙 생성</a>
   </div>
 </div>
+
+{{if $d.GitStatus}}
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">전용 DaC 규칙 Git 저장소 (Dedicated Rules Repository)</h2>
+      <div class="card-subtitle">환경변수 <span class="mono">DAC_GIT_REPO_URL</span> / <span class="mono">DAC_GIT_TOKEN</span> 기반 자동 동기화 및 CR 승인 시 커밋·푸시</div>
+    </div>
+    <span class="pill {{if $d.GitStatus.Configured}}pill-success{{else}}pill-warning{{end}}">
+      <span class="pill-dot"></span>{{if $d.GitStatus.Configured}}Remote Git Connected{{else}}Local Mode (URL 미설정){{end}}
+    </span>
+  </div>
+  <div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+      <div>
+        <div class="text-muted" style="font-size:11.5px;">Remote Repository</div>
+        <div class="mono" style="font-size:12.5px;word-break:break-all;">{{if $d.GitStatus.RepoURL}}{{$d.GitStatus.RepoURL}}{{else}}(DAC_GIT_REPO_URL 미지정 — ./rules 사용 중){{end}}</div>
+      </div>
+      <div>
+        <div class="text-muted" style="font-size:11.5px;">Branch / Commit SHA</div>
+        <div class="mono" style="font-size:12.5px;">{{$d.GitStatus.Branch}} · <span class="tag">{{$d.GitStatus.CommitHash}}</span></div>
+      </div>
+      <div>
+        <div class="text-muted" style="font-size:11.5px;">Local Checkout / Auth</div>
+        <div class="mono" style="font-size:12.5px;">{{$d.GitStatus.LocalPath}} · Token: {{if $d.GitStatus.TokenSet}}Set{{else}}Not Set{{end}} · AutoPush: {{$d.GitStatus.AutoPush}}</div>
+      </div>
+      <div>
+        <div class="text-muted" style="font-size:11.5px;">Last Sync ({{$d.GitStatus.SyncIntervalSec}}s cycle)</div>
+        <div class="mono" style="font-size:12.5px;">{{if $d.GitStatus.LastSync}}{{$d.GitStatus.LastSync}}{{else}}-{{end}}</div>
+      </div>
+    </div>
+    {{if $d.GitStatus.LastError}}
+    <div class="callout callout-warning" style="margin-top:12px;margin-bottom:0;">
+      <div><strong>최근 동기화 경고:</strong> <span class="mono">{{$d.GitStatus.LastError}}</span></div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
 
 <section class="kpi-grid">
   <div class="card kpi-card">

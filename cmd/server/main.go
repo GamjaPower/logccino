@@ -20,6 +20,7 @@ import (
 	"logccino/internal/coverage"
 	"logccino/internal/dac/deployer"
 	"logccino/internal/dac/drift"
+	"logccino/internal/dac/gitrepo"
 	"logccino/internal/dac/schema"
 	"logccino/internal/dac/validator"
 	"logccino/internal/datagen"
@@ -36,23 +37,25 @@ import (
 )
 
 type Server struct {
-	cfg           *config.Config
-	store         *store.Store
-	splunkCli     *splunk.Client
-	llmCli        llm.Client
-	mux           *http.ServeMux
-	renderer      *web.Renderer
-	llmStatus     string
-	llmModel      string
-	triageEngine  *judge.TriageEngine
-	ruleMaker     *rulemaker.Engine
-	assistEngine  *assist.AssistEngine
-	covEngine     *coverage.Engine
-	driftEngine   *drift.DriftDetector
-	deployer      *deployer.Deployer
-	poller        *alerts.Poller
-	datagenSched  *datagen.Scheduler
-	exfilDetector *dlp.ExfilDetector
+	cfg             *config.Config
+	store           *store.Store
+	splunkCli       *splunk.Client
+	llmCli          llm.Client
+	mux             *http.ServeMux
+	renderer        *web.Renderer
+	llmStatus       string
+	llmModel        string
+	triageEngine    *judge.TriageEngine
+	ruleMaker       *rulemaker.Engine
+	assistEngine    *assist.AssistEngine
+	covEngine       *coverage.Engine
+	driftEngine     *drift.DriftDetector
+	deployer        *deployer.Deployer
+	poller          *alerts.Poller
+	datagenSched    *datagen.Scheduler
+	exfilDetector   *dlp.ExfilDetector
+	gitMgr          *gitrepo.Manager
+	activeRulesPath string
 }
 
 func main() {
@@ -94,12 +97,37 @@ func main() {
 		}
 	}
 
+	gitMgr := gitrepo.New(gitrepo.Config{
+		Enabled:         cfg.DACGitEnabled,
+		RepoURL:         cfg.DACGitRepoURL,
+		Branch:          cfg.DACGitBranch,
+		Token:           cfg.DACGitToken,
+		LocalPath:       cfg.DACGitLocalPath,
+		SeedPath:        cfg.RulesRepoPath,
+		AuthorName:      cfg.DACGitAuthorName,
+		AuthorEmail:     cfg.DACGitAuthorEmail,
+		AutoPush:        cfg.DACGitAutoPush,
+		SyncIntervalSec: cfg.DACGitSyncIntervalSec,
+	})
+
+	activeRulesPath := cfg.RulesRepoPath
+	if gitMgr.IsConfigured() {
+		gCtx, gCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		if err := gitMgr.EnsureRepo(gCtx); err != nil {
+			log.Printf("[DaC Git] Initial repo sync warning (falling back to %s): %v", cfg.RulesRepoPath, err)
+		} else {
+			activeRulesPath = gitMgr.EffectivePath()
+			log.Printf("[DaC Git] Dedicated rules repo ready at %s (branch: %s, commit: %s)", activeRulesPath, cfg.DACGitBranch, gitMgr.CurrentCommit(gCtx))
+		}
+		gCancel()
+	}
+
 	// Role-specific LLM client configuration
 	judgeCli := llmCli
 	if cfg.LLMJudgeModel != "" {
 		judgeCli = llmCli.WithModel(cfg.LLMJudgeModel)
 	}
-	col := collector.New(spClient, cfg.RulesRepoPath, filepath.Join("splunk", "apps", "siem_agent", "lookups"))
+	col := collector.New(spClient, activeRulesPath, filepath.Join("splunk", "apps", "siem_agent", "lookups"))
 	tEngine := judge.New(judgeCli, spClient, col, st)
 	rebModel := cfg.LLMRebuttalModel
 	if rebModel == "" {
@@ -107,26 +135,26 @@ func main() {
 	}
 	tEngine.SetRebuttalAgent(rebuttal.New(llmCli, rebModel))
 
-	schemaPath := filepath.Join(cfg.RulesRepoPath, "contracts", "rule.schema.json")
-	profilesDir := filepath.Join(cfg.RulesRepoPath, "source_profiles")
+	schemaPath := filepath.Join(activeRulesPath, "contracts", "rule.schema.json")
+	profilesDir := filepath.Join(activeRulesPath, "source_profiles")
 	val, _ := validator.New(schemaPath, profilesDir, spClient)
 
 	rmCli := llmCli
 	if cfg.LLMRulemakerModel != "" {
 		rmCli = llmCli.WithModel(cfg.LLMRulemakerModel)
 	}
-	rmEngine := rulemaker.NewEngine(rmCli, val, st, cfg.RulesRepoPath, cfg.RulemakerMaxIterations)
+	rmEngine := rulemaker.NewEngine(rmCli, val, st, activeRulesPath, cfg.RulemakerMaxIterations)
 
 	asModel := cfg.LLMAssistModel
 	if asModel == "" {
 		asModel = cfg.DefaultModel
 	}
 	asEngine := assist.NewEngine(llmCli.WithModel(asModel), asModel)
-	covEngine := coverage.New(cfg.RulesRepoPath, spClient)
+	covEngine := coverage.New(activeRulesPath, spClient)
 	drEngine := drift.New(spClient, "siem_agent")
 	dep := deployer.New(spClient, val, st, "siem_agent")
 	poller := alerts.NewPoller(spClient, st, tEngine)
-	exfilDetector := dlp.NewDetector(cfg, spClient, cfg.RulesRepoPath)
+	exfilDetector := dlp.NewDetector(cfg, spClient, activeRulesPath)
 
 	sched := datagen.NewScheduler(cfg)
 	// PostRunHook: 일일 데이터 생성 직후 정보유출 탐지 스캔 자동 실행 및 즉시 트리아지 연계
@@ -153,8 +181,8 @@ func main() {
 	go func() {
 		dCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		rulesDir := filepath.Join(cfg.RulesRepoPath, "detections")
-		if dRes, err := dep.Deploy(dCtx, rulesDir, filepath.Join(cfg.RulesRepoPath, "build"), "system"); err != nil {
+		rulesDir := filepath.Join(activeRulesPath, "detections")
+		if dRes, err := dep.Deploy(dCtx, rulesDir, filepath.Join(activeRulesPath, "build"), "system"); err != nil {
 			log.Printf("[Deployer] Initial auto-deploy warning: %v", err)
 		} else {
 			log.Printf("[Deployer] Auto-deployed %d detection rules to Splunk (%v)", dRes.RulesCount, dRes.Deployed)
@@ -167,28 +195,31 @@ func main() {
 	}
 
 	srv := &Server{
-		cfg:           cfg,
-		store:         st,
-		splunkCli:     spClient,
-		llmCli:        llmCli,
-		mux:           http.NewServeMux(),
-		renderer:      renderer,
-		llmStatus:     "checking",
-		llmModel:      cfg.DefaultModel,
-		triageEngine:  tEngine,
-		ruleMaker:     rmEngine,
-		assistEngine:  asEngine,
-		covEngine:     covEngine,
-		driftEngine:   drEngine,
-		deployer:      dep,
-		poller:        poller,
-		datagenSched:  sched,
-		exfilDetector: exfilDetector,
+		cfg:             cfg,
+		store:           st,
+		splunkCli:       spClient,
+		llmCli:          llmCli,
+		mux:             http.NewServeMux(),
+		renderer:        renderer,
+		llmStatus:       "checking",
+		llmModel:        cfg.DefaultModel,
+		triageEngine:    tEngine,
+		ruleMaker:       rmEngine,
+		assistEngine:    asEngine,
+		covEngine:       covEngine,
+		driftEngine:     drEngine,
+		deployer:        dep,
+		poller:          poller,
+		datagenSched:    sched,
+		exfilDetector:   exfilDetector,
+		gitMgr:          gitMgr,
+		activeRulesPath: activeRulesPath,
 	}
 
 	srv.setupRoutes()
 	go srv.checkLLMStatus()
 	go srv.startAlertPollerLoop()
+	go srv.startDACGitSyncLoop()
 
 	httpServer := &http.Server{
 		Addr:    cfg.AppListenAddr,
@@ -283,6 +314,80 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("GET /api/testdata/status", s.handleTestDataStatus)
 	s.mux.HandleFunc("POST /api/testdata/generate", s.handleTestDataGenerate)
 	s.mux.HandleFunc("POST /api/dlp/scan", s.handleDLPScan)
+	s.mux.HandleFunc("GET /api/dac/git/status", s.handleDACGitStatus)
+	s.mux.HandleFunc("POST /api/dac/git/sync", s.handleDACGitSync)
+}
+
+func (s *Server) startDACGitSyncLoop() {
+	if s.gitMgr == nil || !s.gitMgr.IsConfigured() || s.cfg.DACGitSyncIntervalSec <= 0 {
+		return
+	}
+	interval := time.Duration(s.cfg.DACGitSyncIntervalSec) * time.Second
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	log.Printf("[DaC Git] Periodic sync started (every %v)", interval)
+
+	for range ticker.C {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		res, err := s.gitMgr.Sync(ctx)
+		if err != nil {
+			log.Printf("[DaC Git] Periodic sync warning: %v", err)
+			cancel()
+			continue
+		}
+		if res.Changed {
+			log.Printf("[DaC Git] Rules updated (%s -> %s). Deploying to Splunk...", res.CommitBefore, res.CommitAfter)
+			rulesDir := filepath.Join(s.activeRulesPath, "detections")
+			if _, depErr := s.deployer.Deploy(ctx, rulesDir, filepath.Join(s.activeRulesPath, "build"), "git-sync"); depErr != nil {
+				log.Printf("[DaC Git] Auto-deploy after sync error: %v", depErr)
+			}
+		}
+		cancel()
+	}
+}
+
+func (s *Server) handleDACGitStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if s.gitMgr == nil {
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": "git manager not initialized"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	_ = json.NewEncoder(w).Encode(s.gitMgr.Status(ctx))
+}
+
+func (s *Server) handleDACGitSync(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if s.gitMgr == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": "git manager not initialized"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	defer cancel()
+
+	syncRes, err := s.gitMgr.Sync(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+		return
+	}
+	if s.gitMgr.IsConfigured() {
+		s.activeRulesPath = s.gitMgr.EffectivePath()
+	}
+
+	rulesDir := filepath.Join(s.activeRulesPath, "detections")
+	depRes, depErr := s.deployer.Deploy(ctx, rulesDir, "build/compiled", "git-sync")
+	if depErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": depErr.Error(), "sync": syncRes})
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"sync":   syncRes,
+		"deploy": depRes,
+	})
 }
 
 func (s *Server) handleDLPScan(w http.ResponseWriter, r *http.Request) {
@@ -417,7 +522,11 @@ func (s *Server) basePageData(ctx context.Context, title, section, activeNav str
 
 func (s *Server) loadRulesCatalog() []web.RuleItem {
 	var items []web.RuleItem
-	detDir := filepath.Join(s.cfg.RulesRepoPath, "detections")
+	baseDir := s.activeRulesPath
+	if baseDir == "" {
+		baseDir = s.cfg.RulesRepoPath
+	}
+	detDir := filepath.Join(baseDir, "detections")
 	_ = filepath.Walk(detDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
@@ -429,7 +538,7 @@ func (s *Server) loadRulesCatalog() []web.RuleItem {
 		if err != nil {
 			return nil
 		}
-		rel, _ := filepath.Rel(s.cfg.RulesRepoPath, path)
+		rel, _ := filepath.Rel(baseDir, path)
 		cat := filepath.Base(filepath.Dir(path))
 		if cat == "detections" || cat == "." {
 			cat = "general"
@@ -741,6 +850,10 @@ func (s *Server) handleRulesView(w http.ResponseWriter, r *http.Request) {
 	for c := range catMap {
 		view.Categories = append(view.Categories, c)
 	}
+	if s.gitMgr != nil {
+		st := s.gitMgr.Status(r.Context())
+		view.GitStatus = &st
+	}
 
 	pd := s.basePageData(r.Context(), "탐지 규칙 (DaC)", "Detection Engineering", "rules", []web.Breadcrumb{
 		{Label: "Detection Engineering"},
@@ -765,7 +878,11 @@ func (s *Server) handleRuleDetailView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rawBytes, _ := os.ReadFile(filepath.Join(s.cfg.RulesRepoPath, found.FilePath))
+	baseDir := s.activeRulesPath
+	if baseDir == "" {
+		baseDir = s.cfg.RulesRepoPath
+	}
+	rawBytes, _ := os.ReadFile(filepath.Join(baseDir, found.FilePath))
 	pd := s.basePageData(r.Context(), found.Rule.ID, "Detection Engineering", "rules", []web.Breadcrumb{
 		{Label: "Detection Engineering"},
 		{Label: "탐지 규칙", Href: "/rules"},
@@ -842,13 +959,45 @@ func (s *Server) handleChangeDetailView(w http.ResponseWriter, r *http.Request) 
 
 func (s *Server) handleChangeDeploy(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	_, err := s.deployer.Deploy(r.Context(), filepath.Join(s.cfg.RulesRepoPath, "detections"), "build/compiled", "approver")
+	var ruleID, ruleName, diffContent, author string
+	_ = s.store.DB().QueryRow(`SELECT rule_id, rule_name, diff_content, author FROM change_requests WHERE request_id = ?`, id).
+		Scan(&ruleID, &ruleName, &diffContent, &author)
+
+	if s.gitMgr != nil && ruleID != "" && strings.TrimSpace(diffContent) != "" {
+		cat := ruleCategoryFromID(ruleID)
+		msg := fmt.Sprintf("feat(dac): deploy %s (%s)", ruleID, ruleName)
+		if _, err := s.gitMgr.SaveAndCommitRule(r.Context(), cat, ruleID, diffContent, author, msg); err != nil {
+			log.Printf("[DaC Git] Save/commit warning for %s: %v", ruleID, err)
+		}
+	}
+
+	baseDir := s.activeRulesPath
+	if baseDir == "" {
+		baseDir = s.cfg.RulesRepoPath
+	}
+	_, err := s.deployer.Deploy(r.Context(), filepath.Join(baseDir, "detections"), "build/compiled", "approver")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Deploy error: %v", err), http.StatusInternalServerError)
 		return
 	}
 	_, _ = s.store.DB().Exec(`UPDATE change_requests SET status = 'deployed' WHERE request_id = ?`, id)
 	http.Redirect(w, r, "/deployments", http.StatusSeeOther)
+}
+
+func ruleCategoryFromID(ruleID string) string {
+	upper := strings.ToUpper(ruleID)
+	switch {
+	case strings.Contains(upper, "-DLP-"):
+		return "dlp"
+	case strings.Contains(upper, "-WEB-"):
+		return "web"
+	case strings.Contains(upper, "-EDR-"):
+		return "edr"
+	case strings.Contains(upper, "-NET-"):
+		return "network"
+	default:
+		return "custom"
+	}
 }
 
 func (s *Server) handleDeploymentsView(w http.ResponseWriter, r *http.Request) {
@@ -985,7 +1134,7 @@ func (s *Server) handleRedTeamView(w http.ResponseWriter, r *http.Request) {
 		{Label: "Security Posture"},
 		{Label: "레드팀 제보 연계"},
 	})
-	pd.Data = web.RedTeamView{RulesRepoPath: s.cfg.RulesRepoPath}
+	pd.Data = web.RedTeamView{RulesRepoPath: s.activeRulesPath}
 	s.renderer.Render(w, "redteam", pd)
 }
 

@@ -11,6 +11,7 @@ import (
 	"logccino/internal/assist"
 	"logccino/internal/coverage"
 	"logccino/internal/dac/drift"
+	"logccino/internal/dac/gitrepo"
 	"logccino/internal/dac/schema"
 )
 
@@ -85,7 +86,11 @@ func TestRendererAllPages(t *testing.T) {
 			page: "rules",
 			data: PageData{
 				Title: "Rules", ActiveNav: "rules",
-				Data: RulesView{TotalCount: 1, DLPCount: 1, ProdCount: 1, Categories: []string{"dlp"}, Rules: []RuleItem{{Category: "dlp", FilePath: "detections/dlp/DET-DLP-0001.yaml", Rule: sampleRule}}},
+				Data: RulesView{
+					TotalCount: 1, DLPCount: 1, ProdCount: 1, Categories: []string{"dlp"},
+					Rules:     []RuleItem{{Category: "dlp", FilePath: "detections/dlp/DET-DLP-0001.yaml", Rule: sampleRule}},
+					GitStatus: &gitrepo.RepoStatus{Enabled: true, Configured: true, RepoURL: "https://github.com/org/rules.git", Branch: "main", CommitHash: "abc1234", LocalPath: "./data/rules_repo", SyncIntervalSec: 300},
+				},
 			},
 			want: "DET-DLP-0001",
 		},

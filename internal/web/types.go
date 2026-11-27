@@ -6,6 +6,7 @@ import (
 	"logccino/internal/assist"
 	"logccino/internal/coverage"
 	"logccino/internal/dac/drift"
+	"logccino/internal/dac/gitrepo"
 	"logccino/internal/dac/schema"
 	"logccino/internal/metrics"
 )
@@ -147,6 +148,7 @@ type RulesView struct {
 	WebCount   int
 	ProdCount  int
 	Categories []string
+	GitStatus  *gitrepo.RepoStatus
 }
 
 // RuleDetailView holds detailed metadata and raw YAML for a single rule.

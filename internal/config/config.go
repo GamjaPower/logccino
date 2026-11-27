@@ -35,6 +35,16 @@ type Config struct {
 	SQLitePath    string
 	RulesRepoPath string
 
+	DACGitEnabled         bool
+	DACGitRepoURL         string
+	DACGitBranch          string
+	DACGitToken           string
+	DACGitLocalPath       string
+	DACGitAuthorName      string
+	DACGitAuthorEmail     string
+	DACGitSyncIntervalSec int
+	DACGitAutoPush        bool
+
 	DefaultModel          string
 	OpenAIAPIKey          string
 	OpenAIBaseURL         string
@@ -94,6 +104,16 @@ func Load(envPath string) (*Config, error) {
 
 		SQLitePath:    getEnv("SQLITE_PATH", "./data/siem_agent.db"),
 		RulesRepoPath: getEnv("RULES_REPO_PATH", "./rules"),
+
+		DACGitEnabled:         getEnv("DAC_GIT_ENABLED", "true") == "true",
+		DACGitRepoURL:         getEnv("DAC_GIT_REPO_URL", ""),
+		DACGitBranch:          getEnv("DAC_GIT_BRANCH", "main"),
+		DACGitToken:           getEnv("DAC_GIT_TOKEN", ""),
+		DACGitLocalPath:       getEnv("DAC_GIT_LOCAL_PATH", "./data/rules_repo"),
+		DACGitAuthorName:      getEnv("DAC_GIT_AUTHOR_NAME", "logccino-dac-bot"),
+		DACGitAuthorEmail:     getEnv("DAC_GIT_AUTHOR_EMAIL", "dac-bot@logccino.local"),
+		DACGitSyncIntervalSec: getEnvInt("DAC_GIT_SYNC_INTERVAL_SEC", 300),
+		DACGitAutoPush:        getEnv("DAC_GIT_AUTO_PUSH", "true") == "true",
 
 		DefaultModel:      getEnv("DEFAULT_MODEL", "gpt-4o-mini"),
 		OpenAIAPIKey:      getEnv("OPENAI_API_KEY", ""),
@@ -198,10 +218,20 @@ func loadEnvFile(path string) {
 	}
 }
 
+// EffectiveRulesPath returns the dedicated Git rules checkout path when configured,
+// otherwise falling back to RulesRepoPath.
+func (c *Config) EffectiveRulesPath() string {
+	if c.DACGitEnabled && strings.TrimSpace(c.DACGitRepoURL) != "" && strings.TrimSpace(c.DACGitLocalPath) != "" {
+		return c.DACGitLocalPath
+	}
+	return c.RulesRepoPath
+}
+
 func (c *Config) PrintSummary() {
 	fmt.Printf("[Config] Splunk URL: %s (User: %s, TokenSet: %v, VerifyTLS: %v)\n", c.SplunkMgmtURL, c.SplunkROUser, c.SplunkToken != "", !c.SplunkInsecureSkipVerify)
 	fmt.Printf("[Config] Listen Addr: %s\n", c.AppListenAddr)
 	fmt.Printf("[Config] LLM Provider: %s (Default Model: %s, API Key: %s)\n", c.LLMProvider, c.DefaultModel, MaskSecret(c.OpenAIAPIKey))
 	fmt.Printf("[Config] SQLite DB: %s\n", c.SQLitePath)
+	fmt.Printf("[Config] DaC Git Repo: Enabled=%v, URL=%q, Branch=%s, TokenSet=%v, LocalPath=%s\n", c.DACGitEnabled, c.DACGitRepoURL, c.DACGitBranch, c.DACGitToken != "", c.DACGitLocalPath)
 	fmt.Printf("[Config] TestData Schedule: %02d:%02d daily (Timezone: %s, Enabled: %v)\n", c.TestDataScheduleHour, c.TestDataScheduleMinute, c.TestDataTimezone, c.TestDataScheduleEnabled)
 }

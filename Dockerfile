@@ -20,7 +20,7 @@ FROM alpine:3.20
 
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates tzdata curl && \
+RUN apk add --no-cache ca-certificates tzdata curl git && \
     mkdir -p /app/data /app/rules /app/build
 
 COPY --from=builder /bin/server /app/server

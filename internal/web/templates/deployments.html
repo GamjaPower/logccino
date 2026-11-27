@@ -32,6 +32,7 @@
       <thead>
         <tr>
           <th>배포 ID</th>
+          <th>Git Commit</th>
           <th>규칙 수</th>
           <th>상태</th>
           <th>배포 주체</th>
@@ -43,6 +44,7 @@
         {{range $d.Items}}
         <tr>
           <td class="mono" style="font-weight:600;">{{.DeploymentID}}</td>
+          <td><span class="tag">{{if .CommitHash}}{{.CommitHash}}{{else}}local-git{{end}}</span></td>
           <td class="mono tabular">{{.RulesCount}}</td>
           <td><span class="pill {{statusClass .Status}}"><span class="pill-dot"></span>{{statusLabel .Status}}</span></td>
           <td><span class="tag">{{.DeployedBy}}</span></td>

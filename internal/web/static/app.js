@@ -289,6 +289,26 @@
       });
   }
 
+  function syncDACGit(btn) {
+    if (!btn) return;
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.textContent = "Syncing...";
+    fetch("/api/dac/git/sync", { method: "POST" })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res.error) throw new Error(res.error);
+        const msg = (res.sync && res.sync.message) ? res.sync.message : "Synchronized rules repository.";
+        toast("success", "DaC Git Sync Complete", msg);
+        setTimeout(function () { window.location.reload(); }, 900);
+      })
+      .catch(function (err) {
+        toast("error", "Git Sync Failed", err.message);
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initTheme();
     initMobileSidebar();
@@ -302,6 +322,7 @@
   window.Logccino = {
     toast: toast,
     runDailyPipeline: runDailyPipeline,
-    runQuickDLPScan: runQuickDLPScan
+    runQuickDLPScan: runQuickDLPScan,
+    syncDACGit: syncDACGit
   };
 })();
