@@ -174,92 +174,96 @@
   </div>
 </section>
 
-<!-- Operational Tables & Infrastructure Row -->
-<section class="grid-2">
-  <div class="card">
-    <div class="card-header">
-      <div>
-        <h2 class="card-title">최근 탐지 인시던트</h2>
-        <div class="card-subtitle">실시간 `soc_alerts` 폴링 및 AI 판정 결과</div>
-      </div>
-      <a href="/tickets" class="btn btn-secondary btn-sm">티켓 관제 →</a>
+<!-- Recent Incidents (Full Width, Single-Line Rows) -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">최근 탐지 인시던트</h2>
+      <div class="card-subtitle">실시간 <code class="inline-code">soc_alerts</code> 폴링 및 AI 판정 결과</div>
     </div>
-    <div class="table-wrap">
-      {{if $d.RecentTickets}}
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>티켓</th>
-            <th>규칙</th>
-            <th>엔티티</th>
-            <th>심각도</th>
-            <th>판정</th>
-            <th>신뢰도</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{range $d.RecentTickets}}
-          <tr>
-            <td class="mono"><a href="/tickets/{{.ID}}">#{{.ID}}</a></td>
-            <td>
-              <div style="font-weight:600;">{{.RuleName}}</div>
-              <div class="mono text-muted" style="font-size:11px;">{{.RuleID}}</div>
-            </td>
-            <td><span class="tag">{{.EntityValue}}</span></td>
-            <td><span class="pill {{sevClass .Severity}}"><span class="pill-dot"></span>{{.Severity}}</span></td>
-            <td><span class="pill {{verdictClass .Verdict}}">{{verdictLabel .Verdict}}</span></td>
-            <td>
-              <div class="confidence-cell">
-                <div class="progress"><div class="progress-fill" style="width:{{pct .Confidence}}%;"></div></div>
-                <span class="mono" style="font-size:11.5px;">{{pct .Confidence}}%</span>
-              </div>
-            </td>
-          </tr>
-          {{end}}
-        </tbody>
-      </table>
-      {{else}}
-      <div class="empty-state">표시할 최근 인시던트가 없습니다.</div>
-      {{end}}
-    </div>
+    <a href="/tickets" class="btn btn-secondary btn-sm">티켓 관제 →</a>
   </div>
+  <div class="table-wrap">
+    {{if $d.RecentTickets}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>티켓</th>
+          <th>심각도</th>
+          <th>규칙 ID</th>
+          <th>탐지 규칙</th>
+          <th>엔티티</th>
+          <th>AI 판정</th>
+          <th>신뢰도</th>
+          <th>상태</th>
+          <th>발생 일시</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $d.RecentTickets}}
+        <tr>
+          <td class="mono" style="white-space:nowrap;"><a href="/tickets/{{.ID}}" style="font-weight:700;">#{{.ID}}</a></td>
+          <td style="white-space:nowrap;"><span class="pill {{sevClass .Severity}}"><span class="pill-dot"></span>{{upper .Severity}}</span></td>
+          <td class="mono" style="white-space:nowrap;font-size:12px;"><a href="/rules/{{.RuleID}}" style="color:var(--text-secondary);">{{.RuleID}}</a></td>
+          <td style="white-space:nowrap;max-width:340px;overflow:hidden;text-overflow:ellipsis;font-weight:600;" title="{{.RuleName}}">
+            <a href="/tickets/{{.ID}}" style="color:var(--text-primary);">{{.RuleName}}</a>
+          </td>
+          <td style="white-space:nowrap;"><span class="tag">{{.EntityValue}}</span></td>
+          <td style="white-space:nowrap;"><span class="pill {{verdictClass .Verdict}}">{{verdictLabel .Verdict}}</span></td>
+          <td style="white-space:nowrap;">
+            <div class="confidence-cell">
+              <div class="progress"><div class="progress-fill" style="width:{{pct .Confidence}}%;"></div></div>
+              <span class="mono" style="font-size:11.5px;">{{pct .Confidence}}%</span>
+            </div>
+          </td>
+          <td style="white-space:nowrap;"><span class="pill {{statusClass .Status}}"><span class="pill-dot"></span>{{statusLabel .Status}}</span></td>
+          <td class="mono text-secondary" style="white-space:nowrap;font-size:12px;">{{formatTime .CreatedAt}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <div class="empty-state">표시할 최근 인시던트가 없습니다.</div>
+    {{end}}
+  </div>
+</div>
 
-  <div class="card">
-    <div class="card-header">
-      <div>
-        <h2 class="card-title">인프라 및 멀티 에이전트 모델 아키텍처</h2>
-        <div class="card-subtitle">OpenAI HTTPS 연동 및 결정적 로컬 검증 엔진 구성</div>
-      </div>
-      <span class="pill pill-success"><span class="pill-dot"></span>Operational</span>
+<!-- Infrastructure & Multi-Agent Telemetry (Full Width Multi-Column Card) -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">인프라 및 멀티 에이전트 모델 아키텍처</h2>
+      <div class="card-subtitle">OpenAI HTTPS 연동 및 결정적 로컬 검증 엔진 구성</div>
     </div>
-    <div class="card-body">
-      <div class="kv-list">
-        <div class="kv-row">
-          <span class="kv-key">Splunk Management REST</span>
-          <span class="kv-val mono">{{.SplunkURL}}</span>
-        </div>
-        <div class="kv-row">
-          <span class="kv-key">Judge Agent Model</span>
-          <span class="kv-val"><span class="tag">{{$d.JudgeModel}}</span></span>
-        </div>
-        <div class="kv-row">
-          <span class="kv-key">Adversarial Rebuttal Model</span>
-          <span class="kv-val"><span class="tag">{{$d.RebuttalModel}}</span></span>
-        </div>
-        <div class="kv-row">
-          <span class="kv-key">Rule Maker & Analyst Assist</span>
-          <span class="kv-val"><span class="tag">{{$d.RulemakerModel}}</span> / <span class="tag">{{$d.AssistModel}}</span></span>
-        </div>
-        <div class="kv-row">
-          <span class="kv-key">SQLite State Store (WAL)</span>
-          <span class="kv-val mono">{{$d.SQLitePath}}</span>
-        </div>
-        <div class="kv-row">
-          <span class="kv-key">Web Service Binding</span>
-          <span class="kv-val mono">0.0.0.0{{$d.ListenAddr}} (Public TCP)</span>
-        </div>
+    <span class="pill pill-success"><span class="pill-dot"></span>Operational</span>
+  </div>
+  <div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px 24px;">
+      <div class="kv-row">
+        <span class="kv-key">Splunk Management REST</span>
+        <span class="kv-val mono">{{.SplunkURL}}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Judge Agent Model</span>
+        <span class="kv-val"><span class="tag">{{$d.JudgeModel}}</span></span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Adversarial Rebuttal Model</span>
+        <span class="kv-val"><span class="tag">{{$d.RebuttalModel}}</span></span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Rule Maker &amp; Analyst Assist</span>
+        <span class="kv-val"><span class="tag">{{$d.RulemakerModel}}</span> / <span class="tag">{{$d.AssistModel}}</span></span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">SQLite State Store (WAL)</span>
+        <span class="kv-val mono">{{$d.SQLitePath}}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Web Service Binding</span>
+        <span class="kv-val mono">0.0.0.0{{$d.ListenAddr}} (Public TCP)</span>
       </div>
     </div>
   </div>
-</section>
+</div>
 {{end}}

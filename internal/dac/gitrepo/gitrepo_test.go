@@ -115,3 +115,77 @@ func TestSanitizeErrorMasksTokens(t *testing.T) {
 		t.Fatalf("expected REDACTED marker in error: %v", err)
 	}
 }
+
+func TestSeedMissingStructureOnNonEmptyRemote(t *testing.T) {
+	ctx := context.Background()
+	tmp := t.TempDir()
+
+	bareRepo := filepath.Join(tmp, "remote.git")
+	initBareRepo(t, bareRepo)
+
+	// Push an initial README.md commit (simulating GitHub "Initialize with README")
+	initWork := filepath.Join(tmp, "init_work")
+	if out, err := exec.Command("git", "clone", bareRepo, initWork).CombinedOutput(); err != nil {
+		t.Fatalf("clone bare failed: %v (%s)", err, string(out))
+	}
+	for _, args := range [][]string{
+		{"-C", initWork, "checkout", "-B", "master"},
+		{"-C", initWork, "config", "user.name", "init-user"},
+		{"-C", initWork, "config", "user.email", "init@local"},
+	} {
+		_ = exec.Command("git", args...).Run()
+	}
+	origReadme := "# logccino-dac\nExisting README\n"
+	if err := os.WriteFile(filepath.Join(initWork, "README.md"), []byte(origReadme), 0644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"-C", initWork, "add", "README.md"},
+		{"-C", initWork, "commit", "-m", "Initial commit"},
+		{"-C", initWork, "push", "-u", "origin", "master"},
+	} {
+		if out, err := exec.Command("git", args...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(out))
+		}
+	}
+
+	seedDir := filepath.Join(tmp, "seed_rules")
+	_ = os.MkdirAll(filepath.Join(seedDir, "detections", "dlp"), 0755)
+	_ = os.MkdirAll(filepath.Join(seedDir, "contracts"), 0755)
+	_ = os.WriteFile(filepath.Join(seedDir, "README.md"), []byte("# overwritten? NO\n"), 0644)
+	_ = os.WriteFile(filepath.Join(seedDir, "detections", "dlp", "DET-DLP-0001.yaml"), []byte("id: DET-DLP-0001\n"), 0644)
+	_ = os.WriteFile(filepath.Join(seedDir, "contracts", "rule.schema.json"), []byte(`{"type":"object"}`), 0644)
+
+	localCheckout := filepath.Join(tmp, "rules_checkout")
+	mgr := New(Config{
+		Enabled:   true,
+		RepoURL:   bareRepo,
+		Branch:    "master",
+		LocalPath: localCheckout,
+		SeedPath:  seedDir,
+		AutoPush:  true,
+	})
+
+	if err := mgr.EnsureRepo(ctx); err != nil {
+		t.Fatalf("EnsureRepo failed: %v", err)
+	}
+	gotReadme, _ := os.ReadFile(filepath.Join(localCheckout, "README.md"))
+	if string(gotReadme) != origReadme {
+		t.Fatalf("existing README.md was overwritten: got %q, want %q", string(gotReadme), origReadme)
+	}
+	if _, err := os.Stat(filepath.Join(localCheckout, "detections", "dlp", "DET-DLP-0001.yaml")); err != nil {
+		t.Fatalf("missing seeded rule: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(localCheckout, "contracts", "rule.schema.json")); err != nil {
+		t.Fatalf("missing seeded schema: %v", err)
+	}
+
+	c1 := mgr.CurrentCommit(ctx)
+	if err := mgr.EnsureRepo(ctx); err != nil {
+		t.Fatalf("second EnsureRepo failed: %v", err)
+	}
+	c2 := mgr.CurrentCommit(ctx)
+	if c1 != c2 {
+		t.Fatalf("EnsureRepo should be idempotent, commit changed %q -> %q", c1, c2)
+	}
+}

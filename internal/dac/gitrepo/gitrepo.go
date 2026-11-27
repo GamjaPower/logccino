@@ -167,7 +167,11 @@ func (m *Manager) EnsureRepo(ctx context.Context) error {
 	}
 
 	if _, err := os.Stat(filepath.Join(m.cfg.LocalPath, ".git")); err == nil {
-		_, err := m.runGit(ctx, m.cfg.LocalPath, false, "remote", "set-url", "origin", m.cfg.RepoURL)
+		if _, err := m.runGit(ctx, m.cfg.LocalPath, false, "remote", "set-url", "origin", m.cfg.RepoURL); err != nil {
+			m.setLastErr(err)
+			return err
+		}
+		err := m.seedMissingStructure(ctx)
 		m.setLastErr(err)
 		return err
 	}
@@ -181,6 +185,10 @@ func (m *Manager) EnsureRepo(ctx context.Context) error {
 	_, cloneErr := m.runGit(ctx, "", true, "clone", "--branch", m.cfg.Branch, "--single-branch", m.cfg.RepoURL, m.cfg.LocalPath)
 	if cloneErr == nil {
 		m.configureIdentity(ctx, m.cfg.LocalPath)
+		if err := m.seedMissingStructure(ctx); err != nil {
+			m.setLastErr(err)
+			return err
+		}
 		m.mu.Lock()
 		m.lastSync = time.Now()
 		m.lastErr = ""
@@ -218,10 +226,49 @@ func (m *Manager) EnsureRepo(ctx context.Context) error {
 	}
 	m.configureIdentity(ctx, m.cfg.LocalPath)
 	_, _ = m.runGit(ctx, m.cfg.LocalPath, false, "checkout", "-B", m.cfg.Branch)
+	if err := m.seedMissingStructure(ctx); err != nil {
+		m.setLastErr(err)
+		return err
+	}
 	m.mu.Lock()
 	m.lastSync = time.Now()
 	m.lastErr = ""
 	m.mu.Unlock()
+	return nil
+}
+
+// seedMissingStructure seeds detections/, contracts/, and profiles from SeedPath
+// when a remote repository already existed (e.g., initialized with README.md) without DaC directories.
+func (m *Manager) seedMissingStructure(ctx context.Context) error {
+	if m.cfg.SeedPath == "" {
+		return nil
+	}
+	_, detErr := os.Stat(filepath.Join(m.cfg.LocalPath, "detections"))
+	_, schemaErr := os.Stat(filepath.Join(m.cfg.LocalPath, "contracts", "rule.schema.json"))
+	if detErr == nil && schemaErr == nil {
+		return nil
+	}
+	info, err := os.Stat(m.cfg.SeedPath)
+	if err != nil || !info.IsDir() {
+		return nil
+	}
+	if err := copyDirExcluding(m.cfg.SeedPath, m.cfg.LocalPath, true); err != nil {
+		return fmt.Errorf("seed missing DaC structure failed: %w", err)
+	}
+	m.configureIdentity(ctx, m.cfg.LocalPath)
+	if _, err := m.runGit(ctx, m.cfg.LocalPath, false, "add", "-A"); err != nil {
+		return err
+	}
+	if st, _ := m.runGit(ctx, m.cfg.LocalPath, false, "status", "--porcelain"); strings.TrimSpace(st) != "" {
+		if _, err := m.runGit(ctx, m.cfg.LocalPath, false, "commit", "-m", "chore(dac): seed initial detection rules, profiles, and contracts"); err != nil {
+			return err
+		}
+		if m.cfg.AutoPush {
+			if _, err := m.runGit(ctx, m.cfg.LocalPath, true, "push", "-u", "origin", m.cfg.Branch); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -240,7 +287,7 @@ func (m *Manager) initAndSeedRepo(ctx context.Context) error {
 
 	if m.cfg.SeedPath != "" {
 		if info, err := os.Stat(m.cfg.SeedPath); err == nil && info.IsDir() {
-			if err := copyDirExcluding(m.cfg.SeedPath, m.cfg.LocalPath); err != nil {
+			if err := copyDirExcluding(m.cfg.SeedPath, m.cfg.LocalPath, false); err != nil {
 				return fmt.Errorf("seed rules copy failed: %w", err)
 			}
 		}
@@ -404,7 +451,7 @@ func (m *Manager) Status(ctx context.Context) RepoStatus {
 	return st
 }
 
-func copyDirExcluding(src, dst string) error {
+func copyDirExcluding(src, dst string, skipExisting bool) error {
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -423,6 +470,11 @@ func copyDirExcluding(src, dst string) error {
 		target := filepath.Join(dst, rel)
 		if info.IsDir() {
 			return os.MkdirAll(target, 0755)
+		}
+		if skipExisting {
+			if _, err := os.Stat(target); err == nil {
+				return nil
+			}
 		}
 		in, err := os.Open(path)
 		if err != nil {
