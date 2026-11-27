@@ -1,0 +1,52 @@
+services:
+  splunk:
+    image: ${SPLUNK_IMAGE:-splunk/splunk:latest}
+    platform: linux/amd64
+    container_name: splunk
+    hostname: splunk
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
+      - SPLUNK_HEC_TOKEN=${SPLUNK_HEC_TOKEN}
+    ports:
+      - "${SPLUNK_WEB_PORT:-8000}:8000"
+      - "${SPLUNK_MGMT_PORT:-8089}:8089"
+      - "${SPLUNK_HEC_PORT:-8088}:8088"
+      - "${SPLUNK_S2S_PORT:-9997}:9997"
+    volumes:
+      - splunk-var:/opt/splunk/var
+      - splunk-etc:/opt/splunk/etc
+      - ./splunk/apps/siem_agent:/opt/splunk/etc/apps/siem_agent
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -s -f https://127.0.0.1:8089/services/server/info -u admin:$${SPLUNK_PASSWORD} >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  siem-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: siem-agent
+    ports:
+      - "5090:5090"
+    env_file:
+      - .env
+    environment:
+      - SPLUNK_MGMT_URL=https://splunk:8089
+      - SPLUNK_HEC_URL=https://splunk:8088
+      - APP_LISTEN_ADDR=:5090
+    volumes:
+      - ./data:/app/data
+      - ./rules:/app/rules
+    depends_on:
+      splunk:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  splunk-var:
+  splunk-etc:

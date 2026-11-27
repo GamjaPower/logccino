@@ -1,22 +1,28 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-ENV/
+# Secrets
+.env
 *.env
+!.env.example
 
-# IDE / Editor
+# Binaries & Build
+bin/
+build/
+*.exe
+*.test
+*.out
+
+# Database & runtime data
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+splunk/apps/*/local/
+splunk/apps/*/metadata/local.meta
+
+# IDE & OS
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Logs & temp
-*.log
-.pytest_cache/

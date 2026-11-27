@@ -1,0 +1,9 @@
+.git
+.env
+*.env
+data/
+*.db
+build/
+bin/
+testdata/
+splunk/

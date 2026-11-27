@@ -1,0 +1,3 @@
+[]
+access = read : [ * ], write : [ admin, dac_deployer ]
+export = system

@@ -1,0 +1,8 @@
+host,ip,service,product,version,owner,env
+web-prod-01,10.0.10.11,web-gateway,nginx,1.24.0,infra-team,prod
+web-prod-02,10.0.10.12,web-gateway,nginx,1.24.0,infra-team,prod
+api-prod-01,10.0.10.21,payment-api,golang-internal,2.1.0,payment-team,prod
+auth-prod-01,10.0.10.31,auth-service,golang-internal,1.8.4,sec-team,prod
+corp-pc-0042,10.0.20.42,endpoint,windows-11,23H2,user-hong,corp
+corp-pc-0077,10.0.20.77,endpoint,windows-11,23H2,user-kim,corp
+corp-pc-0099,10.0.20.99,endpoint,windows-11,23H2,user-lee,corp

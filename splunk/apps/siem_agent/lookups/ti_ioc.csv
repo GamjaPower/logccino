@@ -1,0 +1,6 @@
+ioc_type,ioc_value,threat_type,confidence,description
+ip,198.51.100.42,c2,high,Known AI scanner and exploit distribution server
+ip,203.0.113.99,scanner,medium,Automated vulnerability scanner active IP
+domain,malicious-c2-node.net,c2,high,Domain associated with malicious payload download
+domain,convert-pdf-online-free.biz,untrusted_upload,high,Untrusted file conversion service leaking data
+hash,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,malware,high,Known trojanized payload hash

@@ -1,0 +1,8 @@
+domain,category,policy,corporate_terms,notes
+convert-pdf-online-free.biz,file_conversion,prohibited,no,공용 온라인 변환 사이트 이용 금지 (기밀 유출 위험)
+ilovepdf.com,file_conversion,request_justification,no,개인 계정 업로드 시 사유 소명 필요
+ads.google.com,marketing_platform,allowed,yes,마케팅 플랫폼 공식 비즈니스 계정 연동
+youtube.com,media_platform,allowed,yes,사내 공식 홍보 채널 업로드 승인 대상
+drive.google.com,cloud_storage,allowed,yes,Google Workspace 기업 계정 사용
+dropbox.com,cloud_storage,request_justification,no,개인 드롭박스 사용 금지 소명 필요
+pastebin.com,text_sharing,prohibited,no,외부 코드/텍스트 유출 금지
