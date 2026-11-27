@@ -373,6 +373,40 @@ type HECEvent struct {
 	Event      map[string]any `json:"event"`
 }
 
+// EnableHEC configures global HEC and creates a token input idempotently
+func (c *Client) EnableHEC(ctx context.Context, token string, indexes []string) error {
+	// Enable global HTTP
+	u := fmt.Sprintf("%s/servicesNS/nobody/siem_agent/data/inputs/http/http", c.BaseURL)
+	d1 := url.Values{}
+	d1.Set("disabled", "0")
+	d1.Set("enableSSL", "1")
+	d1.Set("port", "8088")
+	d1.Set("output_mode", "json")
+	req, _ := http.NewRequestWithContext(ctx, "POST", u, strings.NewReader(d1.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyAuth(req)
+	_, _ = c.HTTPClient.Do(req)
+
+	// Create HEC token input
+	u2 := fmt.Sprintf("%s/servicesNS/nobody/siem_agent/data/inputs/http", c.BaseURL)
+	d2 := url.Values{}
+	d2.Set("name", "siem_agent_hec")
+	d2.Set("token", token)
+	d2.Set("index", "soc_alerts")
+	d2.Set("indexes", strings.Join(indexes, ","))
+	d2.Set("disabled", "0")
+	d2.Set("output_mode", "json")
+	req2, _ := http.NewRequestWithContext(ctx, "POST", u2, strings.NewReader(d2.Encode()))
+	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyAuth(req2)
+	resp2, err := c.HTTPClient.Do(req2)
+	if err != nil {
+		return err
+	}
+	defer resp2.Body.Close()
+	return nil
+}
+
 // SendHEC batches and sends events to Splunk HTTP Event Collector
 func (c *Client) SendHEC(ctx context.Context, events []HECEvent) error {
 	u := fmt.Sprintf("%s/services/collector/event", c.HECURL)

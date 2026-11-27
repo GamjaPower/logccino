@@ -1,0 +1,20 @@
+index: ids
+sourcetype: ids:alert
+time_field: _time
+description: Intrusion Detection System signature alerts
+fields:
+    - name: action
+      type: string
+      description: IDS action (alert, drop)
+    - name: dest_ip
+      type: string
+      description: Target victim IP
+    - name: severity
+      type: string
+      description: Signature severity (high, medium, low)
+    - name: signature
+      type: string
+      description: Snort/Suricata rule signature name
+    - name: src_ip
+      type: string
+      description: Attacker source IP

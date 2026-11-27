@@ -1,0 +1,53 @@
+index: fw
+sourcetype: fw:traffic
+time_field: _time
+description: Firewall network traffic connection logs
+fields:
+    - name: action
+      type: string
+      description: Firewall rule action (allow, drop, reject)
+    - name: bytes_out
+      type: number
+      description: Bytes transmitted outbound
+    - name: dest_ip
+      type: string
+      description: Destination IP address
+    - name: dest_port
+      type: number
+      description: Destination port
+    - name: event_id
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: eventtype
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: host
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: index
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: linecount
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: punct
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: source
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: sourcetype
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: splunk_server
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: splunk_server_group
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: src_ip
+      type: string
+      description: Source IP address
+    - name: vendor_product
+      type: string
+      description: Palo Alto Networks Firewall

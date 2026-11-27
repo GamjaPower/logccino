@@ -1,0 +1,23 @@
+index: proxy
+sourcetype: proxy:http
+time_field: _time
+description: Outbound web proxy traffic logs
+fields:
+    - name: bytes_out
+      type: number
+      description: Sent bytes
+    - name: destination_domain
+      type: string
+      description: Host domain of request
+    - name: src_ip
+      type: string
+      description: Internal client IP
+    - name: status
+      type: number
+      description: HTTP response code
+    - name: url
+      type: string
+      description: Full destination URL
+    - name: user
+      type: string
+      description: Authenticated proxy user

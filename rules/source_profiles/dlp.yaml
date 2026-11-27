@@ -1,0 +1,56 @@
+index: dlp
+sourcetype: dlp:event
+time_field: _time
+description: Data Loss Prevention document exfiltration and upload logs
+fields:
+    - name: action
+      type: string
+      description: DLP policy action (alert, block)
+    - name: bytes_out
+      type: number
+      description: Size of transferred file
+    - name: channel
+      type: string
+      description: Upload channel (web, usb, email)
+    - name: destination_domain
+      type: string
+      description: Target upload domain
+    - name: event_id
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: eventtype
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: file_hash
+      type: string
+      description: SHA256 of file
+    - name: file_name
+      type: string
+      description: Name of file uploaded
+    - name: host
+      type: string
+      description: Source endpoint hostname
+    - name: index
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: linecount
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: punct
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: source
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: sourcetype
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: splunk_server
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: splunk_server_group
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: user
+      type: string
+      description: Corporate username uploading file

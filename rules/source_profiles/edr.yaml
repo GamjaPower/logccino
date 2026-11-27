@@ -1,0 +1,62 @@
+index: edr
+sourcetype: edr:process
+time_field: _time
+description: Endpoint Detection and Response process execution and network logs
+fields:
+    - name: action
+      type: string
+      description: EDR policy action (allowed, blocked, alert)
+    - name: command_line
+      type: string
+      description: Full command line arguments
+    - name: event_id
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: eventtype
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: host
+      type: string
+      description: Hostname of endpoint
+    - name: index
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: linecount
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: parent_process
+      type: string
+      description: Parent process name
+    - name: process
+      type: string
+      description: Name of executable process
+    - name: process_hash
+      type: string
+      description: SHA256 hash of binary
+    - name: process_path
+      type: string
+      description: Full filesystem path of process
+    - name: punct
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: signature_status
+      type: string
+      description: Digital signature verification status (valid, invalid, unsigned)
+    - name: source
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: sourcetype
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: splunk_server
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: splunk_server_group
+      type: string
+      description: Discovered via Splunk fieldsummary
+    - name: user
+      type: string
+      description: Executing user account
+    - name: vendor_product
+      type: string
+      description: CrowdStrike Falcon / Defender for Endpoint

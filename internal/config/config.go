@@ -68,7 +68,7 @@ func Load(envPath string) (*Config, error) {
 		SplunkMgmtPort:           getEnv("SPLUNK_MGMT_PORT", "8089"),
 		SplunkHECPort:            getEnv("SPLUNK_HEC_PORT", "8088"),
 		SplunkS2SPort:            getEnv("SPLUNK_S2S_PORT", "9997"),
-		SplunkHECToken:           getEnv("SPLUNK_HEC_TOKEN", ""),
+		SplunkHECToken:           getEnv("SPLUNK_HEC_TOKEN", "11111111-2222-3333-4444-555555555555"),
 		SplunkMgmtURL:            getEnv("SPLUNK_MGMT_URL", "https://localhost:8089"),
 		SplunkHECURL:             getEnv("SPLUNK_HEC_URL", "https://localhost:8088"),
 		SplunkCAFile:             getEnv("SPLUNK_CA_FILE", ""),

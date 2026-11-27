@@ -1,0 +1,16 @@
+{"event_id":"S1-1","scenario":"S1","index":"waf","expected_verdict":"true_positive","entity_value":"198.51.100.42","description":"AI Agent vulnerability scanner probing sensitive paths"}
+{"event_id":"S1-2","scenario":"S1","index":"waf","expected_verdict":"true_positive","entity_value":"198.51.100.42","description":"AI Agent vulnerability scanner probing sensitive paths"}
+{"event_id":"S1-3","scenario":"S1","index":"waf","expected_verdict":"true_positive","entity_value":"198.51.100.42","description":"AI Agent vulnerability scanner probing sensitive paths"}
+{"event_id":"S1-4","scenario":"S1","index":"waf","expected_verdict":"true_positive","entity_value":"198.51.100.42","description":"AI Agent vulnerability scanner probing sensitive paths"}
+{"event_id":"S1-5","scenario":"S1","index":"waf","expected_verdict":"true_positive","entity_value":"198.51.100.42","description":"AI Agent vulnerability scanner probing sensitive paths"}
+{"event_id":"S2-1","scenario":"S2","index":"waf","expected_verdict":"false_positive","entity_value":"10.0.99.10","description":"Legitimate internal health check probe"}
+{"event_id":"S2-2","scenario":"S2","index":"waf","expected_verdict":"false_positive","entity_value":"10.0.99.10","description":"Legitimate internal health check probe"}
+{"event_id":"S2-3","scenario":"S2","index":"waf","expected_verdict":"false_positive","entity_value":"10.0.99.10","description":"Legitimate internal health check probe"}
+{"event_id":"S2-4","scenario":"S2","index":"waf","expected_verdict":"false_positive","entity_value":"10.0.99.10","description":"Legitimate internal health check probe"}
+{"event_id":"S2-5","scenario":"S2","index":"waf","expected_verdict":"false_positive","entity_value":"10.0.99.10","description":"Legitimate internal health check probe"}
+{"event_id":"S3-1","scenario":"S3","index":"edr","expected_verdict":"false_positive","entity_value":"corp-pc-0042","description":"Benign encoded PowerShell spawned by signed developer tool"}
+{"event_id":"S4-EDR-1","scenario":"S4","index":"edr","expected_verdict":"true_positive","entity_value":"corp-pc-0077","description":"Malicious encoded PowerShell with C2 external connection and invalid signature"}
+{"event_id":"S5-1","scenario":"S5","index":"edr","expected_verdict":"false_positive","entity_value":"corp-pc-0099","description":"ExecutionPolicy Bypass used legitimately by IT admin backup script"}
+{"event_id":"S6-1","scenario":"S6","index":"dlp","expected_verdict":"request_justification","entity_value":"user-hong","description":"Financial document uploaded to untrusted public conversion site"}
+{"event_id":"S6-2","scenario":"S6","index":"dlp","expected_verdict":"no_issue","entity_value":"user-lee","description":"Marketing video uploaded to approved corporate ad platform"}
+{"event_id":"S7-1","scenario":"S7","index":"waf","expected_verdict":"true_positive","entity_value":"203.0.113.155","description":"Prompt injection payload embedded within URI parameter"}

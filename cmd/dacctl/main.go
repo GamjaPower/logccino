@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"logccino/internal/config"
+	"logccino/internal/dac/profile"
 	"logccino/internal/llm"
 	"logccino/internal/splunk"
 )
@@ -93,6 +95,10 @@ func runBootstrap(cfg *config.Config) {
 		fmt.Printf("==> User '%s' ready.\n", cfg.SplunkDeployUser)
 	}
 
+	// 3. HEC 활성화 및 토큰 입력 멱등 생성
+	fmt.Println("==> Configuring Splunk HEC input and token...")
+	_ = adminCli.EnableHEC(ctx, cfg.SplunkHECToken, []string{"edr", "waf", "ids", "fw", "proxy", "dlp", "svc", "soc_alerts"})
+
 	fmt.Println("==> [Bootstrap] 완료.")
 }
 
@@ -168,7 +174,37 @@ func runLLMCheck(cfg *config.Config) {
 }
 
 func runProfile(cfg *config.Config, args []string) {
-	fmt.Println("==> [profile] Sourcing profile refresh implementation (Phase 2)")
+	if len(args) == 0 || args[0] != "refresh" {
+		fmt.Println("Usage: dacctl profile refresh [index]")
+		return
+	}
+
+	cli := splunk.NewClient(splunk.Config{
+		BaseURL:            cfg.SplunkMgmtURL,
+		Username:           cfg.SplunkROUser,
+		Password:           cfg.SplunkROPassword,
+		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	profilesDir := filepath.Join(cfg.RulesRepoPath, "source_profiles")
+	indexes := []string{"waf", "edr", "fw", "svc", "dlp", "proxy", "ids"}
+	if len(args) >= 2 {
+		indexes = []string{args[1]}
+	}
+
+	fmt.Printf("==> [profile refresh] Querying Splunk fieldsummary for indexes: %v...\n", indexes)
+	for _, idx := range indexes {
+		report, err := profile.RefreshIndex(ctx, cli, profilesDir, idx)
+		if err != nil {
+			fmt.Printf("[WARN] %s: %v\n", idx, err)
+		} else {
+			fmt.Printf("==> %s\n", report)
+		}
+	}
+	fmt.Println("==> [profile refresh] 완료.")
 }
 
 func runValidate(cfg *config.Config, args []string) {
