@@ -51,6 +51,7 @@ build:
 	$(GO) build -v -o bin/server ./cmd/server
 	$(GO) build -v -o bin/dacctl ./cmd/dacctl
 	$(GO) build -v -o bin/loggen ./cmd/loggen
+	$(GO) build -v -o bin/loaddata ./cmd/loaddata
 	$(GO) build -v -o bin/eval ./cmd/eval
 
 verify:

@@ -76,6 +76,7 @@ func main() {
 		HECURL:             cfg.SplunkHECURL,
 		Username:           cfg.SplunkROUser,
 		Password:           cfg.SplunkROPassword,
+		Token:              cfg.SplunkToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 

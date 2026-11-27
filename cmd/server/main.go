@@ -67,6 +67,7 @@ func main() {
 		HECURL:             cfg.SplunkHECURL,
 		Username:           cfg.SplunkROUser,
 		Password:           cfg.SplunkROPassword,
+		Token:              cfg.SplunkToken,
 		HECToken:           cfg.SplunkHECToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 		Timeout:            15 * time.Second,

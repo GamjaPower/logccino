@@ -20,6 +20,7 @@ type Client struct {
 	HECURL     string
 	Username   string
 	Password   string
+	Token      string
 	HECToken   string
 	SessionKey string
 	HTTPClient *http.Client
@@ -30,6 +31,7 @@ type Config struct {
 	HECURL             string
 	Username           string
 	Password           string
+	Token              string
 	HECToken           string
 	InsecureSkipVerify bool
 	Timeout            time.Duration
@@ -51,6 +53,7 @@ func NewClient(cfg Config) *Client {
 		HECURL:   strings.TrimRight(cfg.HECURL, "/"),
 		Username: cfg.Username,
 		Password: cfg.Password,
+		Token:    cfg.Token,
 		HECToken: cfg.HECToken,
 		HTTPClient: &http.Client{
 			Transport: tr,
@@ -61,6 +64,9 @@ func NewClient(cfg Config) *Client {
 
 // Login obtains a session key via /services/auth/login
 func (c *Client) Login(ctx context.Context) error {
+	if c.Token != "" {
+		return nil
+	}
 	loginURL := fmt.Sprintf("%s/services/auth/login", c.BaseURL)
 	data := url.Values{}
 	data.Set("username", c.Username)
@@ -106,7 +112,9 @@ func (c *Client) Login(ctx context.Context) error {
 }
 
 func (c *Client) applyAuth(req *http.Request) {
-	if c.SessionKey != "" {
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	} else if c.SessionKey != "" {
 		req.Header.Set("Authorization", "Splunk "+c.SessionKey)
 	} else if c.Username != "" {
 		req.SetBasicAuth(c.Username, c.Password)
@@ -438,4 +446,80 @@ func (c *Client) SendHEC(ctx context.Context, events []HECEvent) error {
 		return fmt.Errorf("HEC failed with status %d: %s", resp.StatusCode, string(b))
 	}
 	return nil
+}
+
+// CreateIndex creates a Splunk index idempotently
+func (c *Client) CreateIndex(ctx context.Context, name string) error {
+	u := fmt.Sprintf("%s/services/data/indexes", c.BaseURL)
+	data := url.Values{}
+	data.Set("name", name)
+	data.Set("output_mode", "json")
+
+	req, err := http.NewRequestWithContext(ctx, "POST", u, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyAuth(req)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		return nil
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if strings.Contains(string(body), "already exists") {
+		return nil
+	}
+	return fmt.Errorf("create index %s failed with status %d: %s", name, resp.StatusCode, string(body))
+}
+
+// IngestRaw ingests raw log string into Splunk index with sourcetype via /services/receivers/simple
+func (c *Client) IngestRaw(ctx context.Context, index, sourcetype, rawData string) error {
+	u := fmt.Sprintf("%s/services/receivers/simple?index=%s&sourcetype=%s", c.BaseURL, url.QueryEscape(index), url.QueryEscape(sourcetype))
+	req, err := http.NewRequestWithContext(ctx, "POST", u, strings.NewReader(rawData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "text/plain")
+	c.applyAuth(req)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return nil
+	}
+	body, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("ingest failed with status %d: %s", resp.StatusCode, string(body))
+}
+
+// IngestReader streams reader data into Splunk index with sourcetype
+func (c *Client) IngestReader(ctx context.Context, index, sourcetype string, r io.Reader) error {
+	u := fmt.Sprintf("%s/services/receivers/simple?index=%s&sourcetype=%s", c.BaseURL, url.QueryEscape(index), url.QueryEscape(sourcetype))
+	req, err := http.NewRequestWithContext(ctx, "POST", u, r)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "text/plain")
+	c.applyAuth(req)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return nil
+	}
+	body, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("ingest reader failed with status %d: %s", resp.StatusCode, string(body))
 }

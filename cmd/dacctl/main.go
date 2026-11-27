@@ -80,6 +80,7 @@ func runBootstrap(cfg *config.Config) {
 		BaseURL:            cfg.SplunkMgmtURL,
 		Username:           "admin",
 		Password:           cfg.SplunkPassword,
+		Token:              cfg.SplunkToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 
@@ -190,6 +191,7 @@ func runProfile(cfg *config.Config, args []string) {
 		BaseURL:            cfg.SplunkMgmtURL,
 		Username:           cfg.SplunkROUser,
 		Password:           cfg.SplunkROPassword,
+		Token:              cfg.SplunkToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 
@@ -219,6 +221,7 @@ func getValidator(cfg *config.Config) *validator.Validator {
 		BaseURL:            cfg.SplunkMgmtURL,
 		Username:           cfg.SplunkROUser,
 		Password:           cfg.SplunkROPassword,
+		Token:              cfg.SplunkToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 	schemaPath := filepath.Join(cfg.RulesRepoPath, "contracts", "rule.schema.json")
@@ -313,6 +316,7 @@ func runPlan(cfg *config.Config, args []string) {
 		BaseURL:            cfg.SplunkMgmtURL,
 		Username:           cfg.SplunkDeployUser,
 		Password:           cfg.SplunkDeployPassword,
+		Token:              cfg.SplunkToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 	d := drift.New(cli, "siem_agent")
@@ -347,6 +351,7 @@ func runDeploy(cfg *config.Config, args []string) {
 		BaseURL:            cfg.SplunkMgmtURL,
 		Username:           cfg.SplunkDeployUser,
 		Password:           cfg.SplunkDeployPassword,
+		Token:              cfg.SplunkToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 	v := getValidator(cfg)
@@ -381,6 +386,7 @@ func runDrift(cfg *config.Config, args []string) {
 		BaseURL:            cfg.SplunkMgmtURL,
 		Username:           cfg.SplunkDeployUser,
 		Password:           cfg.SplunkDeployPassword,
+		Token:              cfg.SplunkToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})
 	d := drift.New(cli, "siem_agent")

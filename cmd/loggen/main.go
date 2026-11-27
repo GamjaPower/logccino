@@ -48,6 +48,7 @@ func main() {
 	cli := splunk.NewClient(splunk.Config{
 		BaseURL:            cfg.SplunkMgmtURL,
 		HECURL:             cfg.SplunkHECURL,
+		Token:              cfg.SplunkToken,
 		HECToken:           cfg.SplunkHECToken,
 		InsecureSkipVerify: cfg.SplunkInsecureSkipVerify,
 	})

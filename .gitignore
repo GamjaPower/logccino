@@ -16,6 +16,8 @@ data/
 *.db-journal
 *.db-wal
 *.db-shm
+testdata/downloads/
+testdata/exfiltration/*.log
 splunk/apps/*/local/
 splunk/apps/*/metadata/local.meta
 

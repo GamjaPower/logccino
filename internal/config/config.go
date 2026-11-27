@@ -10,6 +10,7 @@ import (
 type Config struct {
 	SplunkImage              string
 	SplunkPassword           string
+	SplunkToken              string
 	SplunkWebPort            string
 	SplunkMgmtPort           string
 	SplunkHECPort            string
@@ -64,6 +65,7 @@ func Load(envPath string) (*Config, error) {
 	cfg := &Config{
 		SplunkImage:              getEnv("SPLUNK_IMAGE", "splunk/splunk:latest"),
 		SplunkPassword:           getEnv("SPLUNK_PASSWORD", ""),
+		SplunkToken:              getEnv("SPLUNK_TOKEN", ""),
 		SplunkWebPort:            getEnv("SPLUNK_WEB_PORT", "8000"),
 		SplunkMgmtPort:           getEnv("SPLUNK_MGMT_PORT", "8089"),
 		SplunkHECPort:            getEnv("SPLUNK_HEC_PORT", "8088"),
@@ -177,7 +179,7 @@ func loadEnvFile(path string) {
 }
 
 func (c *Config) PrintSummary() {
-	fmt.Printf("[Config] Splunk URL: %s (User: %s, VerifyTLS: %v)\n", c.SplunkMgmtURL, c.SplunkROUser, !c.SplunkInsecureSkipVerify)
+	fmt.Printf("[Config] Splunk URL: %s (User: %s, TokenSet: %v, VerifyTLS: %v)\n", c.SplunkMgmtURL, c.SplunkROUser, c.SplunkToken != "", !c.SplunkInsecureSkipVerify)
 	fmt.Printf("[Config] Listen Addr: %s\n", c.AppListenAddr)
 	fmt.Printf("[Config] LLM Provider: %s (Default Model: %s, API Key: %s)\n", c.LLMProvider, c.DefaultModel, MaskSecret(c.OpenAIAPIKey))
 	fmt.Printf("[Config] SQLite DB: %s\n", c.SQLitePath)
