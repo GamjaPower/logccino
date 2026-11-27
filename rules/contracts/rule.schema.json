@@ -51,7 +51,7 @@
       }
     },
     "matrices": {
-      "type": "array",
+      "type": ["array", "null"],
       "items": { "type": "string" }
     },
     "data_sources": {
@@ -82,10 +82,10 @@
       }
     },
     "suppression": {
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
-        "fields": { "type": "array", "items": { "type": "string" } },
-        "period": { "type": "string" }
+        "fields": { "type": ["array", "null"], "items": { "type": "string" } },
+        "period": { "type": ["string", "null"] }
       }
     },
     "entity_fields": {
@@ -93,14 +93,14 @@
       "items": { "type": "string" }
     },
     "false_positives": {
-      "type": "array",
+      "type": ["array", "null"],
       "items": { "type": "string" }
     },
     "exceptions_ref": {
       "type": ["string", "null"]
     },
     "triage_hints": {
-      "type": "array",
+      "type": ["array", "null"],
       "items": { "type": "string" }
     },
     "tests": {
