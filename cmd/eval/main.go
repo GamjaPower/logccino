@@ -21,6 +21,7 @@ import (
 	"logccino/internal/store"
 	"logccino/internal/triage/collector"
 	"logccino/internal/triage/judge"
+	"logccino/internal/triage/rebuttal"
 )
 
 type LabelEntry struct {
@@ -82,6 +83,11 @@ func main() {
 
 	col := collector.New(spCli, cfg.RulesRepoPath, filepath.Join("splunk", "apps", "siem_agent", "lookups"))
 	tEngine := judge.New(llmCli, spCli, col, st)
+	rebModel := cfg.LLMRebuttalModel
+	if rebModel == "" {
+		rebModel = cfg.DefaultModel
+	}
+	tEngine.SetRebuttalAgent(rebuttal.New(llmCli, rebModel))
 	dlpEngine := dlp.New(llmCli, spCli, filepath.Join(cfg.RulesRepoPath, "exceptions", "dlp_policy.yaml"), filepath.Join("splunk", "apps", "siem_agent", "lookups"))
 
 	// 1. 레이블 데이터 로드

@@ -29,6 +29,7 @@ import (
 	"logccino/internal/store"
 	"logccino/internal/triage/collector"
 	"logccino/internal/triage/judge"
+	"logccino/internal/triage/rebuttal"
 )
 
 type Server struct {
@@ -90,6 +91,11 @@ func main() {
 
 	col := collector.New(spClient, cfg.RulesRepoPath, filepath.Join("splunk", "apps", "siem_agent", "lookups"))
 	tEngine := judge.New(llmCli, spClient, col, st)
+	rebModel := cfg.LLMRebuttalModel
+	if rebModel == "" {
+		rebModel = cfg.DefaultModel
+	}
+	tEngine.SetRebuttalAgent(rebuttal.New(llmCli, rebModel))
 
 	schemaPath := filepath.Join(cfg.RulesRepoPath, "contracts", "rule.schema.json")
 	profilesDir := filepath.Join(cfg.RulesRepoPath, "source_profiles")

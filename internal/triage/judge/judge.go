@@ -11,6 +11,7 @@ import (
 	"logccino/internal/store"
 	"logccino/internal/triage/collector"
 	"logccino/internal/triage/evidence"
+	"logccino/internal/triage/rebuttal"
 	"logccino/internal/triage/report"
 	"logccino/internal/triage/verifier"
 )
@@ -20,6 +21,7 @@ type TriageEngine struct {
 	splunkCli *splunk.Client
 	collector *collector.Collector
 	store     *store.Store
+	rebuttal  *rebuttal.Agent
 }
 
 func New(cli llm.Client, splCli *splunk.Client, col *collector.Collector, st *store.Store) *TriageEngine {
@@ -28,7 +30,13 @@ func New(cli llm.Client, splCli *splunk.Client, col *collector.Collector, st *st
 		splunkCli: splCli,
 		collector: col,
 		store:     st,
+		rebuttal:  rebuttal.New(cli, ""),
 	}
+}
+
+// SetRebuttalAgent allows configuring a specialized Rebuttal Agent (with separate model)
+func (te *TriageEngine) SetRebuttalAgent(agent *rebuttal.Agent) {
+	te.rebuttal = agent
 }
 
 func (te *TriageEngine) AnalyzeTicket(ctx context.Context, ticketID int, alertID, ruleID, entityType, entityValue string, alertData map[string]any) (*verifier.VerdictPayload, string, error) {
@@ -116,30 +124,14 @@ Output JSON schema:
 		}
 	}
 
-	// 3. Rebuttal 단계 (종결성 판정일 경우만 실행)
-	if payload.Verdict == "false_positive" || payload.Verdict == "benign_true_positive" {
-		rebuttalPrompt := `You are an Adversarial Security Reviewer playing Devil's Advocate.
-If this were an actual attack or compromise, what did the analysis miss?
-Output JSON: {"has_substantial_rebuttal": true|false, "rebuttal_reason": "..."}`
-		rebResp, _, err := te.llmCli.Chat(ctx, []llm.Message{
-			{Role: "system", Content: rebuttalPrompt},
-			{Role: "user", Content: cleanJSON},
-		}, nil, nil)
-		if err == nil {
-			var rebResult struct {
-				HasSubstantialRebuttal bool   `json:"has_substantial_rebuttal"`
-				RebuttalReason         string `json:"rebuttal_reason"`
-			}
-			rJSON := strings.TrimSpace(rebResp.Content)
-			if strings.HasPrefix(rJSON, "```") {
-				rJSON = strings.TrimPrefix(rJSON, "```json")
-				rJSON = strings.TrimPrefix(rJSON, "```")
-				rJSON = strings.TrimSuffix(rJSON, "```")
-				rJSON = strings.TrimSpace(rJSON)
-			}
-			if err := json.Unmarshal([]byte(rJSON), &rebResult); err == nil && rebResult.HasSubstantialRebuttal {
-				payload.Verdict = "needs_more_info"
-				payload.UncheckedItems = append(payload.UncheckedItems, "Rebuttal: "+rebResult.RebuttalReason)
+	// 3. Rebuttal 단계 (Multi-Agent Adversarial Counter-Examiner)
+	if te.rebuttal != nil && (payload.Verdict == "false_positive" || payload.Verdict == "benign_true_positive") {
+		rebRes, err := te.rebuttal.Examine(ctx, &payload, est)
+		if err == nil && rebRes != nil && rebRes.HasSubstantialRebuttal {
+			payload.Verdict = "needs_more_info"
+			payload.UncheckedItems = append(payload.UncheckedItems, "Adversarial Rebuttal: "+rebRes.RebuttalReason)
+			for _, m := range rebRes.MissedIndicators {
+				payload.UncheckedItems = append(payload.UncheckedItems, "Overlooked Indicator: "+m)
 			}
 		}
 	}
