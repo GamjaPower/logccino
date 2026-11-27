@@ -5,8 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"logccino/internal/llm"
+	"logccino/internal/llm/redact"
+	"logccino/internal/prompts"
+	"logccino/internal/store"
 	"logccino/internal/triage/evidence"
 	"logccino/internal/triage/verifier"
 )
@@ -23,17 +27,41 @@ type Result struct {
 // Its role is specifically to challenge closing verdicts (false_positive, benign_true_positive)
 // to prevent catastrophic false negatives and stealthy attack evasions.
 type Agent struct {
-	llmCli llm.Client
-	model  string
+	llmCli       llm.Client
+	model        string
+	store        *store.Store
+	redactFields []string
 }
 
 // New creates a new Rebuttal Agent
 func New(cli llm.Client, model string) *Agent {
 	return &Agent{
-		llmCli: cli,
-		model:  model,
+		llmCli:       cli,
+		model:        model,
+		redactFields: []string{"user", "src_user", "email", "dest_host", "src_host", "host"},
 	}
 }
+
+// SetStore attaches SQLite store for LLM call auditing.
+func (a *Agent) SetStore(st *store.Store) {
+	a.store = st
+}
+
+// SetRedactFields overrides the configured sensitive fields for PII masking.
+func (a *Agent) SetRedactFields(fields []string) {
+	if len(fields) > 0 {
+		a.redactFields = fields
+	}
+}
+
+const defaultRebuttalFallback = `You are an Adversarial Security Reviewer (Devil's Advocate) in a Multi-Agent SOC.
+Challenge the primary analyst's benign verdict and output valid JSON:
+{
+  "has_substantial_rebuttal": true|false,
+  "rebuttal_reason": "Detailed justification",
+  "missed_indicators": [],
+  "recommended_actions": []
+}`
 
 // Examine challenges the primary Judge's verdict if it is a closing verdict
 func (a *Agent) Examine(ctx context.Context, payload *verifier.VerdictPayload, est *evidence.Store) (*Result, error) {
@@ -45,24 +73,7 @@ func (a *Agent) Examine(ctx context.Context, payload *verifier.VerdictPayload, e
 		}, nil
 	}
 
-	systemPrompt := `You are an elite Adversarial Security Reviewer (Devil's Advocate) in a Multi-Agent SOC.
-Your mission is to rigorously challenge the primary analyst's verdict and protect the organization from false negatives.
-
-CRITICAL INSTRUCTIONS:
-1. Assume the primary analyst may have been deceived by attacker evasion (e.g. living-off-the-land binaries, disguised user-agents, spoofed parent processes, legitimate tool abuse).
-2. Ask: "If this were an actual advanced attack, breach, or exfiltration, what subtle anomaly was overlooked?"
-3. Look for:
-   - Unverified assumptions (e.g. "signed developer tool" but was it executing unauthorized network downloads?)
-   - Empty vs Unchecked evidence (did queries return 0 rows because logs don't exist, or because the query was too narrow?)
-   - Timing anomalies, unusual off-hours activity, or covert channels.
-4. Return strictly valid JSON:
-{
-  "has_substantial_rebuttal": true|false,
-  "rebuttal_reason": "Detailed justification of what was missed or could be malicious",
-  "missed_indicators": ["e.g. External network connection attempted from dev host"],
-  "recommended_actions": ["e.g. inspect endpoint network connections", "escalate"]
-}`
-
+	systemPrompt, promptVer := prompts.Load("rebuttal_v1.md", defaultRebuttalFallback)
 	judgeSummary, _ := json.MarshalIndent(payload, "", "  ")
 
 	var evBuilder strings.Builder
@@ -71,7 +82,7 @@ CRITICAL INSTRUCTIONS:
 			it.ID, it.Status, it.RowCount, it.Query, it.SummaryJSON))
 	}
 
-	userMsg := fmt.Sprintf(`PRIMARY JUDGE'S VERDICT:
+	rawUserMsg := fmt.Sprintf(`PRIMARY JUDGE'S VERDICT:
 %s
 
 PRE-COLLECTED EVIDENCE:
@@ -82,9 +93,12 @@ PRE-COLLECTED EVIDENCE:
 Evaluate whether there are reasonable adversarial grounds to contest this %s verdict.`,
 		string(judgeSummary), evBuilder.String(), payload.Verdict)
 
+	red := redact.New()
+	redactedUserMsg, appliedFields := red.RedactText(rawUserMsg, a.redactFields)
+
 	messages := []llm.Message{
 		{Role: "system", Content: systemPrompt},
-		{Role: "user", Content: userMsg},
+		{Role: "user", Content: redactedUserMsg},
 	}
 
 	schema := &llm.JSONSchema{
@@ -106,12 +120,26 @@ Evaluate whether there are reasonable adversarial grounds to contest this %s ver
 		cli = a.llmCli.WithModel(a.model)
 	}
 
-	resp, _, err := cli.Chat(ctx, messages, nil, schema)
+	start := time.Now()
+	resp, usage, err := cli.Chat(ctx, messages, nil, schema)
+	latencyMs := int(time.Since(start).Milliseconds())
+	if a.store != nil {
+		status := "ok"
+		if err != nil {
+			status = "error"
+		}
+		_ = a.store.RecordLLMCall(
+			est.TicketID(), "rebuttal", cli.GetModel(), "chat_completions", promptVer,
+			redact.InputHash(redactedUserMsg), strings.Join(appliedFields, ","),
+			usage.PromptTokens, usage.CompletionTokens, latencyMs, 0, status,
+		)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("rebuttal LLM call failed: %w", err)
 	}
 
-	cleanJSON := strings.TrimSpace(resp.Content)
+	restoredContent := red.Restore(resp.Content)
+	cleanJSON := strings.TrimSpace(restoredContent)
 	if strings.HasPrefix(cleanJSON, "```") {
 		cleanJSON = strings.TrimPrefix(cleanJSON, "```json")
 		cleanJSON = strings.TrimPrefix(cleanJSON, "```")

@@ -12,6 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"logccino/internal/llm"
+	"logccino/internal/llm/redact"
+	"logccino/internal/prompts"
 	"logccino/internal/splunk"
 	"logccino/internal/triage/evidence"
 	"logccino/internal/triage/report"
@@ -105,13 +107,16 @@ func (a *Analyzer) Analyze(ctx context.Context, ticketID int, dlpEvent map[strin
 			it.ID, it.Status, it.Query, it.SummaryJSON))
 	}
 
-	userMsg := fmt.Sprintf(`<DATA>
+	rawUserMsg := fmt.Sprintf(`<DATA>
 %s
 </DATA>
 Analyze this DLP exfiltration event against the central policy and domain rules.
 Determine verdict: no_issue, request_justification, or escalate.`, evSummary.String())
 
-	systemPrompt := `You are a Data Loss Prevention (DLP) Triage Analyst AI.
+	red := redact.New()
+	userMsg, _ := red.RedactText(rawUserMsg, nil)
+
+	fallbackPrompt := `You are a Data Loss Prevention (DLP) Triage Analyst AI.
 Conform strictly to JSON:
 {
   "verdict": "no_issue" | "request_justification" | "escalate",
@@ -123,6 +128,7 @@ Conform strictly to JSON:
   "proposed_actions": ["request_user_justification" | "escalate"],
   "tuning_suggestion": ""
 }`
+	systemPrompt, _ := prompts.Load("dlp_judge_v1.md", fallbackPrompt)
 
 	resp, _, err := a.llmCli.Chat(ctx, []llm.Message{
 		{Role: "system", Content: systemPrompt},
@@ -134,7 +140,7 @@ Conform strictly to JSON:
 	}
 
 	var payload verifier.VerdictPayload
-	cleanJSON := strings.TrimSpace(resp.Content)
+	cleanJSON := strings.TrimSpace(red.Restore(resp.Content))
 	if strings.HasPrefix(cleanJSON, "```") {
 		cleanJSON = strings.TrimPrefix(cleanJSON, "```json")
 		cleanJSON = strings.TrimPrefix(cleanJSON, "```")

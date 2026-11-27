@@ -76,30 +76,18 @@ func (c *Collector) Collect(ctx context.Context, est *evidence.Store, ruleID, en
 		est.Add("rule_context", "static", evidence.StatusEmpty, nil)
 	}
 
-	// E3: 엔티티 기준 ±15분 관련 이벤트
-	if c.splunkCli != nil && entityValue != "" {
-		spl := fmt.Sprintf(`search index=* %s | head 20`, entityValue)
-		rows, err := c.splunkCli.Export(ctx, spl, "-15m", "+15m", 20)
-		if err != nil {
-			est.Add(spl, "-15m~+15m", evidence.StatusError, nil)
-		} else if len(rows) == 0 {
-			est.Add(spl, "-15m~+15m", evidence.StatusEmpty, nil)
-		} else {
-			est.Add(spl, "-15m~+15m", evidence.StatusOk, rows)
-		}
+	safeEntity := escapeSPLValue(entityValue)
+
+	// E3: 엔티티 기준 ±15분 관련 이벤트 (허용된 보안 인덱스 명시)
+	if c.splunkCli != nil && safeEntity != "" {
+		spl := fmt.Sprintf(`search (index=waf OR index=edr OR index=dlp OR index=proxy OR index=svc OR index=fw) "%s" | head 20`, safeEntity)
+		c.queryAndRecord(ctx, est, spl, "-15m", "+15m", "-15m~+15m", 20)
 	}
 
 	// E4: WAF/웹 공격 엔티티(src_ip)의 경우 svc 인덱스 서비스 도달 여부
-	if c.splunkCli != nil && entityType == "src_ip" && entityValue != "" {
-		spl := fmt.Sprintf(`search index=svc src_ip="%s" status>=200 status<300 | head 10`, entityValue)
-		rows, err := c.splunkCli.Export(ctx, spl, "-1h", "now", 10)
-		if err != nil {
-			est.Add(spl, "-1h~now", evidence.StatusError, nil)
-		} else if len(rows) == 0 {
-			est.Add(spl, "-1h~now", evidence.StatusEmpty, nil)
-		} else {
-			est.Add(spl, "-1h~now", evidence.StatusOk, rows)
-		}
+	if c.splunkCli != nil && entityType == "src_ip" && safeEntity != "" {
+		spl := fmt.Sprintf(`search index=svc src_ip="%s" status>=200 status<300 | head 10`, safeEntity)
+		c.queryAndRecord(ctx, est, spl, "-1h", "now", "-1h~now", 10)
 	}
 
 	// E5: DLP 및 정보유출 특화 증거 수집 (user 엔티티 또는 DLP 규칙)
@@ -109,35 +97,22 @@ func (c *Collector) Collect(ctx context.Context, est *evidence.Store, ruleID, en
 		destDomain = d
 	}
 
-	if isDLP && c.splunkCli != nil && entityValue != "" {
+	if isDLP && c.splunkCli != nil && safeEntity != "" {
 		// DLP 이벤트 조회
-		dlpSPL := fmt.Sprintf(`search index=dlp user="%s" | head 10`, entityValue)
-		if dlpRows, err := c.splunkCli.Export(ctx, dlpSPL, "-24h", "now", 10); err == nil && len(dlpRows) > 0 {
-			est.Add(dlpSPL, "-24h~now", evidence.StatusOk, dlpRows)
-			if destDomain == "" {
-				if dom, ok := dlpRows[0]["destination_domain"].(string); ok {
-					destDomain = dom
-				}
+		dlpSPL := fmt.Sprintf(`search index=dlp user="%s" | head 10`, safeEntity)
+		if dlpRows := c.queryAndRecord(ctx, est, dlpSPL, "-24h", "now", "-24h~now", 10); len(dlpRows) > 0 && destDomain == "" {
+			if dom, ok := dlpRows[0]["destination_domain"].(string); ok {
+				destDomain = dom
 			}
-		} else {
-			est.Add(dlpSPL, "-24h~now", evidence.StatusEmpty, nil)
 		}
 
 		// 프록시 네트워크 트래픽 조회
-		proxySPL := fmt.Sprintf(`search index=proxy user="%s" | head 10`, entityValue)
-		if proxyRows, err := c.splunkCli.Export(ctx, proxySPL, "-24h", "now", 10); err == nil && len(proxyRows) > 0 {
-			est.Add(proxySPL, "-24h~now", evidence.StatusOk, proxyRows)
-		} else {
-			est.Add(proxySPL, "-24h~now", evidence.StatusEmpty, nil)
-		}
+		proxySPL := fmt.Sprintf(`search index=proxy user="%s" | head 10`, safeEntity)
+		c.queryAndRecord(ctx, est, proxySPL, "-24h", "now", "-24h~now", 10)
 
 		// 엔드포인트 EDR 의심 활동 조회 (압축, 파워셸 등)
-		edrSPL := fmt.Sprintf(`search index=edr user="%s" | head 10`, entityValue)
-		if edrRows, err := c.splunkCli.Export(ctx, edrSPL, "-24h", "now", 10); err == nil && len(edrRows) > 0 {
-			est.Add(edrSPL, "-24h~now", evidence.StatusOk, edrRows)
-		} else {
-			est.Add(edrSPL, "-24h~now", evidence.StatusEmpty, nil)
-		}
+		edrSPL := fmt.Sprintf(`search index=edr user="%s" | head 10`, safeEntity)
+		c.queryAndRecord(ctx, est, edrSPL, "-24h", "now", "-24h~now", 10)
 	}
 
 	// E6: 도메인 정책 룩업 (domain_policy.csv)
@@ -194,6 +169,35 @@ func (c *Collector) Collect(ctx context.Context, est *evidence.Store, ruleID, en
 	}
 
 	return nil
+}
+
+func (c *Collector) queryAndRecord(ctx context.Context, est *evidence.Store, spl, earliest, latest, label string, limit int) []map[string]any {
+	rows, err := c.splunkCli.Export(ctx, spl, earliest, latest, limit)
+	if err != nil {
+		// AGENTS.md §2.3: 조회 실패·타임아웃·권한 오류는 StatusEmpty와 엄격히 구분한다.
+		est.Add(spl, label, evidence.StatusError, nil)
+		return nil
+	}
+	if len(rows) == 0 {
+		est.Add(spl, label, evidence.StatusEmpty, nil)
+		return nil
+	}
+	est.Add(spl, label, evidence.StatusOk, rows)
+	return rows
+}
+
+func escapeSPLValue(s string) string {
+	s = strings.TrimSpace(s)
+	replacer := strings.NewReplacer(
+		"\r", "",
+		"\n", "",
+		"|", "",
+		";", "",
+		"`", "",
+		`\`, `\\`,
+		`"`, `\"`,
+	)
+	return replacer.Replace(s)
 }
 
 func (c *Collector) lookupCSV(filename, targetValue string) []map[string]any {

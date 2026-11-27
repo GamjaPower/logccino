@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -43,6 +44,7 @@ type Server struct {
 	llmCli          llm.Client
 	mux             *http.ServeMux
 	renderer        *web.Renderer
+	mu              sync.RWMutex
 	llmStatus       string
 	llmModel        string
 	triageEngine    *judge.TriageEngine
@@ -56,6 +58,33 @@ type Server struct {
 	exfilDetector   *dlp.ExfilDetector
 	gitMgr          *gitrepo.Manager
 	activeRulesPath string
+}
+
+func (s *Server) getLLMStatus() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.llmStatus
+}
+
+func (s *Server) setLLMStatus(st string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.llmStatus = st
+}
+
+func (s *Server) getActiveRulesPath() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.activeRulesPath == "" {
+		return s.cfg.RulesRepoPath
+	}
+	return s.activeRulesPath
+}
+
+func (s *Server) setActiveRulesPath(p string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.activeRulesPath = p
 }
 
 func main() {
@@ -129,11 +158,15 @@ func main() {
 	}
 	col := collector.New(spClient, activeRulesPath, filepath.Join("splunk", "apps", "siem_agent", "lookups"))
 	tEngine := judge.New(judgeCli, spClient, col, st)
+	tEngine.SetRedactFields(cfg.LLMRedactFields)
 	rebModel := cfg.LLMRebuttalModel
 	if rebModel == "" {
 		rebModel = cfg.DefaultModel
 	}
-	tEngine.SetRebuttalAgent(rebuttal.New(llmCli, rebModel))
+	rebAgent := rebuttal.New(llmCli, rebModel)
+	rebAgent.SetStore(st)
+	rebAgent.SetRedactFields(cfg.LLMRedactFields)
+	tEngine.SetRebuttalAgent(rebAgent)
 
 	schemaPath := filepath.Join(activeRulesPath, "contracts", "rule.schema.json")
 	profilesDir := filepath.Join(activeRulesPath, "source_profiles")
@@ -150,6 +183,8 @@ func main() {
 		asModel = cfg.DefaultModel
 	}
 	asEngine := assist.NewEngine(llmCli.WithModel(asModel), asModel)
+	asEngine.SetStore(st)
+	asEngine.SetRedactFields(cfg.LLMRedactFields)
 	covEngine := coverage.New(activeRulesPath, spClient)
 	drEngine := drift.New(spClient, "siem_agent")
 	dep := deployer.New(spClient, val, st, "siem_agent")
@@ -222,8 +257,11 @@ func main() {
 	go srv.startDACGitSyncLoop()
 
 	httpServer := &http.Server{
-		Addr:    cfg.AppListenAddr,
-		Handler: srv.mux,
+		Addr:              cfg.AppListenAddr,
+		Handler:           srv.mux,
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	go func() {
@@ -251,7 +289,7 @@ func (s *Server) checkLLMStatus() {
 	if err != nil {
 		log.Printf("[WARN] LLM capability check error: %v (Status: %s)", err, cap.Status)
 	}
-	s.llmStatus = cap.Status
+	s.setLLMStatus(cap.Status)
 }
 
 func (s *Server) startAlertPollerLoop() {
@@ -311,6 +349,7 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("GET /api/status", s.handleReadyz)
 	s.mux.HandleFunc("GET /api/tickets", s.handleTicketsAPI)
 	s.mux.HandleFunc("GET /api/metrics", s.handleMetricsAPI)
+	s.mux.HandleFunc("GET /api/llm/calls", s.handleLLMCallsAPI)
 	s.mux.HandleFunc("GET /api/testdata/status", s.handleTestDataStatus)
 	s.mux.HandleFunc("POST /api/testdata/generate", s.handleTestDataGenerate)
 	s.mux.HandleFunc("POST /api/dlp/scan", s.handleDLPScan)
@@ -337,8 +376,9 @@ func (s *Server) startDACGitSyncLoop() {
 		}
 		if res.Changed {
 			log.Printf("[DaC Git] Rules updated (%s -> %s). Deploying to Splunk...", res.CommitBefore, res.CommitAfter)
-			rulesDir := filepath.Join(s.activeRulesPath, "detections")
-			if _, depErr := s.deployer.Deploy(ctx, rulesDir, filepath.Join(s.activeRulesPath, "build"), "git-sync"); depErr != nil {
+			baseDir := s.getActiveRulesPath()
+			rulesDir := filepath.Join(baseDir, "detections")
+			if _, depErr := s.deployer.Deploy(ctx, rulesDir, filepath.Join(baseDir, "build"), "git-sync"); depErr != nil {
 				log.Printf("[DaC Git] Auto-deploy after sync error: %v", depErr)
 			}
 		}
@@ -374,10 +414,10 @@ func (s *Server) handleDACGitSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if s.gitMgr.IsConfigured() {
-		s.activeRulesPath = s.gitMgr.EffectivePath()
+		s.setActiveRulesPath(s.gitMgr.EffectivePath())
 	}
 
-	rulesDir := filepath.Join(s.activeRulesPath, "detections")
+	rulesDir := filepath.Join(s.getActiveRulesPath(), "detections")
 	depRes, depErr := s.deployer.Deploy(ctx, rulesDir, "build/compiled", "git-sync")
 	if depErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -463,7 +503,7 @@ func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 			"sqlite": "ok",
 			"splunk": "unreachable",
 			"llm": map[string]string{
-				"status": s.llmStatus,
+				"status": s.getLLMStatus(),
 				"model":  s.llmModel,
 			},
 		},
@@ -513,7 +553,7 @@ func (s *Server) basePageData(ctx context.Context, title, section, activeNav str
 		PendingTickets:  pendingTickets,
 		OpenCRs:         openCRs,
 		LLMModel:        s.llmModel,
-		LLMStatus:       s.llmStatus,
+		LLMStatus:       s.getLLMStatus(),
 		SplunkHealthy:   splunkOK,
 		SplunkURL:       s.cfg.SplunkMgmtURL,
 		ScheduleNextRun: nextRun,
@@ -522,10 +562,7 @@ func (s *Server) basePageData(ctx context.Context, title, section, activeNav str
 
 func (s *Server) loadRulesCatalog() []web.RuleItem {
 	var items []web.RuleItem
-	baseDir := s.activeRulesPath
-	if baseDir == "" {
-		baseDir = s.cfg.RulesRepoPath
-	}
+	baseDir := s.getActiveRulesPath()
 	detDir := filepath.Join(baseDir, "detections")
 	_ = filepath.Walk(detDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
@@ -878,11 +915,7 @@ func (s *Server) handleRuleDetailView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baseDir := s.activeRulesPath
-	if baseDir == "" {
-		baseDir = s.cfg.RulesRepoPath
-	}
-	rawBytes, _ := os.ReadFile(filepath.Join(baseDir, found.FilePath))
+	rawBytes, _ := os.ReadFile(filepath.Join(s.getActiveRulesPath(), found.FilePath))
 	pd := s.basePageData(r.Context(), found.Rule.ID, "Detection Engineering", "rules", []web.Breadcrumb{
 		{Label: "Detection Engineering"},
 		{Label: "탐지 규칙", Href: "/rules"},
@@ -971,11 +1004,7 @@ func (s *Server) handleChangeDeploy(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	baseDir := s.activeRulesPath
-	if baseDir == "" {
-		baseDir = s.cfg.RulesRepoPath
-	}
-	_, err := s.deployer.Deploy(r.Context(), filepath.Join(baseDir, "detections"), "build/compiled", "approver")
+	_, err := s.deployer.Deploy(r.Context(), filepath.Join(s.getActiveRulesPath(), "detections"), "build/compiled", "approver")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Deploy error: %v", err), http.StatusInternalServerError)
 		return
@@ -1134,7 +1163,7 @@ func (s *Server) handleRedTeamView(w http.ResponseWriter, r *http.Request) {
 		{Label: "Security Posture"},
 		{Label: "레드팀 제보 연계"},
 	})
-	pd.Data = web.RedTeamView{RulesRepoPath: s.activeRulesPath}
+	pd.Data = web.RedTeamView{RulesRepoPath: s.getActiveRulesPath()}
 	s.renderer.Render(w, "redteam", pd)
 }
 
@@ -1207,4 +1236,38 @@ func (s *Server) handleMetricsAPI(w http.ResponseWriter, r *http.Request) {
 	sum, _ := metrics.Collect(s.store.DB())
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(sum)
+}
+
+func (s *Server) handleLLMCallsAPI(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.store.DB().Query(`
+		SELECT id, ticket_id, role_name, model_name, prompt_version, input_hash, input_redacted_fields,
+		       tokens_prompt, tokens_completion, latency_ms, status, created_at
+		FROM llm_calls ORDER BY id DESC LIMIT 50
+	`)
+	calls := make([]map[string]any, 0)
+	if err == nil && rows != nil {
+		defer rows.Close()
+		for rows.Next() {
+			var id, tID, pTok, cTok, lat int
+			var role, model, pVer, hash, fields, st string
+			var created time.Time
+			_ = rows.Scan(&id, &tID, &role, &model, &pVer, &hash, &fields, &pTok, &cTok, &lat, &st, &created)
+			calls = append(calls, map[string]any{
+				"id":                    id,
+				"ticket_id":             tID,
+				"role_name":             role,
+				"model_name":            model,
+				"prompt_version":        pVer,
+				"input_hash":            hash,
+				"input_redacted_fields": fields,
+				"tokens_prompt":         pTok,
+				"tokens_completion":     cTok,
+				"latency_ms":            lat,
+				"status":                st,
+				"created_at":            created.Format(time.RFC3339),
+			})
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(calls)
 }

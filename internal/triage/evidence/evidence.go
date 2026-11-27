@@ -40,6 +40,10 @@ func NewStore(ticketID int) *Store {
 	}
 }
 
+func (s *Store) TicketID() int {
+	return s.ticketID
+}
+
 func (s *Store) Add(query, timeRange string, status Status, rawRows []map[string]any) *Item {
 	s.mu.Lock()
 	defer s.mu.Unlock()

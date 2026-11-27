@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"logccino/internal/splunk"
@@ -56,7 +57,9 @@ type Poller struct {
 	splunkCli     *splunk.Client
 	store         *store.Store
 	triageEngine  *judge.TriageEngine
+	mu            sync.Mutex
 	lastIndexTime int64
+	inFlight      map[int]bool
 }
 
 func NewPoller(cli *splunk.Client, st *store.Store, engine *judge.TriageEngine) *Poller {
@@ -64,12 +67,17 @@ func NewPoller(cli *splunk.Client, st *store.Store, engine *judge.TriageEngine) 
 		splunkCli:    cli,
 		store:        st,
 		triageEngine: engine,
+		inFlight:     make(map[int]bool),
 	}
 }
 
 // PollOnce polls soc_alerts index for new alerts
 func (p *Poller) PollOnce(ctx context.Context) (int, error) {
-	spl := fmt.Sprintf(`search index=soc_alerts _indextime>%d | sort 0 _indextime | head 50`, p.lastIndexTime)
+	p.mu.Lock()
+	since := p.lastIndexTime
+	p.mu.Unlock()
+
+	spl := fmt.Sprintf(`search index=soc_alerts _indextime>%d | sort 0 _indextime | head 50`, since)
 	rows, err := p.splunkCli.Export(ctx, spl, "-24h", "now", 50)
 	if err != nil {
 		return 0, err
@@ -79,8 +87,12 @@ func (p *Poller) PollOnce(ctx context.Context) (int, error) {
 	for _, row := range rows {
 		// _indextime 갱신
 		if itStr, ok := row["_indextime"].(string); ok {
-			if it, err := strconv.ParseInt(itStr, 10, 64); err == nil && it > p.lastIndexTime {
-				p.lastIndexTime = it
+			if it, err := strconv.ParseInt(itStr, 10, 64); err == nil {
+				p.mu.Lock()
+				if it > p.lastIndexTime {
+					p.lastIndexTime = it
+				}
+				p.mu.Unlock()
 			}
 		}
 
@@ -123,11 +135,24 @@ func (p *Poller) PollOnce(ctx context.Context) (int, error) {
 			newTickets++
 		}
 
-		log.Printf("[Poller] Created new ticket #%d for alert %s (Rule: %s, Entity: %s)\n", ticketID, alertID, ruleID, entityValue)
-
-		// 비동기로 트리아지 분석 실행
+		// 비동기로 트리아지 분석 실행 (동일 티켓 중복 실행 방지)
 		if p.triageEngine != nil {
+			p.mu.Lock()
+			if p.inFlight[ticketID] {
+				p.mu.Unlock()
+				continue
+			}
+			p.inFlight[ticketID] = true
+			p.mu.Unlock()
+
+			log.Printf("[Poller] Created/queued ticket #%d for alert %s (Rule: %s, Entity: %s)\n", ticketID, alertID, ruleID, entityValue)
+
 			go func(tID int, aID, rID, eType, eVal string, rData map[string]any) {
+				defer func() {
+					p.mu.Lock()
+					delete(p.inFlight, tID)
+					p.mu.Unlock()
+				}()
 				tCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 				defer cancel()
 				_, _, err := p.triageEngine.AnalyzeTicket(tCtx, tID, aID, rID, eType, eVal, rData)

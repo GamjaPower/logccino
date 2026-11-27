@@ -17,5 +17,6 @@ Output JSON:
 {
   "has_substantial_rebuttal": true | false,
   "rebuttal_reason": "Specific threat scenario or overlooked data",
-  "recommended_verdict": "needs_more_info" | "false_positive" | "benign_true_positive"
+  "missed_indicators": ["e.g. External network connection attempted from dev host"],
+  "recommended_actions": ["e.g. inspect endpoint network connections", "escalate"]
 }
