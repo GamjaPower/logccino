@@ -1,0 +1,25 @@
+version: 1
+policy_name: Corporate DLP Exfiltration Evaluation Policy
+rules:
+  - category: file_conversion
+    domains:
+      - convert-pdf-online-free.biz
+      - ilovepdf.com
+    action_default: request_justification
+    condition: "Any financial, audit, credential, or source code file uploaded to public conversion services requires mandatory user justification."
+  - category: marketing_platform
+    domains:
+      - ads.google.com
+      - youtube.com
+    action_default: no_issue
+    condition: "Marketing materials uploaded to approved company marketing channels are permitted."
+  - category: cloud_storage
+    domains:
+      - drive.google.com
+    action_default: no_issue
+    condition: "Corporate Google Workspace accounts are permitted."
+  - category: text_sharing
+    domains:
+      - pastebin.com
+    action_default: escalate
+    condition: "Uploading internal corporate data to public paste sites is strictly prohibited and must be escalated immediately."
