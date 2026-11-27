@@ -1,0 +1,67 @@
+{{define "content"}}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">AI Rule Maker (Detection Engineering Studio)</h1>
+    <p class="page-subtitle">자연어 탐지 의도를 입력하면 LLM이 소스 프로파일과 Splunk 파서를 통과하는 DaC 규칙과 AI 리뷰를 자동 생성합니다</p>
+  </div>
+  <div class="page-actions">
+    <a href="/changes" class="btn btn-secondary">변경 요청(CR) 목록</a>
+  </div>
+</div>
+
+<div class="grid-detail">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">탐지 의도 명세 (Detection Intent Prompt)</h2>
+        <div class="card-subtitle">예시 시나리오를 선택하거나 직접 탐지 시나리오를 입력하세요</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="form-label">빠른 예시 채우기</div>
+      <div class="chip-row">
+        <button type="button" class="chip-btn" data-fill-target="intent-input" data-fill-value="사내 사용자가 비인가 외부 파일 변환 사이트나 개인 클라우드(Dropbox, Pastebin 등)로 1MB 이상의 민감 문서를 업로드하는 정보유출 행위를 탐지해 줘.">DLP 비인가 반출 탐지</button>
+        <button type="button" class="chip-btn" data-fill-target="intent-input" data-fill-value="외부 AI 에이전트 스캐너가 WAF 민감 경로(/.env, /.git/config, /.aws/credentials)를 2회 이상 탐색하는 행위를 탐지해 줘.">WAF 민감 경로 스캐닝</button>
+        <button type="button" class="chip-btn" data-fill-target="intent-input" data-fill-value="엔드포인트에서 winword.exe 등 오피스 프로세스가 인코딩된 PowerShell(-enc)을 실행하는 악성 행위를 탐지해 줘.">EDR 오피스-PowerShell</button>
+      </div>
+
+      <form method="POST" action="/rulemaker/generate" onsubmit="var b=this.querySelector('button[type=submit]');b.disabled=true;b.textContent='AI 규칙 생성 및 검증 중...';">
+        <div class="form-group">
+          <label class="form-label" for="intent-input">탐지 시나리오 상세 설명</label>
+          <textarea id="intent-input" name="intent" class="form-control" rows="6" required placeholder="탐지하려는 위협 행위, 대상 데이터소스(dlp, proxy, waf, edr 등), 임계치 및 오탐 배제 조건을 구체적으로 기술하세요."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>AI 규칙 초안 생성 및 검증 루프 시작</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <aside class="sticky-rail">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">자동 검증·복구 파이프라인</h2></div>
+      <div class="card-body">
+        <div class="kv-list">
+          <div class="kv-row" style="flex-direction:column;align-items:flex-start;gap:3px;">
+            <strong style="font-size:12.5px;">1. Source Profile Alignment</strong>
+            <span class="text-secondary" style="font-size:12px;">실제 Splunk 인덱스 스키마에 존재하는 필드만 사용하도록 제한합니다.</span>
+          </div>
+          <div class="kv-row" style="flex-direction:column;align-items:flex-start;gap:3px;">
+            <strong style="font-size:12.5px;">2. JSON Schema &amp; SPL Syntax Repair</strong>
+            <span class="text-secondary" style="font-size:12px;">Splunk REST 파서 검증 실패 시 LLM이 최대 3회 자동 복구합니다.</span>
+          </div>
+          <div class="kv-row" style="flex-direction:column;align-items:flex-start;gap:3px;">
+            <strong style="font-size:12.5px;">3. Adversarial Peer Review</strong>
+            <span class="text-secondary" style="font-size:12px;">리뷰 에이전트가 오탐 가능성과 탐지 회피 경로를 비평합니다.</span>
+          </div>
+          <div class="kv-row" style="flex-direction:column;align-items:flex-start;gap:3px;">
+            <strong style="font-size:12.5px;">4. Change Request (CR) Staging</strong>
+            <span class="text-secondary" style="font-size:12px;">인간의 승인 버튼 클릭 전까지는 운영 Splunk에 배포되지 않습니다.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+{{end}}

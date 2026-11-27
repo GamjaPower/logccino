@@ -1,0 +1,107 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">탐지 규칙 카탈로그 (Detection as Code)</h1>
+    <p class="page-subtitle">Git 저장소(`rules/detections/`)에서 자동 검증·컴파일되어 Splunk Saved Search로 배포된 전체 탐지 규칙</p>
+  </div>
+  <div class="page-actions">
+    <a href="/coverage" class="btn btn-secondary">커버리지 매트릭스</a>
+    <a href="/rulemaker" class="btn btn-primary">+ AI 규칙 생성</a>
+  </div>
+</div>
+
+<section class="kpi-grid">
+  <div class="card kpi-card">
+    <div class="kpi-label"><span>전체 탐지 규칙</span><span class="pill pill-info">DaC</span></div>
+    <div class="kpi-value">{{$d.TotalCount}}</div>
+    <div class="kpi-meta">Production 운영 중 <strong>{{$d.ProdCount}}</strong>개</div>
+  </div>
+  <div class="card kpi-card">
+    <div class="kpi-label"><span>정보유출 (DLP) 규칙</span><span class="pill pill-high">DLP</span></div>
+    <div class="kpi-value">{{$d.DLPCount}}</div>
+    <div class="kpi-meta">외부 반출 및 대용량 전송 탐지</div>
+  </div>
+  <div class="card kpi-card">
+    <div class="kpi-label"><span>웹/네트워크 규칙</span><span class="pill pill-medium">Web</span></div>
+    <div class="kpi-value">{{$d.WebCount}}</div>
+    <div class="kpi-meta">WAF 스캐너 및 침해 시도 탐지</div>
+  </div>
+  <div class="card kpi-card">
+    <div class="kpi-label"><span>형상 관리 방식</span><span class="pill pill-success">Synced</span></div>
+    <div class="kpi-value" style="font-size:18px;padding-top:4px;">YAML → SPL</div>
+    <div class="kpi-meta">Splunk REST 자동 배포 연동</div>
+  </div>
+</section>
+
+<div class="card">
+  <div class="toolbar" data-filter-table="rules-table">
+    <div class="toolbar-filters">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" data-filter-search placeholder="규칙 ID, 이름, MITRE 기법, 인덱스 검색...">
+      </div>
+      <select class="select-input" data-filter-attr="category" aria-label="Filter by Category">
+        <option value="all">카테고리: 전체</option>
+        {{range $d.Categories}}
+        <option value="{{.}}">{{upper .}}</option>
+        {{end}}
+      </select>
+      <select class="select-input" data-filter-attr="severity" aria-label="Filter by Severity">
+        <option value="all">심각도: 전체</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <span class="mono text-muted" style="font-size:12px;" data-filter-count></span>
+  </div>
+
+  <div class="table-wrap">
+    {{if $d.Rules}}
+    <table id="rules-table" class="data-table">
+      <thead>
+        <tr>
+          <th>규칙 ID</th>
+          <th>카테고리</th>
+          <th>규칙명 및 탐지 의도</th>
+          <th>심각도</th>
+          <th>상태</th>
+          <th>데이터소스</th>
+          <th>스케줄</th>
+          <th>MITRE</th>
+          <th style="text-align:right;">상세</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $d.Rules}}
+        <tr data-row data-category="{{.Category}}" data-severity="{{.Rule.Severity}}">
+          <td class="mono"><a href="/rules/{{.Rule.ID}}" style="font-weight:700;">{{.Rule.ID}}</a></td>
+          <td><span class="tag">{{upper .Category}}</span></td>
+          <td>
+            <div style="font-weight:600;"><a href="/rules/{{.Rule.ID}}" style="color:var(--text-primary);">{{.Rule.Name}}</a></div>
+            <div class="text-secondary" style="font-size:12px;max-width:400px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{.Rule.Intent}}</div>
+          </td>
+          <td><span class="pill {{sevClass .Rule.Severity}}"><span class="pill-dot"></span>{{upper .Rule.Severity}}</span></td>
+          <td><span class="pill {{statusClass .Rule.Status}}">{{statusLabel .Rule.Status}}</span></td>
+          <td>
+            {{range .Rule.DataSources}}<span class="tag">{{.Index}}</span> {{end}}
+          </td>
+          <td class="mono text-secondary" style="font-size:12px;">{{.Rule.Schedule.Cron}}</td>
+          <td>
+            {{range .Rule.Mitre.Attack}}<span class="tag">{{.}}</span> {{end}}
+          </td>
+          <td style="text-align:right;">
+            <a href="/rules/{{.Rule.ID}}" class="btn btn-secondary btn-sm">보기</a>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <div class="empty-state">등록된 DaC 규칙이 없습니다.</div>
+    {{end}}
+  </div>
+</div>
+{{end}}

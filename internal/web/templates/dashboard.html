@@ -1,0 +1,265 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">SOC 통합 보안 관제 대시보드</h1>
+    <p class="page-subtitle">Splunk Enterprise SIEM 실시간 경보 수집, 일일 DLP 정보유출 탐지 및 멀티 에이전트 AI 트리아지 현황</p>
+  </div>
+  <div class="page-actions">
+    <a href="/tickets" class="btn btn-secondary">티켓 관제 센터</a>
+    <button type="button" class="btn btn-primary" onclick="window.Logccino.runDailyPipeline()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span>일일 유출 탐지 파이프라인 실행</span>
+    </button>
+  </div>
+</div>
+
+<!-- KPI Summary Strip -->
+<section class="kpi-grid">
+  <div class="card kpi-card">
+    <div class="kpi-label">
+      <span>총 인시던트 티켓</span>
+      <span class="pill pill-info">Active</span>
+    </div>
+    <div class="kpi-value">{{$d.TotalTickets}}</div>
+    <div class="kpi-meta">
+      <span>검토 대기 <strong>{{$d.PendingCount}}</strong>건</span>
+      <span>·</span>
+      <span>조치 완료 <strong>{{$d.ResolvedCount}}</strong>건</span>
+    </div>
+  </div>
+
+  <div class="card kpi-card">
+    <div class="kpi-label">
+      <span>확정 위협 (True Positive)</span>
+      <span class="pill pill-critical">High Risk</span>
+    </div>
+    <div class="kpi-value">{{$d.TruePositiveCount}}</div>
+    <div class="kpi-meta">
+      <span>보완 조사 필요 <strong>{{$d.NeedsInfoCount}}</strong>건</span>
+      <span>·</span>
+      <span>전체의 {{percent $d.TruePositiveCount $d.TotalTickets}}%</span>
+    </div>
+  </div>
+
+  <div class="card kpi-card">
+    <div class="kpi-label">
+      <span>AI / 분석가 판정 일치율</span>
+      <span class="pill pill-success">Verified</span>
+    </div>
+    <div class="kpi-value">{{printf "%.1f" $d.ConcordanceRate}}%</div>
+    <div class="progress" style="margin-top:2px;">
+      <div class="progress-fill success" style="width: {{printf "%.0f" $d.ConcordanceRate}}%;"></div>
+    </div>
+  </div>
+
+  <div class="card kpi-card">
+    <div class="kpi-label">
+      <span>활성 DaC 탐지 규칙</span>
+      <span class="pill {{if eq $d.TotalDrifts 0}}pill-success{{else}}pill-warning{{end}}">{{if eq $d.TotalDrifts 0}}Synced{{else}}{{$d.TotalDrifts}} Drift{{end}}</span>
+    </div>
+    <div class="kpi-value">{{$d.ActiveRulesCount}}</div>
+    <div class="kpi-meta">
+      <span>누적 배포 <strong>{{$d.TotalDeployments}}</strong>회</span>
+      <span>·</span>
+      <span><a href="/rules">규칙 카탈로그 →</a></span>
+    </div>
+  </div>
+</section>
+
+<!-- Analytics & Daily DLP Pipeline Row -->
+<section class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">트리아지 판정 분포 (Verdict Breakdown)</h2>
+        <div class="card-subtitle">멀티 에이전트 (Judge · Rebuttal · Verifier) 분류 현황</div>
+      </div>
+      <a href="/tickets" class="btn btn-secondary btn-sm">전체 보기</a>
+    </div>
+    <div class="card-body">
+      {{if gt $d.TotalTickets 0}}
+      <div class="donut-layout">
+        <div class="donut-svg-wrap">
+          <svg viewBox="0 0 42 42" width="148" height="148" style="transform: rotate(-90deg);">
+            <circle cx="21" cy="21" r="15.9154943" fill="transparent" stroke="var(--border-subtle)" stroke-width="5"></circle>
+            {{range $d.VerdictBars}}
+              {{if gt .Count 0}}
+              <circle cx="21" cy="21" r="15.9154943" fill="transparent"
+                      stroke="{{.Color}}" stroke-width="5"
+                      stroke-dasharray="{{.DashArray}}"
+                      stroke-dashoffset="{{.DashOffset}}"></circle>
+              {{end}}
+            {{end}}
+          </svg>
+          <div class="donut-center">
+            <div class="donut-center-val">{{$d.TotalTickets}}</div>
+            <div class="donut-center-lbl">Total Tickets</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          {{range $d.VerdictBars}}
+          <div class="dist-row">
+            <div class="dist-row-head">
+              <span class="pill {{.PillClass}}"><span class="pill-dot"></span>{{.Label}}</span>
+              <span class="mono tabular"><strong>{{.Count}}</strong> <span class="text-muted">({{.Percent}}%)</span></span>
+            </div>
+            <div class="progress">
+              <div class="progress-fill" style="width:{{.Percent}}%; background:{{.Color}};"></div>
+            </div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+      {{else}}
+      <div class="empty-state">
+        <div class="empty-state-title">아직 수집된 인시던트 티켓이 없습니다</div>
+        <p>우측의 일일 정보유출 탐지 파이프라인을 실행해 데이터를 수집하고 분석을 시작하세요.</p>
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">일일 정보유출 탐지 파이프라인 (Daily DLP Pipeline)</h2>
+        <div class="card-subtitle">매일 {{$d.ScheduleTime}} ({{$d.Timezone}}) 자동 스케줄 · 비인가 업로드 및 대용량 유출 감시</div>
+      </div>
+      <span class="pill {{if $d.ScheduleEnabled}}pill-success{{else}}pill-neutral{{end}}">
+        <span class="pill-dot"></span>{{if $d.ScheduleEnabled}}Scheduled{{else}}Paused{{end}}
+      </span>
+    </div>
+    <div class="card-body">
+      <div class="pipeline-steps">
+        <div id="pipeline-step-1" class="step-card">
+          <div class="step-num">Stage 01</div>
+          <div class="step-title">일일 로그 적재 (Splunk HEC)</div>
+        </div>
+        <div id="pipeline-step-2" class="step-card">
+          <div class="step-num">Stage 02</div>
+          <div class="step-title">DLP / Proxy 유출 탐지</div>
+        </div>
+        <div id="pipeline-step-3" class="step-card">
+          <div class="step-num">Stage 03</div>
+          <div class="step-title">AI 멀티 에이전트 트리아지</div>
+        </div>
+      </div>
+
+      <div class="kv-list" style="margin: 14px 0;">
+        <div class="kv-row">
+          <span class="kv-key">다음 정기 실행 예정</span>
+          <span class="kv-val mono">{{if $d.NextRun}}{{$d.NextRun}}{{else}}미정{{end}}</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">최근 데이터 생성 이력</span>
+          <span class="kv-val mono">{{if $d.LastRun}}{{$d.LastRun}} ({{$d.LastEventsCount}} events){{else}}수동 실행 대기{{end}}</span>
+        </div>
+      </div>
+
+      <div id="pipeline-status-text" class="text-secondary" style="font-size:12.5px;margin-bottom:12px;">
+        수동 버튼으로 전체 일일 데이터 생성 및 정보유출 탐지 루프를 즉시 검증할 수 있습니다.
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="btn-run-pipeline" type="button" class="btn btn-primary" onclick="window.Logccino.runDailyPipeline()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>전체 파이프라인 즉시 실행</span>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="window.Logccino.runQuickDLPScan(this)">
+          <span>DLP 스캔만 실행</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Operational Tables & Infrastructure Row -->
+<section class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">최근 탐지 인시던트</h2>
+        <div class="card-subtitle">실시간 `soc_alerts` 폴링 및 AI 판정 결과</div>
+      </div>
+      <a href="/tickets" class="btn btn-secondary btn-sm">티켓 관제 →</a>
+    </div>
+    <div class="table-wrap">
+      {{if $d.RecentTickets}}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>티켓</th>
+            <th>규칙</th>
+            <th>엔티티</th>
+            <th>심각도</th>
+            <th>판정</th>
+            <th>신뢰도</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $d.RecentTickets}}
+          <tr>
+            <td class="mono"><a href="/tickets/{{.ID}}">#{{.ID}}</a></td>
+            <td>
+              <div style="font-weight:600;">{{.RuleName}}</div>
+              <div class="mono text-muted" style="font-size:11px;">{{.RuleID}}</div>
+            </td>
+            <td><span class="tag">{{.EntityValue}}</span></td>
+            <td><span class="pill {{sevClass .Severity}}"><span class="pill-dot"></span>{{.Severity}}</span></td>
+            <td><span class="pill {{verdictClass .Verdict}}">{{verdictLabel .Verdict}}</span></td>
+            <td>
+              <div class="confidence-cell">
+                <div class="progress"><div class="progress-fill" style="width:{{pct .Confidence}}%;"></div></div>
+                <span class="mono" style="font-size:11.5px;">{{pct .Confidence}}%</span>
+              </div>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <div class="empty-state">표시할 최근 인시던트가 없습니다.</div>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">인프라 및 멀티 에이전트 모델 아키텍처</h2>
+        <div class="card-subtitle">OpenAI HTTPS 연동 및 결정적 로컬 검증 엔진 구성</div>
+      </div>
+      <span class="pill pill-success"><span class="pill-dot"></span>Operational</span>
+    </div>
+    <div class="card-body">
+      <div class="kv-list">
+        <div class="kv-row">
+          <span class="kv-key">Splunk Management REST</span>
+          <span class="kv-val mono">{{.SplunkURL}}</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Judge Agent Model</span>
+          <span class="kv-val"><span class="tag">{{$d.JudgeModel}}</span></span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Adversarial Rebuttal Model</span>
+          <span class="kv-val"><span class="tag">{{$d.RebuttalModel}}</span></span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Rule Maker & Analyst Assist</span>
+          <span class="kv-val"><span class="tag">{{$d.RulemakerModel}}</span> / <span class="tag">{{$d.AssistModel}}</span></span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">SQLite State Store (WAL)</span>
+          <span class="kv-val mono">{{$d.SQLitePath}}</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Web Service Binding</span>
+          <span class="kv-val mono">0.0.0.0{{$d.ListenAddr}} (Public TCP)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{{end}}

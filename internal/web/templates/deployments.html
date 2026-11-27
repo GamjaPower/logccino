@@ -1,0 +1,67 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">배포 이력 및 감사 로그 (Deployments)</h1>
+    <p class="page-subtitle">Splunk Saved Search 배포, 사후 검증(Post-verification) 및 자동 롤백 실행 이력</p>
+  </div>
+  <div class="page-actions">
+    <a href="/drift" class="btn btn-secondary">드리프트 점검 →</a>
+  </div>
+</div>
+
+<section class="kpi-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+  <div class="card kpi-card">
+    <div class="kpi-label"><span>누적 배포 횟수</span><span class="pill pill-info">Audit</span></div>
+    <div class="kpi-value">{{$d.TotalCount}}</div>
+  </div>
+  <div class="card kpi-card">
+    <div class="kpi-label"><span>성공 (Success)</span><span class="pill pill-success">OK</span></div>
+    <div class="kpi-value">{{$d.SuccessCount}}</div>
+  </div>
+  <div class="card kpi-card">
+    <div class="kpi-label"><span>자동 롤백 (Rolled Back)</span><span class="pill {{if eq $d.RollbackCnt 0}}pill-neutral{{else}}pill-critical{{end}}">Safety</span></div>
+    <div class="kpi-value">{{$d.RollbackCnt}}</div>
+  </div>
+</section>
+
+<div class="card">
+  <div class="table-wrap">
+    {{if $d.Items}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>배포 ID</th>
+          <th>규칙 수</th>
+          <th>상태</th>
+          <th>배포 주체</th>
+          <th>실행 일시</th>
+          <th>실행 로그</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $d.Items}}
+        <tr>
+          <td class="mono" style="font-weight:600;">{{.DeploymentID}}</td>
+          <td class="mono tabular">{{.RulesCount}}</td>
+          <td><span class="pill {{statusClass .Status}}"><span class="pill-dot"></span>{{statusLabel .Status}}</span></td>
+          <td><span class="tag">{{.DeployedBy}}</span></td>
+          <td class="mono text-secondary" style="font-size:12px;">{{formatTime .CreatedAt}}</td>
+          <td>
+            {{if .Logs}}
+            <details>
+              <summary>로그 보기</summary>
+              <pre class="code-block" style="margin-top:8px;max-width:440px;font-size:11px;">{{prettyJSON .Logs}}</pre>
+            </details>
+            {{else}}<span class="text-muted">-</span>{{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <div class="empty-state">아직 기록된 배포 이력이 없습니다.</div>
+    {{end}}
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}} · Logccino Enterprise SOC</title>
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem("logccino-theme") === "light") {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+    <aside id="app-sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">Logccino</div>
+          <div class="brand-sub">Enterprise SOC</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group">
+          <div class="nav-group-label">Operations</div>
+          <a href="/" class="nav-item{{if eq .ActiveNav "dashboard"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            <span>관제 대시보드</span>
+          </a>
+          <a href="/tickets" class="nav-item{{if eq .ActiveNav "tickets"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            <span>인시던트 티켓</span>
+            {{if gt .PendingTickets 0}}<span class="nav-badge">{{.PendingTickets}}</span>{{end}}
+          </a>
+          <a href="/assist" class="nav-item{{if eq .ActiveNav "assist"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+            <span>분석가 보조 (Assist)</span>
+          </a>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-group-label">Detection Engineering</div>
+          <a href="/rules" class="nav-item{{if eq .ActiveNav "rules"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+            <span>탐지 규칙 (DaC)</span>
+          </a>
+          <a href="/rulemaker" class="nav-item{{if eq .ActiveNav "rulemaker"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>AI Rule Maker</span>
+          </a>
+          <a href="/changes" class="nav-item{{if eq .ActiveNav "changes"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" x2="6" y1="9" y2="21"/></svg>
+            <span>변경 요청 (CR)</span>
+            {{if gt .OpenCRs 0}}<span class="nav-badge">{{.OpenCRs}}</span>{{end}}
+          </a>
+          <a href="/deployments" class="nav-item{{if eq .ActiveNav "deployments"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+            <span>배포 이력</span>
+          </a>
+          <a href="/drift" class="nav-item{{if eq .ActiveNav "drift"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>형상 드리프트</span>
+          </a>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-group-label">Security Posture</div>
+          <a href="/coverage" class="nav-item{{if eq .ActiveNav "coverage"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+            <span>커버리지 매트릭스</span>
+          </a>
+          <a href="/redteam" class="nav-item{{if eq .ActiveNav "redteam"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            <span>레드팀 제보 연계</span>
+          </a>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-group-label">Administration</div>
+          <a href="/settings/prompts" class="nav-item{{if eq .ActiveNav "prompts"}} active{{end}}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>프롬프트 레지스트리</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-row">
+          <span>LLM Engine</span>
+          <span class="mono" style="color:var(--text-primary);font-weight:600;">{{.LLMModel}}</span>
+        </div>
+        <div class="sidebar-footer-row">
+          <span>Splunk SIEM</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">
+            <span class="status-dot {{if .SplunkHealthy}}ok{{else}}err{{end}}"></span>
+            <span>{{if .SplunkHealthy}}Connected{{else}}Degraded{{end}}</span>
+          </span>
+        </div>
+        <div class="sidebar-footer-row">
+          <span>Endpoint</span>
+          <span class="mono">TCP :5090</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="mobile-menu-btn" class="mobile-menu-btn" type="button" aria-label="Toggle Menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+          </button>
+          <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <a href="/">Logccino</a>
+            {{range .Breadcrumbs}}
+              <span>/</span>
+              {{if .Href}}
+                <a href="{{.Href}}">{{.Label}}</a>
+              {{else}}
+                <span class="crumb-current">{{.Label}}</span>
+              {{end}}
+            {{end}}
+          </nav>
+        </div>
+
+        <div class="topbar-right">
+          <div class="telemetry-pill hide-sm" title="Splunk Enterprise REST Status">
+            <span id="topbar-splunk-dot" class="status-dot {{if .SplunkHealthy}}ok{{else}}err{{end}}"></span>
+            <span id="topbar-splunk-text">{{if .SplunkHealthy}}Splunk Connected{{else}}Splunk Degraded{{end}}</span>
+          </div>
+          <div class="telemetry-pill hide-sm" title="OpenAI LLM Capability">
+            <span id="topbar-llm-dot" class="status-dot {{if eq .LLMStatus "ok"}}ok{{else}}warn{{end}}"></span>
+            <span id="topbar-llm-text">{{.LLMModel}} ({{.LLMStatus}})</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="window.Logccino.runQuickDLPScan(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>DLP 스캔</span>
+          </button>
+          <button id="theme-toggle-btn" class="icon-btn" type="button" title="Toggle Dark / Light Mode" aria-label="Toggle Theme">
+            <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <svg id="theme-icon-moon" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="page-container">
+        {{template "content" .}}
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

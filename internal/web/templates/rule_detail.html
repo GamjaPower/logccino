@@ -1,0 +1,109 @@
+{{define "content"}}
+{{$d := .Data}}
+{{$r := $d.Rule}}
+<div class="page-header">
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+      <span class="mono" style="font-weight:700;color:var(--accent);">{{$r.ID}}</span>
+      <span class="tag">v{{$r.Version}}</span>
+      <span class="tag">{{upper $d.Category}}</span>
+      <span class="pill {{sevClass $r.Severity}}"><span class="pill-dot"></span>{{upper $r.Severity}}</span>
+      <span class="pill {{statusClass $r.Status}}">{{statusLabel $r.Status}}</span>
+    </div>
+    <h1 class="page-title">{{$r.Name}}</h1>
+    <p class="page-subtitle">Owner: {{$r.Owner}} · Source Path: <span class="mono">{{$d.FilePath}}</span></p>
+  </div>
+  <div class="page-actions">
+    <a href="/rules" class="btn btn-secondary">← 규칙 목록</a>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <div>
+    <div style="font-weight:700;margin-bottom:2px;">탐지 의도 (Detection Intent)</div>
+    <div>{{$r.Intent}}</div>
+  </div>
+</div>
+
+<div class="grid-detail">
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">컴파일 대상 SPL 쿼리 (Search Logic)</h2>
+        <button type="button" class="btn btn-secondary btn-sm" data-copy="rule-spl-code">Copy SPL</button>
+      </div>
+      <div class="card-body">
+        <pre id="rule-spl-code" class="code-block">{{$r.Search}}</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">데이터소스 및 필수 필드 계약 (Data Source Contract)</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Splunk Index</th><th>필수 검증 필드 (Source Profile Verified)</th></tr>
+          </thead>
+          <tbody>
+            {{range $r.DataSources}}
+            <tr>
+              <td class="mono" style="font-weight:700;">{{.Index}}</td>
+              <td>{{range .RequiredFields}}<span class="tag">{{.}}</span> {{end}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">원본 YAML 정의</h2>
+        <button type="button" class="btn btn-secondary btn-sm" data-copy="rule-yaml-raw">Copy YAML</button>
+      </div>
+      <div class="card-body">
+        <pre id="rule-yaml-raw" class="code-block">{{$d.RawYAML}}</pre>
+      </div>
+    </div>
+  </div>
+
+  <aside class="sticky-rail">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">스케줄 및 억제 설정</h2></div>
+      <div class="card-body">
+        <div class="kv-list">
+          <div class="kv-row"><span class="kv-key">Cron Schedule</span><span class="kv-val mono">{{$r.Schedule.Cron}}</span></div>
+          <div class="kv-row"><span class="kv-key">Time Window</span><span class="kv-val mono">{{$r.Schedule.Earliest}} ~ {{$r.Schedule.Latest}}</span></div>
+          <div class="kv-row"><span class="kv-key">Entity Fields</span><span class="kv-val">{{range $r.EntityFields}}<span class="tag">{{.}}</span> {{end}}</span></div>
+          <div class="kv-row"><span class="kv-key">Suppression Period</span><span class="kv-val mono">{{if $r.Suppression.Period}}{{$r.Suppression.Period}}{{else}}None{{end}}</span></div>
+          <div class="kv-row"><span class="kv-key">Suppression Fields</span><span class="kv-val">{{range $r.Suppression.Fields}}<span class="tag">{{.}}</span> {{end}}</span></div>
+          {{if $r.ExceptionsRef}}
+          <div class="kv-row"><span class="kv-key">Exceptions Policy</span><span class="kv-val mono">{{$r.ExceptionsRef}}</span></div>
+          {{end}}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">트리아지 힌트 및 오탐 사유</h2></div>
+      <div class="card-body">
+        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Triage Hints</div>
+        {{if $r.TriageHints}}
+        <ul class="md-list" style="margin-bottom:14px;">
+          {{range $r.TriageHints}}<li>{{.}}</li>{{end}}
+        </ul>
+        {{else}}<p class="text-muted">등록된 힌트 없음</p>{{end}}
+
+        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Known False Positives</div>
+        {{if $r.FalsePositives}}
+        <ul class="md-list">
+          {{range $r.FalsePositives}}<li>{{.}}</li>{{end}}
+        </ul>
+        {{else}}<p class="text-muted">등록된 오탐 예외 없음</p>{{end}}
+      </div>
+    </div>
+  </aside>
+</div>
+{{end}}

@@ -1,0 +1,43 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">프롬프트 레지스트리 (Versioned Prompts)</h1>
+    <p class="page-subtitle">모든 AI 에이전트 역할의 시스템 프롬프트는 `prompts/` 디렉터리에서 버전 관리됩니다 (읽기 전용)</p>
+  </div>
+</div>
+
+{{if $d.Files}}
+<div class="card" data-tabs>
+  <div class="tabs-bar">
+    {{range $i, $f := $d.Files}}
+    <button type="button" class="tab-btn{{if eq $i 0}} active{{end}}" data-tab-target="prompt-{{$i}}">
+      {{$f.Name}}
+    </button>
+    {{end}}
+  </div>
+  {{range $i, $f := $d.Files}}
+  <div class="tab-panel{{if eq $i 0}} active{{end}}" data-tab-panel="prompt-{{$i}}">
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="mono" style="font-weight:700;">prompts/{{$f.Name}}</span>
+        {{if $f.Version}}<span class="pill pill-info">{{$f.Version}}</span>{{end}}
+        <span class="mono text-muted" style="font-size:12px;">{{$f.SizeBytes}} bytes</span>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" data-copy="prompt-content-{{$i}}">Copy Markdown</button>
+    </div>
+    <div class="card-body">
+      <pre id="prompt-content-{{$i}}" class="code-block">{{$f.Content}}</pre>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{else}}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state-title">프롬프트 파일을 찾을 수 없습니다</div>
+    <p>`prompts/` 경로에 버전 관리된 Markdown 파일이 있는지 확인하세요.</p>
+  </div>
+</div>
+{{end}}
+{{end}}

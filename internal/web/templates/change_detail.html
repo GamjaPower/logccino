@@ -1,0 +1,51 @@
+{{define "content"}}
+{{$d := .Data}}
+{{$c := $d.Item}}
+<div class="page-header">
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <span class="mono" style="font-weight:700;color:var(--accent);">{{$c.RequestID}}</span>
+      <span class="pill {{statusClass $c.Status}}"><span class="pill-dot"></span>{{statusLabel $c.Status}}</span>
+    </div>
+    <h1 class="page-title">{{$c.RuleName}} <span class="mono text-muted" style="font-size:15px;">({{$c.RuleID}})</span></h1>
+    <p class="page-subtitle">Author: <span class="tag">{{$c.Author}}</span> · Created: <span class="mono">{{formatTime $c.CreatedAt}}</span></p>
+  </div>
+  <div class="page-actions">
+    <a href="/changes" class="btn btn-secondary">← 목록으로</a>
+    <form method="POST" action="/changes/{{$c.RequestID}}/deploy" style="display:inline;">
+      <button type="submit" class="btn btn-success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>승인 및 Splunk 운영 배포</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="grid-detail">
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">제안된 탐지 규칙 YAML (Proposed Rule Specification)</h2>
+        <button type="button" class="btn btn-secondary btn-sm" data-copy="cr-diff-yaml">Copy YAML</button>
+      </div>
+      <div class="card-body">
+        <pre id="cr-diff-yaml" class="code-block">{{$c.DiffYAML}}</pre>
+      </div>
+    </div>
+  </div>
+
+  <aside class="sticky-rail">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">AI 피어 리뷰 비평 (Review Agent)</h2>
+          <div class="card-subtitle">오탐 가능성·예외 조건·SPL 안전성 자동 검토 결과</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <pre class="code-block" style="font-size:12px;">{{prettyJSON $c.ReviewJSON}}</pre>
+      </div>
+    </div>
+  </aside>
+</div>
+{{end}}

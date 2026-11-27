@@ -25,6 +25,7 @@ RUN apk add --no-cache ca-certificates tzdata curl && \
 
 COPY --from=builder /bin/server /app/server
 COPY --from=builder /bin/dacctl /app/dacctl
+COPY --from=builder /app/prompts /app/prompts
 
 EXPOSE 5090
 

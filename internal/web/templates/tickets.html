@@ -1,0 +1,119 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">인시던트 티켓 관제 센터</h1>
+    <p class="page-subtitle">Splunk 경보 기반 자동 증거 수집, 멀티 에이전트 판정 및 분석가 최종 조치 승인 대기열</p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn btn-primary" onclick="window.Logccino.runQuickDLPScan(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>정보유출 탐지 즉시 스캔</span>
+    </button>
+  </div>
+</div>
+
+<!-- Quick Status Filter Chips -->
+<div class="filter-pills">
+  <button type="button" class="filter-pill-btn active" data-quick-filter-target="tickets-table" data-quick-attr="status" data-quick-val="all">
+    <span>전체 티켓</span><span class="filter-pill-count">{{$d.TotalCount}}</span>
+  </button>
+  <button type="button" class="filter-pill-btn" data-quick-filter-target="tickets-table" data-quick-attr="status" data-quick-val="pending_review">
+    <span>승인 대기</span><span class="filter-pill-count">{{$d.PendingCount}}</span>
+  </button>
+  <button type="button" class="filter-pill-btn" data-quick-filter-target="tickets-table" data-quick-attr="status" data-quick-val="resolved">
+    <span>조치 완료</span><span class="filter-pill-count">{{$d.ResolvedCount}}</span>
+  </button>
+  <button type="button" class="filter-pill-btn" data-quick-filter-target="tickets-table" data-quick-attr="verdict" data-quick-val="true_positive">
+    <span>True Positive</span><span class="filter-pill-count">{{$d.TruePositiveCnt}}</span>
+  </button>
+  <button type="button" class="filter-pill-btn" data-quick-filter-target="tickets-table" data-quick-attr="verdict" data-quick-val="needs_more_info">
+    <span>추가 확인 필요</span><span class="filter-pill-count">{{$d.NeedsMoreInfoCnt}}</span>
+  </button>
+</div>
+
+<div class="card">
+  <div class="toolbar" data-filter-table="tickets-table">
+    <div class="toolbar-filters">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" data-filter-search placeholder="티켓 ID, 규칙명, 엔티티, Alert ID 검색...">
+      </div>
+      <select class="select-input" data-filter-attr="severity" aria-label="Filter by Severity">
+        <option value="all">심각도: 전체</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <select class="select-input" data-filter-attr="status" aria-label="Filter by Status">
+        <option value="all">상태: 전체</option>
+        <option value="pending_review">Pending Review</option>
+        <option value="resolved">Resolved</option>
+        <option value="collecting">Collecting</option>
+      </select>
+      <select class="select-input" data-filter-attr="verdict" aria-label="Filter by Verdict">
+        <option value="all">AI 판정: 전체</option>
+        <option value="true_positive">True Positive</option>
+        <option value="needs_more_info">Needs Review</option>
+        <option value="benign_true_positive">Benign TP</option>
+        <option value="false_positive">False Positive</option>
+      </select>
+    </div>
+    <span class="mono text-muted" style="font-size:12px;" data-filter-count></span>
+  </div>
+
+  <div class="table-wrap">
+    {{if $d.Tickets}}
+    <table id="tickets-table" class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>심각도</th>
+          <th>탐지 규칙</th>
+          <th>대상 엔티티</th>
+          <th>AI 판정</th>
+          <th>신뢰도</th>
+          <th>상태</th>
+          <th>생성 일시</th>
+          <th style="text-align:right;">작업</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $d.Tickets}}
+        <tr data-row data-severity="{{.Severity}}" data-status="{{.Status}}" data-verdict="{{.Verdict}}">
+          <td class="mono"><a href="/tickets/{{.ID}}" style="font-weight:700;">#{{.ID}}</a></td>
+          <td><span class="pill {{sevClass .Severity}}"><span class="pill-dot"></span>{{upper .Severity}}</span></td>
+          <td>
+            <div style="font-weight:600;"><a href="/tickets/{{.ID}}" style="color:var(--text-primary);">{{.RuleName}}</a></div>
+            <div class="mono text-muted" style="font-size:11px;" title="Alert ID: {{.AlertID}}">{{.RuleID}} · {{shortID .AlertID}}</div>
+          </td>
+          <td>
+            <span class="tag">{{.EntityValue}}</span>
+            <span class="text-muted" style="font-size:11px;margin-left:4px;">{{.EntityType}}</span>
+          </td>
+          <td><span class="pill {{verdictClass .Verdict}}">{{verdictLabel .Verdict}}</span></td>
+          <td>
+            <div class="confidence-cell">
+              <div class="progress"><div class="progress-fill" style="width:{{pct .Confidence}}%;"></div></div>
+              <span class="mono" style="font-size:12px;">{{pct .Confidence}}%</span>
+            </div>
+          </td>
+          <td><span class="pill {{statusClass .Status}}"><span class="pill-dot"></span>{{statusLabel .Status}}</span></td>
+          <td class="mono text-secondary" style="font-size:12px;">{{formatTime .CreatedAt}}</td>
+          <td style="text-align:right;">
+            <a href="/tickets/{{.ID}}" class="btn btn-secondary btn-sm">상세 분석</a>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <div class="empty-state">
+      <div class="empty-state-title">등록된 인시던트 티켓이 없습니다</div>
+      <p>상단의 '정보유출 탐지 즉시 스캔' 버튼을 눌러 탐지를 실행해 보세요.</p>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
